@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/* 옥!소리 디자인 토큰 — design-system.md. 상태별 색은 lib/signs.ts */
+@theme {
+  --color-ink: #4A3D37;
+  --color-muted: #776859;
+  --color-paper: #F8F3E8;
+  --color-card: #FFFDF8;
+  --color-cream: #FFF8E6;
+  --color-line: #E8DCC8;
+  --color-line-strong: #C9B89C;
+
+  --color-yellow: #F4C25B;
+  --color-yellow-deep: #D9A132;
+  --color-yellow-soft: #FFF1CF;
+  --color-yellow-line: #F0D697;
+
+  --color-sage: #7E9F72;
+  --color-sage-deep: #5E7F55;
+  --color-sage-soft: #E6F0DF;
+
+  --color-coral: #D9706F;
+  --color-coral-soft: #FBE3E1;
+
+  --color-memo: #FFF3C8;
+
+  --font-display: var(--font-jua), "Noto Sans KR", system-ui, sans-serif;
+  --font-sans: var(--font-noto), system-ui, sans-serif;
+
+  --radius-card: 22px;
+  --radius-sheet: 28px;
+}
+
+html {
+  color-scheme: light;
+  background: var(--color-paper);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+button:not(:disabled):active {
+  transform: translateY(2px);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-sage-deep);
+  outline-offset: 2px;
+}
+
+@keyframes ok-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes ok-pop {
+  0% { transform: scale(0.94); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.ok-bob { animation: ok-bob 1.6s ease-in-out infinite; }
+.ok-pop { animation: ok-pop 0.2s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ok-bob, .ok-pop { animation: none; }
+}
