@@ -8,26 +8,30 @@
 - 언제: [plan.md](plan.md) · [todo.md](todo.md)
 - 개발 규칙: [CLAUDE.md](CLAUDE.md)
 
+**배포 주소:** https://test1-black-psi.vercel.app (Vercel 팀 hearts2okcheon, `main`에 올리면 자동 재배포)
+**DB:** Supabase 프로젝트 `test1` (ref `encttfcrxuckoqkrakoi`, 서울, 조직 "Welcome, hearts2okcheon")
+
 ## 처음 실행하기
 
-필요한 것: Node.js 20 이상, Docker Desktop(로컬 Supabase용).
+필요한 것: Node.js 20 이상.
 
 ```bash
 npm install
 cp .env.example .env.local
-npx supabase start
 ```
 
-`supabase start`가 끝나면 출력되는 `API URL`과 `anon key`를 `.env.local`의 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`에 넣는다. 마이그레이션과 예시 가게 5곳(seed)이 자동으로 들어간다.
+`.env.local`에 Supabase 대시보드 → Project Settings → API의 URL과 publishable 키를 넣는다.
 
 ```bash
 npm run typecheck
-npm run test:db
 npm test
 npm run dev
 ```
 
-http://localhost:3000 에서 마을방송이 보이면 성공. DB를 처음 상태로 돌리려면 `npx supabase db reset`.
+http://localhost:3000 에서 마을방송이 보이면 성공.
+
+- **DB 테스트(pgTAP):** Docker가 있으면 `npx supabase start` 후 `npm run test:db`. 없으면 `supabase/tests/signs_test.sql`을 Supabase SQL Editor에서 실행한다(파일이 `begin … rollback`이라 데이터가 남지 않는다).
+- **DB 구조 바꾸기:** `supabase/migrations/`에 파일을 추가하고 `npx supabase link --project-ref encttfcrxuckoqkrakoi` → `npx supabase db push`.
 
 ## 화면
 
@@ -35,18 +39,13 @@ http://localhost:3000 에서 마을방송이 보이면 성공. DB를 처음 상�
 |---|---|---|
 | `/` | 주민 | 오늘의 마을방송, 가게 팻말, 이웃 제보 |
 | `/stores/[id]` | 주민 | 큰 팻말, 쪽지, 제보 목록, 나도 봤어요 |
-| `/owner` | 사장님 | 공지 버튼 5개, 쪽지, 확인 질문 |
-| `/owner/claim` | 사장님 | 내 가게 인증 요청 |
-| `/admin` | 옥천신문 | 엇갈림·무응답, 대리 등록, 가게 인증, 가게 관리, 지표 |
+| `/owner` | 사장님 | 처음엔 가게 코드 입력 → 연결 후 공지 버튼 5개, 쪽지, 확인 질문 |
+| `/admin` | 옥천신문 | 엇갈림·무응답, 대리 등록, 가게 코드, 가게 관리, 지표 |
 
-## 사장님으로 테스트하기 (카카오 없이)
+## Supabase 설정 (대시보드에서 한 번)
 
-`.env.local`에 `NEXT_PUBLIC_DEV_EMAIL_LOGIN=true`면 `/owner/login`에 개발용 이메일 로그인이 보인다. 가입 → 내 가게 찾기 → 인증 요청 후, 관리자 화면에서 승인하면 공지 버튼이 열린다. **프로덕션에서는 이 값을 끈다.**
-
-## 관리자 만들기
-
-1. Supabase Studio(로컬은 http://127.0.0.1:54323) → Authentication → Add user 로 이메일·비밀번호 계정을 만든다.
-2. SQL Editor에서:
+1. **익명 로그인 켜기:** Authentication → Sign In / Providers → **Allow anonymous sign-ins** 켜고 Save. 이웃 제보와 사장님 가게 코드 연결이 모두 이걸로 동작한다.
+2. **관리자 만들기:** Authentication → Users → Add user로 이메일·비밀번호 계정을 만들고, SQL Editor에서:
 
 ```sql
 insert into profiles (id, role)
@@ -56,17 +55,15 @@ on conflict (id) do update set role = 'admin';
 
 3. `/admin/login`으로 로그인.
 
-## 카카오 로그인 켜기
+## 사장님 연결하기 (가게 코드, ADR-006)
 
-1. [Kakao Developers](https://developers.kakao.com)에서 앱을 만들고 카카오 로그인을 활성화한다. Redirect URI는 `https://<프로젝트>.supabase.co/auth/v1/callback` (로컬: `http://127.0.0.1:54321/auth/v1/callback`).
-2. 로컬: `.env.local`에 `SUPABASE_AUTH_EXTERNAL_KAKAO_CLIENT_ID`·`SECRET`을 넣고 `supabase/config.toml`의 `[auth.external.kakao] enabled = true`, `npx supabase stop && npx supabase start`.
-3. 클라우드: Supabase 대시보드 → Authentication → Providers → Kakao에 키 입력. **Anonymous sign-ins도 켠다**(이웃 제보용).
+1. 옥천신문이 `/admin` → **가게 코드** 탭에서 가게의 **코드 만들기**를 누른다.
+2. 전화나 방문으로 사장님이 맞는지 확인한 뒤 6자리 코드를 불러 드린다.
+3. 사장님은 휴대폰에서 **내 가게** 탭을 열고 코드를 넣는다. 한 번만 넣으면 그 휴대폰에서 계속 쓴다. 가족 휴대폰도 같은 코드로 연결할 수 있다.
+4. 휴대폰을 잃어버렸거나 사람이 바뀌면 **연결 모두 끊고 새 코드**를 누른다.
 
-## 배포 (Vercel + Supabase)
+카카오 로그인은 나중에 다시 검토한다 (ADR-002).
 
-```bash
-npx supabase link --project-ref <프로젝트 ref>
-npx supabase db push
-```
+## 배포 (Vercel)
 
-Vercel에 저장소를 연결하고 환경변수 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`를 넣는다. Supabase Auth의 Site URL과 Redirect URL에 Vercel 주소(`/auth/callback`)를 추가한다.
+Vercel 프로젝트 환경변수 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`에 `.env.local`과 같은 값을 넣고 Redeploy 한다.

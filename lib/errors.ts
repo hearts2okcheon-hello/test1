@@ -13,8 +13,8 @@ const MESSAGES: Record<string, string> = {
   INVALID_TIME: "시각을 다시 골라 주세요.",
   MEMO_TOO_LONG: "쪽지는 40자까지 쓸 수 있어요.",
   NO_QUESTION: "확인할 필요가 없는 제보예요.",
-  ALREADY_OWNER: "이미 가게가 연결되어 있어요.",
-  CLAIM_PENDING: "인증 요청을 확인하고 있어요. 옥천신문이 곧 전화 드릴게요.",
+  INVALID_CODE: "코드가 맞지 않아요. 옥천신문에 다시 확인해 주세요.",
+  TOO_MANY_ATTEMPTS: "여러 번 틀렸어요. 10분 뒤에 다시 넣어 주세요.",
   INVALID_NAME: "가게 이름을 써 주세요.",
 };
 
@@ -24,7 +24,7 @@ export function errorMessage(error: unknown): string {
     if (raw.includes(code)) return MESSAGES[code];
   }
   // Supabase 대시보드에서 익명 로그인이 꺼져 있을 때 (ADR-003)
-  if (/anonymous sign-ins are disabled/i.test(raw)) return "지금은 제보를 받을 수 없어요. 옥천신문에 알려 주세요. (관리자: Supabase 익명 로그인 켜기)";
+  if (/anonymous sign-ins are disabled/i.test(raw)) return "지금은 이용할 수 없어요. 옥천신문에 알려 주세요. (관리자: Supabase 익명 로그인 켜기)";
   if (/fetch|network/i.test(raw)) return "인터넷 연결을 확인하고 다시 눌러 주세요.";
   return "잠깐 문제가 생겼어요. 다시 눌러 주세요.";
 }

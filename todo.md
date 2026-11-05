@@ -11,7 +11,7 @@
 ## Phase 0 — 개발 준비 (4주차)
 
 ### 현장
-- [ ] 사장님 인터뷰 3~5명 (공지 의향 · 걸림돌 · 원하는 방식 · 현재 공지 방법 · 카카오톡 사용 여부)
+- [ ] 사장님 인터뷰 3~5명 (공지 의향 · 걸림돌 · 원하는 방식 · 현재 공지 방법 · 가게 코드 방식이 편한지 · 카카오톡 사용 여부)
 - [ ] 인터뷰 기록 정리 → brd §3 "아직 모르는 것" 갱신
 - [ ] 시범 참여 가게 약 10곳 확정 + 평소 영업시간·카테고리·주소 수집 → `supabase/seed.sql` 교체 또는 관리자 화면에서 등록
 - [ ] 이웃 제보단 모집
@@ -19,17 +19,20 @@
 ### 셋업
 - [~] Next.js 15 + TypeScript + Tailwind 4 프로젝트 파일 (package.json, tsconfig, postcss, next.config)
 - [x] `npm install` → `npm run typecheck` 통과 · `npm test` 17개 통과 · `next build` 성공 (2026-11-04)
-- [x] Supabase 프로젝트 연결 — 기존 OhaiyoOkcheon 프로젝트 사용(ADR-005), `.env.local` 작성 (2026-11-04)
-- [ ] Vercel 연결 + 프리뷰 배포 확인
-- [ ] 카카오 개발자 앱 등록 + Supabase Kakao provider 설정
-- [x] Supabase 대시보드에서 익명 로그인 켜기 (2026-11-04)
+- [x] Supabase 프로젝트 `test1` (ref encttfcrxuckoqkrakoi, 서울) — 마이그레이션 3개 · 예시 가게 5곳 · pgTAP 51개 통과, `.env.local` 작성 (2026-11-05)
+- [ ] **새 프로젝트에서 익명 로그인 켜기** (이웃 제보·가게 코드 연결에 필요)
+- [ ] **Vercel 환경변수를 새 프로젝트 값으로 바꾸고 Redeploy** (지금 배포 사이트는 삭제된 프로젝트를 가리킴)
+- [ ] 관리자 계정 만들기 (README "Supabase 설정")
+- [x] Vercel 연결 + 배포 확인 — https://test1-black-psi.vercel.app (2026-11-05)
+- [ ] Supabase Auth URL Configuration 에 배포 주소 등록 (Site URL · Redirect URL)
+- [ ] (나중) 카카오 로그인 재검토 — ADR-002
+- [x] Supabase 대시보드에서 익명 로그인 켜기 (2026-11-04, 삭제된 OhaiyoOkcheon 프로젝트 기준)
 - [x] 테스트: Vitest 18개 통과 · pgTAP 41개 클라우드 DB에서 통과(롤백, 2026-11-04)
 
 ### 데이터
 - [x] 마이그레이션 3개 클라우드 적용: 스키마 · RPC · 권한 강화(`20261104000000`)
 - [x] RLS 정책 (쓰기는 RPC만) — 보안 점검(advisor) 반영, 로그인 안 한 방문자는 읽기 RPC만
 - [x] seed: 예시 가게 5곳 클라우드에 넣음 (실제 시범 가게로 교체 필요)
-- [ ] 관리자 계정 만들기 (README)
 
 ---
 
@@ -45,9 +48,8 @@
 - [~] 컴포넌트: SignChip, SignBoard, SourceLine, TimeAgo, Osori, Toast, BottomNav
 - [~] 화면 `/` 마을방송 + 가게 목록 — 가짜 데이터로 375px 화면 확인함, 실제 DB 연결 전
 - [~] 화면 `/stores/[id]` 가게 상세 — 가짜 데이터로 화면·제보 시트 확인함, 실제 DB 연결 전
-- [~] 화면 `/owner/login` 카카오 로그인 (+ 개발용 이메일 로그인)
-- [~] 화면 `/owner/claim` + RPC `request_claim`
-- [~] 화면 `/admin` 가게 인증 탭 + RPC `review_claim`
+- [x] 사장님 연결을 가게 코드로 변경 (ADR-006): `/owner` 코드 입력 화면 + RPC `redeem_store_code` — pgTAP T-AUTH 통과, 화면 확인
+- [~] `/admin` 가게 코드 탭 + RPC `admin_issue_store_code` · `admin_list_store_codes` — DB 테스트 통과, 화면은 관리자 계정 생긴 뒤 확인
 - [~] 화면 `/owner` 공지 버튼 5개 + 시각 선택 + 쪽지(빠른 문구·40자) + 되돌리기 토스트 + "오늘 문 여셨나요?" 카드
 - [~] 빈 상태(오소리) · 에러 문구
 - [x] 로딩 상태 (`app/loading.tsx`) · 에러 화면 (`app/error.tsx`, 설정 누락 안내)

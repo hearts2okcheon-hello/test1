@@ -6,8 +6,8 @@ create type notice_kind as enum ('open', 'closed_today', 'late_open', 'sold_out'
 create type notice_source as enum ('owner', 'okcheon');
 create type report_kind as enum ('seen_closed', 'seen_open', 'seen_sold_out', 'seen_long_line');
 create type report_status as enum ('pending', 'confirmed', 'rejected', 'expired');
-create type claim_status as enum ('requested', 'approved', 'rejected');
 
+-- 사장님(가게 코드로 연결된 기기)과 옥천신문 관리자
 create table profiles (
   id uuid primary key references auth.users on delete cascade,
   role user_role not null default 'owner',
@@ -23,18 +23,31 @@ create table stores (
   address text,
   -- { "mon": [["11:00","21:00"]], "sun": null, ... }  null = 정기 휴무
   regular_hours jsonb,
-  owner_id uuid references profiles(id) on delete set null,
   is_pilot boolean not null default true,
   created_at timestamptz not null default now()
 );
 
-create table store_claims (
-  id uuid primary key default gen_random_uuid(),
+-- 가게 코드: 옥천신문이 발급해 전화·방문으로 사장님께 알려 준다 (ADR-006)
+create table store_codes (
+  store_id uuid primary key references stores(id) on delete cascade,
+  code text not null unique check (code ~ '^[0-9]{6}$'),
+  created_by uuid references profiles(id),
+  created_at timestamptz not null default now()
+);
+
+-- 가게 코드를 넣은 기기(사장님·가족). 한 가게에 여러 기기 가능
+create table store_members (
   store_id uuid not null references stores(id) on delete cascade,
   user_id uuid not null references profiles(id) on delete cascade,
-  status claim_status not null default 'requested',
-  reviewed_by uuid references profiles(id),
-  reviewed_at timestamptz,
+  created_at timestamptz not null default now(),
+  primary key (store_id, user_id)
+);
+
+-- 코드 입력 시도 (틀린 코드 연속 입력 제한)
+create table code_attempts (
+  id bigserial primary key,
+  user_id uuid not null,
+  ok boolean not null,
   created_at timestamptz not null default now()
 );
 
@@ -88,12 +101,15 @@ create index notices_created on notices (created_at desc);
 create index reports_store_pending on reports (store_id, created_at desc) where status = 'pending';
 create index reports_reporter on reports (reporter_id, store_id, created_at desc);
 create index events_name_created on events (name, created_at);
-create unique index store_claims_one_open on store_claims (store_id, user_id) where status = 'requested';
+create index store_members_user on store_members (user_id, created_at desc);
+create index code_attempts_user on code_attempts (user_id, created_at desc);
 
 -- ── RLS ──────────────────────────────────────────────
 alter table profiles enable row level security;
 alter table stores enable row level security;
-alter table store_claims enable row level security;
+alter table store_codes enable row level security;
+alter table store_members enable row level security;
+alter table code_attempts enable row level security;
 alter table notices enable row level security;
 alter table reports enable row level security;
 alter table report_agrees enable row level security;
@@ -110,6 +126,6 @@ create policy "가게는 누구나 본다" on stores for select using (true);
 create policy "공지는 누구나 본다" on notices for select using (true);
 
 create policy "본인 프로필" on profiles for select using (id = auth.uid() or okc_is_admin());
-create policy "본인 인증 요청" on store_claims for select using (user_id = auth.uid() or okc_is_admin());
 
--- reports · report_agrees · events: 정책 없음 = 직접 접근 불가. 제보자 id 비노출 (T-REPORT-13)
+-- store_codes · store_members · code_attempts · reports · report_agrees · events:
+-- 정책 없음 = 직접 접근 불가. 가게 코드·제보자 id 비노출 (T-REPORT-13, T-AUTH)

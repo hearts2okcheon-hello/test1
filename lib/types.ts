@@ -73,9 +73,9 @@ export type OwnerQuestion = {
   agree_count: number;
 };
 
+/** no_store = 아직 가게 코드를 넣지 않은 기기 (ADR-006) */
 export type OwnerHome =
-  | { state: "signed_out" }
-  | { state: "no_store" | "claim_pending"; claim_store_name: string | null; is_admin: boolean }
+  | { state: "no_store"; is_admin: boolean }
   | {
       state: "owner";
       is_admin: boolean;
@@ -95,15 +95,17 @@ export type QueueItem = {
   notice_kind: NoticeKind | null;
 };
 
-export type ClaimItem = {
-  claim_id: string;
+export type StoreCodeItem = {
   store_id: string;
   store_name: string;
-  store_has_owner: boolean;
-  user_name: string | null;
-  phone: string | null;
-  created_at: string;
+  code: string | null;
+  code_created_at: string | null;
+  member_count: number;
 };
+
+export type RedeemResult =
+  | { ok: true; store_id: string; store_name: string }
+  | { ok: false; error: "INVALID_CODE" | "TOO_MANY_ATTEMPTS" };
 
 export type Metrics = {
   pilot_stores: number;

@@ -46,16 +46,17 @@ language sql immutable as $$
 $$;
 
 -- ── 내부: 호출자가 이 가게에 공지할 수 있는가 → 출처 ──
+-- 사장님 = 가게 코드를 넣은 기기 (익명 세션이어도 됨, ADR-006)
 create or replace function _okc_actor_source(p_store_id uuid) returns notice_source
 language plpgsql stable security definer set search_path = public as $$
 begin
-  if auth.uid() is null or okc_is_anonymous() then
+  if auth.uid() is null then
     raise exception 'NOT_AUTHENTICATED';
   end if;
-  if exists (select 1 from stores where id = p_store_id and owner_id = auth.uid()) then
+  if exists (select 1 from store_members where store_id = p_store_id and user_id = auth.uid()) then
     return 'owner';
   end if;
-  if okc_is_admin() then
+  if okc_is_admin() and not okc_is_anonymous() then
     return 'okcheon';
   end if;
   raise exception 'NOT_OWNER';
@@ -371,23 +372,16 @@ create or replace function get_owner_home() returns jsonb
 language plpgsql stable security definer set search_path = public as $$
 declare
   v_store uuid;
-  v_claim text;
 begin
-  if auth.uid() is null or okc_is_anonymous() then
-    return jsonb_build_object('state', 'signed_out');
+  if auth.uid() is null then
+    return jsonb_build_object('state', 'no_store', 'is_admin', false);
   end if;
 
-  select id into v_store from stores where owner_id = auth.uid() order by created_at limit 1;
+  -- 가장 최근에 코드를 넣은 가게
+  select store_id into v_store from store_members where user_id = auth.uid() order by created_at desc limit 1;
 
   if v_store is null then
-    select s.name into v_claim
-      from store_claims c join stores s on s.id = c.store_id
-     where c.user_id = auth.uid() and c.status = 'requested'
-     order by c.created_at desc limit 1;
-    return jsonb_build_object(
-      'state', case when v_claim is null then 'no_store' else 'claim_pending' end,
-      'claim_store_name', v_claim,
-      'is_admin', okc_is_admin());
+    return jsonb_build_object('state', 'no_store', 'is_admin', okc_is_admin());
   end if;
 
   return jsonb_build_object(
@@ -413,65 +407,71 @@ begin
 end;
 $$;
 
--- ── 가게 인증 ─────────────────────────────────────
-create or replace function request_claim(p_store_id uuid, p_phone text default null) returns uuid
+-- ── 가게 코드 (ADR-006) ────────────────────────────
+-- 사장님이 옥천신문에게 받은 6자리 코드를 넣으면 이 기기가 그 가게의 사장님이 된다.
+-- 틀린 코드는 기록해야 하므로 예외 대신 {ok:false, error} 를 돌려준다 (예외면 기록까지 롤백됨).
+create or replace function redeem_store_code(p_code text) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
-  v_id uuid;
-  v_meta jsonb := auth.jwt() -> 'user_metadata';
+  v_code text := regexp_replace(coalesce(p_code, ''), '[^0-9]', '', 'g');
+  v_store stores;
 begin
-  if auth.uid() is null or okc_is_anonymous() then
+  if auth.uid() is null then
     raise exception 'NOT_AUTHENTICATED';
+  end if;
+
+  -- 10분 안에 5번 틀리면 잠시 막는다
+  if (select count(*) from code_attempts
+       where user_id = auth.uid() and not ok and created_at > now() - interval '10 minutes') >= 5 then
+    return jsonb_build_object('ok', false, 'error', 'TOO_MANY_ATTEMPTS');
+  end if;
+
+  select s.* into v_store
+    from store_codes c join stores s on s.id = c.store_id
+   where c.code = v_code;
+
+  if not found then
+    insert into code_attempts (user_id, ok) values (auth.uid(), false);
+    return jsonb_build_object('ok', false, 'error', 'INVALID_CODE');
+  end if;
+
+  insert into code_attempts (user_id, ok) values (auth.uid(), true);
+  insert into profiles (id, role) values (auth.uid(), 'owner') on conflict (id) do nothing;
+  insert into store_members (store_id, user_id) values (v_store.id, auth.uid())
+  on conflict (store_id, user_id) do update set created_at = now();
+
+  insert into events (name, store_id) values ('owner_joined', v_store.id);
+
+  return jsonb_build_object('ok', true, 'store_id', v_store.id, 'store_name', v_store.name);
+end;
+$$;
+
+-- 옥천신문: 가게 코드 발급·재발급. p_revoke 면 지금까지 연결된 기기를 모두 끊는다
+create or replace function admin_issue_store_code(p_store_id uuid, p_revoke boolean default false) returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  v_code text;
+begin
+  if not okc_is_admin() or okc_is_anonymous() then
+    raise exception 'NOT_ADMIN';
   end if;
   if not exists (select 1 from stores where id = p_store_id) then
     raise exception 'NOT_FOUND';
   end if;
 
-  insert into profiles (id, display_name, phone)
-  values (auth.uid(),
-          coalesce(v_meta ->> 'full_name', v_meta ->> 'name', v_meta ->> 'nickname', auth.jwt() ->> 'email'),
-          nullif(btrim(p_phone), ''))
-  on conflict (id) do update
-     set phone = coalesce(excluded.phone, profiles.phone),
-         display_name = coalesce(profiles.display_name, excluded.display_name);
+  loop
+    v_code := lpad((floor(random() * 1000000))::int::text, 6, '0');
+    exit when not exists (select 1 from store_codes where code = v_code);
+  end loop;
 
-  -- MVP: 1인 1가게 (2번째 가게는 옥천신문이 수동 처리)
-  if exists (select 1 from stores where owner_id = auth.uid()) then
-    raise exception 'ALREADY_OWNER';
-  end if;
-  if exists (select 1 from store_claims where user_id = auth.uid() and status = 'requested') then
-    raise exception 'CLAIM_PENDING';
+  insert into store_codes (store_id, code, created_by) values (p_store_id, v_code, auth.uid())
+  on conflict (store_id) do update set code = excluded.code, created_by = excluded.created_by, created_at = now();
+
+  if p_revoke then
+    delete from store_members where store_id = p_store_id;
   end if;
 
-  insert into store_claims (store_id, user_id) values (p_store_id, auth.uid()) returning id into v_id;
-  return v_id;
-end;
-$$;
-
-create or replace function review_claim(p_claim_id uuid, p_approve boolean) returns void
-language plpgsql security definer set search_path = public as $$
-declare
-  c store_claims;
-begin
-  if not okc_is_admin() then
-    raise exception 'NOT_ADMIN';
-  end if;
-  select * into c from store_claims where id = p_claim_id for update;
-  if not found or c.status <> 'requested' then
-    raise exception 'ALREADY_RESOLVED';
-  end if;
-
-  update store_claims
-     set status = (case when p_approve then 'approved' else 'rejected' end)::claim_status,
-         reviewed_by = auth.uid(), reviewed_at = now()
-   where id = c.id;
-
-  if p_approve then
-    update stores set owner_id = c.user_id where id = c.store_id;
-    -- 같은 가게의 다른 요청은 정리
-    update store_claims set status = 'rejected', reviewed_by = auth.uid(), reviewed_at = now()
-     where store_id = c.store_id and status = 'requested' and id <> c.id;
-  end if;
+  return v_code;
 end;
 $$;
 
@@ -539,18 +539,18 @@ language sql stable security definer set search_path = public as $$
    order by r.created_at
 $$;
 
-create or replace function admin_list_claims()
+-- 가게별 코드와 연결된 기기 수
+create or replace function admin_list_store_codes()
 returns table (
-  claim_id uuid, store_id uuid, store_name text, store_has_owner boolean,
-  user_name text, phone text, created_at timestamptz
+  store_id uuid, store_name text, code text, code_created_at timestamptz, member_count int
 )
 language sql stable security definer set search_path = public as $$
-  select c.id, s.id, s.name, s.owner_id is not null, p.display_name, p.phone, c.created_at
-    from store_claims c
-    join stores s on s.id = c.store_id
-    join profiles p on p.id = c.user_id
-   where okc_is_admin() and c.status = 'requested'
-   order by c.created_at
+  select s.id, s.name, c.code, c.created_at,
+         (select count(*)::int from store_members m where m.store_id = s.id)
+    from stores s
+    left join store_codes c on c.store_id = s.id
+   where okc_is_admin() and not okc_is_anonymous()
+   order by s.name
 $$;
 
 -- 시범 지표 (design §7). 기간은 [p_from, p_to)
@@ -558,7 +558,9 @@ create or replace function admin_metrics(p_from timestamptz, p_to timestamptz) r
 language sql stable security definer set search_path = public as $$
   select case when not okc_is_admin() then null else jsonb_build_object(
     'pilot_stores', (select count(*) from stores where is_pilot),
-    'verified_pilot_stores', (select count(*) from stores where is_pilot and owner_id is not null),
+    'verified_pilot_stores', (
+      select count(*) from stores s
+       where s.is_pilot and exists (select 1 from store_members m where m.store_id = s.id)),
     'stores_with_owner_notice', (
       select count(distinct n.store_id) from notices n join stores s on s.id = n.store_id
        where s.is_pilot and n.source = 'owner' and n.created_at >= p_from and n.created_at < p_to),

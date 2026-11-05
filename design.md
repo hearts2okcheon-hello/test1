@@ -25,11 +25,11 @@
 |---|---|---|
 | 주민(열람) | 없음 | 마을방송·가게 팻말 보기 |
 | 이웃(제보) | Supabase 익명 로그인 (화면엔 안 보임) | 제보 4종, 나도 봤어요 |
-| 사장님 | 카카오 로그인 + 가게 인증(옥천신문 승인) | 자기 가게 공지 5종·쪽지, 확인 질문 네/아니요 |
-| 옥천신문(관리자) | 이메일 로그인, `role = admin` | 확인 표시, 대리 등록, 가게 인증 승인, 가게 등록 |
+| 사장님 | **가게 코드 6자리** (옥천신문 발급) → 그 기기의 익명 세션이 가게에 연결됨 | 자기 가게 공지 5종·쪽지, 확인 질문 네/아니요 |
+| 옥천신문(관리자) | 이메일 로그인, `role = admin` | 확인 표시, 대리 등록, 가게 코드 발급, 가게 등록 |
 
 - 이웃 제보의 신원은 어디에도 노출하지 않는다. 익명 세션 id는 중복 제보·도배 방지에만 쓴다.
-- 사장님 로그인 방식은 adr.md ADR-002 참고(4주차 사장님 인터뷰 후 재확인).
+- 사장님 연결 방식은 adr.md ADR-006. 옥천신문이 전화·방문으로 사장님임을 확인한 뒤 코드를 불러 드리고, 사장님은 "내 가게" 탭에 한 번 넣는다. 가족 휴대폰도 같은 코드로 연결할 수 있고, 10분 안에 5번 틀리면 잠시 막힌다. 카카오 로그인은 나중에 다시 검토한다.
 
 ---
 
@@ -95,7 +95,6 @@ create type notice_kind as enum ('open', 'closed_today', 'late_open', 'sold_out'
 create type notice_source as enum ('owner', 'okcheon');
 create type report_kind as enum ('seen_closed', 'seen_open', 'seen_sold_out', 'seen_long_line');
 create type report_status as enum ('pending', 'confirmed', 'rejected', 'expired');
-create type claim_status as enum ('requested', 'approved', 'rejected');
 
 create table profiles (
   id uuid primary key references auth.users on delete cascade,
@@ -111,18 +110,28 @@ create table stores (
   category text,                    -- 식당·카페·약국·의원 등
   address text,
   regular_hours jsonb,              -- { "mon": [["11:00","21:00"]], "sun": null, ... }
-  owner_id uuid references profiles(id),  -- 인증 승인 후 연결
   is_pilot boolean default true,    -- 시범 참여 가게
   created_at timestamptz default now()
 );
 
-create table store_claims (          -- 사장님 가게 인증 요청
-  id uuid primary key default gen_random_uuid(),
-  store_id uuid references stores(id) not null,
-  user_id uuid references profiles(id) not null,
-  status claim_status default 'requested',
-  reviewed_by uuid references profiles(id),
-  reviewed_at timestamptz,
+create table store_codes (           -- 가게 코드 (ADR-006). 가게당 1개, 재발급 가능
+  store_id uuid primary key references stores(id),
+  code text unique not null,        -- 숫자 6자리
+  created_by uuid references profiles(id),
+  created_at timestamptz default now()
+);
+
+create table store_members (         -- 코드를 넣은 기기 = 사장님. 한 가게에 여러 기기 가능
+  store_id uuid references stores(id),
+  user_id uuid references profiles(id),
+  created_at timestamptz default now(),
+  primary key (store_id, user_id)
+);
+
+create table code_attempts (         -- 틀린 코드 연속 입력 제한용
+  id bigserial primary key,
+  user_id uuid not null,
+  ok boolean not null,
   created_at timestamptz default now()
 );
 
@@ -190,7 +199,7 @@ create table events (                -- 시범 지표 측정용
 | notices | 모두 | 없음 (RPC) |
 | reports | **없음** — `reporter_id` 비노출, RPC로만 읽음 | 없음 (RPC) |
 | report_agrees | 없음 (RPC 집계) | 없음 (RPC) |
-| store_claims | 본인, admin | 없음 (RPC) |
+| store_codes · store_members · code_attempts | 없음 (RPC) | 없음 (RPC) |
 | profiles | 본인, admin | 없음 (RPC) |
 | events | 없음 | 없음 (`log_event`는 page_view·store_view만) |
 
@@ -215,9 +224,8 @@ create table events (                -- 시범 지표 측정용
 | `/` | 오늘의 마을방송 — 상단: 오늘 소식 피드(최신순), 하단: 가게 목록 + 팻말, 카테고리 필터 | 주민 |
 | `/stores/[id]` | 가게 상세 — 큰 팻말, 출처 배지·시각, 쪽지, 평소 영업시간, 확인 중 제보 + 나도 봤어요, 제보 버튼 4개 | 주민·이웃 |
 | `/owner` | 사장님 홈 — 내 가게 현재 팻말, 공지 버튼 5개, 쪽지 입력, **확인 질문 카드(네/아니요)** 상단 고정 | 사장님 |
-| `/owner/login` | 카카오로 시작하기 버튼 1개 | 사장님 |
-| `/owner/claim` | 내 가게 찾기 → 인증 요청 → "옥천신문이 전화 드릴게요" 안내 | 사장님 |
-| `/admin` | 옥천신문 — 탭: 엇갈림·무응답 / 대리 등록 / 가게 인증 요청 / 가게 관리 / 지표 | 관리자 |
+| `/owner` (연결 전) | 가게 코드 6자리 입력 → "내 가게 연결하기" | 사장님 |
+| `/admin` | 옥천신문 — 탭: 엇갈림·무응답 / 대리 등록 / 가게 코드 / 가게 관리 / 지표 | 관리자 |
 
 ### 5.3 핵심 플로우
 **사장님 공지 (목표: 앱 열고 2탭)**
@@ -256,16 +264,16 @@ MVP에 푸시 알림은 없다(brd 범위 밖). 그래서:
 | `post_report(store_id, kind)` | 익명 포함 로그인 | 30분 중복 제한 확인 후 제보 생성 |
 | `agree_report(report_id, on?)` | 익명 포함 로그인 | 나도 봤어요 켜기/끄기(본인 제보 불가), 동의 수 반환 |
 | `answer_report(report_id, yes)` | 해당 가게 owner, admin | §3.2 규칙으로 공지 생성 + confirmed/rejected. 호출자에 따라 source owner/okcheon |
-| `request_claim(store_id, phone?)` | 카카오 로그인 사용자 | 인증 요청 (1인 1가게) |
-| `review_claim(claim_id, approve)` | admin | 승인 시 `stores.owner_id` 연결, 같은 가게 다른 요청 정리 |
+| `redeem_store_code(code)` | 익명 포함 로그인 | 가게 코드 확인 → 이 기기를 가게에 연결. 틀리면 `{ok:false, error}` (10분 5회 제한) |
+| `admin_issue_store_code(store_id, revoke?)` | admin | 6자리 코드 발급·재발급. revoke 면 연결된 기기 모두 끊기 |
 | `admin_upsert_store(store_id?, name, category?, address?, regular_hours?, is_pilot?)` | admin | 가게 등록·수정 (store_id가 없으면 새로 등록) |
 | `admin_get_queue()` | admin | 엇갈림·무응답 제보 |
-| `admin_list_claims()` | admin | 대기 중 인증 요청 |
+| `admin_list_store_codes()` | admin | 가게별 코드와 연결된 기기 수 |
 | `admin_metrics(from, to)` | admin | §7 지표 |
 | `log_event(name, anon_id?, store_id?)` | 모두 | page_view·store_view만 (나머지 이벤트는 RPC 안에서 서버가 기록) |
 
 - 모든 RPC는 `security definer` + 함수 안에서 권한 확인. 시간 계산은 DB에서 `now() at time zone 'Asia/Seoul'`.
-- 에러 코드: `NOT_AUTHENTICATED`, `NOT_OWNER`, `NOT_ADMIN`, `NOT_FOUND`, `DUPLICATE_REPORT`, `OWN_REPORT`, `ALREADY_RESOLVED`, `UNDO_WINDOW_PASSED`, `UNDO_NOT_ALLOWED`, `INVALID_TIME`, `MEMO_TOO_LONG`, `NO_QUESTION`, `ALREADY_OWNER`, `CLAIM_PENDING` → 문구는 `lib/errors.ts`.
+- 에러 코드: `NOT_AUTHENTICATED`, `NOT_OWNER`, `NOT_ADMIN`, `NOT_FOUND`, `DUPLICATE_REPORT`, `OWN_REPORT`, `ALREADY_RESOLVED`, `UNDO_WINDOW_PASSED`, `UNDO_NOT_ALLOWED`, `INVALID_TIME`, `MEMO_TOO_LONG`, `NO_QUESTION`, `INVALID_CODE`, `TOO_MANY_ATTEMPTS` → 문구는 `lib/errors.ts`.
 - 구현: `supabase/migrations/20261103000100_functions.sql`.
 
 ---

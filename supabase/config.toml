@@ -30,7 +30,7 @@ enable_signup = true
 enable_signup = true
 enable_confirmations = false
 
-# 사장님 카카오 로그인 (ADR-002). 카카오 개발자 앱을 만든 뒤 .env.local 에 키를 넣고 enabled = true 로 바꾼다.
+# 사장님 카카오 로그인 — 지금은 쓰지 않음 (ADR-006 가게 코드로 대체, ADR-002 나중에 재검토)
 [auth.external.kakao]
 enabled = false
 client_id = "env(SUPABASE_AUTH_EXTERNAL_KAKAO_CLIENT_ID)"

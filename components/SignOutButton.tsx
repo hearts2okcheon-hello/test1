@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export function SignOutButton() {
+export function SignOutButton({ label = "로그아웃" }: { label?: string }) {
   const router = useRouter();
   return (
     <button
@@ -13,9 +13,9 @@ export function SignOutButton() {
         router.push("/");
         router.refresh();
       }}
-      className="min-h-11 rounded-2xl border-2 border-line bg-card px-3.5 text-sm font-bold text-muted"
+      className="min-h-11 shrink-0 rounded-2xl border-2 border-line bg-card px-3.5 text-sm font-bold text-muted"
     >
-      로그아웃
+      {label}
     </button>
   );
 }

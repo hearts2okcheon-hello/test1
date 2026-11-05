@@ -20,7 +20,7 @@
 | Supabase | Postgres + Auth + RLS | 무료 티어 |
 | `@supabase/supabase-js` | 2.x | |
 | `@supabase/ssr` | 최신 | App Router 쿠키 세션 |
-| Auth | Kakao OAuth (사장님) · Anonymous (이웃 제보) · Email (옥천신문 관리자) | ADR-002, ADR-003 |
+| Auth | Anonymous (이웃 제보·가게 코드로 연결한 사장님 기기) · Email (옥천신문 관리자) | ADR-003, ADR-006 |
 | 시간대 | DB 함수에서 `Asia/Seoul` | ADR-004 |
 
 ## 배포
@@ -44,9 +44,8 @@
 app/
   page.tsx, HomeReport.tsx # / 오늘의 마을방송
   stores/[id]/             # 가게 상세 (page + StoreClient)
-  owner/                   # 사장님: page + OwnerPanel, login, claim
+  owner/                   # 사장님: page + CodeEntry(가게 코드) + OwnerPanel
   admin/                   # 옥천신문: page + AdminPanels, login
-  auth/callback/route.ts   # 카카오 로그인 콜백
 components/                # SignChip, SignBoard, StoreCard, NoticeButtons, ConfirmCard, ReportSheet, Toast, Osori ...
 lib/
   supabase/                # client.ts(+익명 세션), server.ts

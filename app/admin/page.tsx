@@ -3,15 +3,15 @@ import { redirect } from "next/navigation";
 import { Osori } from "@/components/Osori";
 import { SignOutButton } from "@/components/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
-import type { ClaimItem, Metrics, QueueItem, StoreSign } from "@/lib/types";
-import { ClaimList, ProxyPanel, QueueList, StoreForm } from "./AdminPanels";
+import type { Metrics, QueueItem, StoreCodeItem, StoreSign } from "@/lib/types";
+import { ProxyPanel, QueueList, StoreCodeList, StoreForm } from "./AdminPanels";
 
 export const dynamic = "force-dynamic";
 
 const TABS = [
   { id: "queue", label: "엇갈림·무응답" },
   { id: "proxy", label: "대리 등록" },
-  { id: "claims", label: "가게 인증" },
+  { id: "codes", label: "가게 코드" },
   { id: "stores", label: "가게 관리" },
   { id: "metrics", label: "지표" },
 ] as const;
@@ -61,7 +61,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
       {tab === "queue" && <QueueTab />}
       {tab === "proxy" && <ProxyTab />}
-      {tab === "claims" && <ClaimsTab />}
+      {tab === "codes" && <CodesTab />}
       {tab === "stores" && <StoreForm />}
       {tab === "metrics" && <MetricsTab from={sp.from} to={sp.to} />}
     </main>
@@ -85,10 +85,10 @@ async function ProxyTab() {
   return <ProxyPanel stores={(data ?? []) as StoreSign[]} notices={notices ?? []} />;
 }
 
-async function ClaimsTab() {
+async function CodesTab() {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("admin_list_claims");
-  return <ClaimList items={(data ?? []) as ClaimItem[]} />;
+  const { data } = await supabase.rpc("admin_list_store_codes");
+  return <StoreCodeList items={(data ?? []) as StoreCodeItem[]} />;
 }
 
 /** 기본 기간: 최근 7일 */

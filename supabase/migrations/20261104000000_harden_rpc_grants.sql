@@ -16,11 +16,11 @@ declare
     'post_report(uuid, report_kind)',
     'agree_report(uuid, boolean)',
     'answer_report(uuid, boolean)',
-    'request_claim(uuid, text)',
-    'review_claim(uuid, boolean)',
+    'redeem_store_code(text)',
+    'admin_issue_store_code(uuid, boolean)',
     'admin_upsert_store(text, text, text, jsonb, boolean, uuid)',
     'admin_get_queue()',
-    'admin_list_claims()',
+    'admin_list_store_codes()',
     'admin_metrics(timestamptz, timestamptz)'
   ];
 begin

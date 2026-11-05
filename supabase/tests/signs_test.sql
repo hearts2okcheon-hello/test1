@@ -1,24 +1,29 @@
 -- 팻말 규칙·공지·제보 RPC 테스트 (test.md). 실행: npx supabase test db
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(41);
+select plan(51);
 
 -- ── 준비 ──────────────────────────────────────────
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000a1', 'owner@test.local'),
   ('00000000-0000-0000-0000-0000000000a2', 'admin@test.local'),
   ('00000000-0000-0000-0000-0000000000a3', 'other@test.local');
+-- 가게 코드를 넣을 익명 기기 (T-AUTH)
+insert into auth.users (id, is_anonymous) values ('00000000-0000-0000-0000-0000000000c9', true);
 insert into profiles (id, role) values
   ('00000000-0000-0000-0000-0000000000a1', 'owner'),
   ('00000000-0000-0000-0000-0000000000a2', 'admin'),
   ('00000000-0000-0000-0000-0000000000a3', 'owner');
-insert into stores (id, name, regular_hours, owner_id) values
-  ('00000000-0000-0000-0000-0000000000b1', '테스트식당', '{"mon":[["09:00","21:00"]]}', '00000000-0000-0000-0000-0000000000a1'),
-  ('00000000-0000-0000-0000-0000000000b2', '주인없는가게', null, null),
+insert into stores (id, name, regular_hours) values
+  ('00000000-0000-0000-0000-0000000000b1', '테스트식당', '{"mon":[["09:00","21:00"]]}'),
+  ('00000000-0000-0000-0000-0000000000b2', '주인없는가게', null),
   -- 하루 종일 영업하는 가게: 평소 영업시간 안이어도 "소식 없음"인지 본다 (T-SIGN-19)
   ('00000000-0000-0000-0000-0000000000b3', '종일가게',
-   '{"mon":[["00:00","23:59"]],"tue":[["00:00","23:59"]],"wed":[["00:00","23:59"]],"thu":[["00:00","23:59"]],"fri":[["00:00","23:59"]],"sat":[["00:00","23:59"]],"sun":[["00:00","23:59"]]}',
-   '00000000-0000-0000-0000-0000000000a3');
+   '{"mon":[["00:00","23:59"]],"tue":[["00:00","23:59"]],"wed":[["00:00","23:59"]],"thu":[["00:00","23:59"]],"fri":[["00:00","23:59"]],"sat":[["00:00","23:59"]],"sun":[["00:00","23:59"]]}');
+-- 사장님 = 가게 코드를 넣은 기기 (ADR-006)
+insert into store_members (store_id, user_id) values
+  ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000a1'),
+  ('00000000-0000-0000-0000-0000000000b3', '00000000-0000-0000-0000-0000000000a3');
 
 create temp table ids (k text primary key, id uuid);
 
@@ -86,7 +91,7 @@ select throws_ok(
 
 select throws_ok(
   $$ select post_notice('00000000-0000-0000-0000-0000000000b1', 'open') $$,
-  'P0001', 'NOT_AUTHENTICATED', '익명 사용자는 공지 불가');
+  'P0001', 'NOT_OWNER', '가게 코드를 넣지 않은 익명 사용자는 공지 불가');
 
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000c2","role":"authenticated","is_anonymous":true}';
 select is(agree_report((select id from ids where k = 'r1')), 1, 'T-REPORT-09 나도 봤어요 +1');
@@ -226,6 +231,52 @@ set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000c1","
 select throws_ok(
   $$ select admin_upsert_store('익명이 만든 가게') $$,
   'P0001', 'NOT_ADMIN', 'T-ADMIN-06 익명은 가게 등록 불가');
+
+-- ── 가게 코드로 사장님 연결 (T-AUTH-01~07, ADR-006) ──
+create temp table codes (k text primary key, code text);
+
+set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}';
+select throws_ok(
+  $$ select admin_issue_store_code('00000000-0000-0000-0000-0000000000b2') $$,
+  'P0001', 'NOT_ADMIN', 'T-AUTH-05 사장님은 코드 발급 불가');
+
+set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}';
+insert into codes select 'b2', admin_issue_store_code('00000000-0000-0000-0000-0000000000b2');
+select ok((select code ~ '^[0-9]{6}$' from codes where k = 'b2'), 'T-AUTH-01 관리자가 6자리 코드 발급');
+
+set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000c9","role":"authenticated","is_anonymous":true}';
+select is(
+  redeem_store_code((select case when code = '111111' then '222222' else '111111' end from codes where k = 'b2')) ->> 'error',
+  'INVALID_CODE', 'T-AUTH-02 틀린 코드는 거부');
+select is(
+  redeem_store_code((select substr(code, 1, 3) || ' ' || substr(code, 4) from codes where k = 'b2')) ->> 'store_name',
+  '주인없는가게', 'T-AUTH-01 맞는 코드(띄어쓰기 포함)를 넣으면 그 가게에 연결');
+select is(get_owner_home() ->> 'state', 'owner', 'T-AUTH-01 연결된 기기는 사장님 화면');
+insert into ids select 'n6', post_notice('00000000-0000-0000-0000-0000000000b2', 'closed_today');
+select is(
+  (select sign || '/' || source from current_sign('00000000-0000-0000-0000-0000000000b2')),
+  'closed_today/owner', 'T-AUTH-03 코드로 연결된 익명 기기의 공지는 사장님 배지');
+select is((select count(*)::int from admin_list_store_codes()), 0, 'T-AUTH-07 사장님 기기는 코드 목록을 못 봄');
+
+set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000c8","role":"authenticated","is_anonymous":true}';
+do $$ begin
+  -- 7자리라 어떤 코드와도 겹치지 않는다
+  for i in 1..5 loop perform redeem_store_code('9999990'); end loop;
+end $$;
+select is(
+  redeem_store_code((select code from codes where k = 'b2')) ->> 'error',
+  'TOO_MANY_ATTEMPTS', 'T-AUTH-04 10분 안에 5번 틀리면 맞는 코드도 잠시 막음');
+
+set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}';
+insert into codes select 'b2new', admin_issue_store_code('00000000-0000-0000-0000-0000000000b2', true);
+set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000c9","role":"authenticated","is_anonymous":true}';
+select throws_ok(
+  $$ select post_notice('00000000-0000-0000-0000-0000000000b2', 'open') $$,
+  'P0001', 'NOT_OWNER', 'T-AUTH-06 연결 모두 끊고 재발급하면 기존 기기는 사장님 아님');
+set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000c7","role":"authenticated","is_anonymous":true}';
+select is(
+  redeem_store_code((select code from codes where k = 'b2')) ->> 'error',
+  'INVALID_CODE', 'T-AUTH-06 재발급하면 예전 코드는 못 씀');
 
 select * from finish();
 rollback;
