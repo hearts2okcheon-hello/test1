@@ -82,6 +82,8 @@ export const REPORT_KINDS: ReportKind[] = ["seen_closed", "seen_open", "seen_sol
 
 /** 사장님 쪽지 빠른 문구 */
 export const MEMO_CHIPS = ["마감 할인해요", "새 메뉴 나왔어요", "내일은 정상 영업해요"];
+/** 옥천신문 대리 등록에서만 더 보이는 쪽지 */
+export const PROXY_MEMO_CHIPS = [...MEMO_CHIPS, "개인 사정으로 휴무합니다"];
 
 export const MEMO_MAX = 40;
 

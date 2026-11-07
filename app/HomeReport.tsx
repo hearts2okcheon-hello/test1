@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Osori } from "@/components/Osori";
 import { ReportSheet } from "@/components/ReportSheet";
+import { pushWithLoading } from "@/lib/nav";
 
 /** "지나가다 본 게 있나요?" → 제보 시트 → 그 가게 상세로 */
 export function HomeReport({ stores }: { stores: { store_id: string; name: string }[] }) {
@@ -33,7 +34,7 @@ export function HomeReport({ stores }: { stores: { store_id: string; name: strin
           onClose={() => setOpen(false)}
           onDone={(storeId, kind) => {
             setOpen(false);
-            router.push(`/stores/${storeId}?reported=${kind}`);
+            pushWithLoading(router, `/stores/${storeId}?reported=${kind}`);
           }}
         />
       )}

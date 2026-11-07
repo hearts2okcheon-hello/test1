@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Jua, Noto_Sans_KR } from "next/font/google";
+import { Suspense } from "react";
+import { NavLoading } from "@/components/NavLoading";
+import { TouchRipple } from "@/components/TouchRipple";
 import "./globals.css";
 
 const jua = Jua({ weight: "400", subsets: ["latin"], variable: "--font-jua", preload: false });
@@ -24,6 +27,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko" className={`${jua.variable} ${noto.variable}`}>
       <body>
         <div className="mx-auto flex min-h-dvh max-w-[480px] flex-col">{children}</div>
+        <Suspense fallback={null}>
+          <NavLoading />
+        </Suspense>
+        <TouchRipple />
       </body>
     </html>
   );

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AdminDoor } from "@/components/AdminDoor";
 import { BottomNav } from "@/components/BottomNav";
 import { SignOutButton } from "@/components/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
@@ -26,6 +27,11 @@ export default async function OwnerPage() {
   return (
     <>
       <main className="flex flex-1 flex-col gap-4 px-[18px] pt-4 pb-5">
+        {home.state !== "owner" && (
+          <div className="flex justify-end">
+            <AdminDoor href={home.is_admin ? "/admin" : "/admin/login"} />
+          </div>
+        )}
         {home.state === "owner" ? <OwnerPanel home={home} posts={detail?.posts ?? []} closures={detail?.closures ?? []} /> : <CodeEntry />}
 
         <div className="mt-auto flex items-center gap-2 pt-2">

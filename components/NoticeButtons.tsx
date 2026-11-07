@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { errorMessage } from "@/lib/errors";
-import { MEMO_CHIPS, MEMO_MAX, NOTICE_KINDS, SIGN_STYLES, TIMED_KINDS, formatClock } from "@/lib/signs";
+import { MEMO_CHIPS, MEMO_MAX, NOTICE_KINDS, PROXY_MEMO_CHIPS, SIGN_STYLES, TIMED_KINDS, formatClock } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
 import { seoulClock } from "@/lib/time";
 import type { NoticeKind, OwnerNotice } from "@/lib/types";
@@ -140,7 +140,7 @@ export function NoticeButtons({ storeId, current, proxy = false }: { storeId: st
         {current ? (
           <>
             <div className="flex flex-wrap gap-2">
-              {MEMO_CHIPS.map((c) => (
+              {(proxy ? PROXY_MEMO_CHIPS : MEMO_CHIPS).map((c) => (
                 <button
                   key={c}
                   type="button"

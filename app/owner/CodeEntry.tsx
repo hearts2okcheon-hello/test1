@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Osori } from "@/components/Osori";
 import { errorMessage } from "@/lib/errors";
+import { pushWithLoading } from "@/lib/nav";
 import { createClient, ensureSession } from "@/lib/supabase/client";
 import type { RedeemResult } from "@/lib/types";
 
@@ -36,7 +37,7 @@ export function CodeEntry() {
         setDigits("");
         return;
       }
-      if (result.needs_store) router.push("/owner/register");
+      if (result.needs_store) pushWithLoading(router, "/owner/register");
       else router.refresh();
     } catch (e) {
       setError(errorMessage(e));

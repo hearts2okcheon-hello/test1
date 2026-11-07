@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { errorMessage } from "@/lib/errors";
 import { uploadStoreImage } from "@/lib/images";
+import { pushWithLoading } from "@/lib/nav";
 import { createClient } from "@/lib/supabase/client";
 import type { StorePost } from "@/lib/types";
 import { Osori } from "./Osori";
@@ -36,7 +37,7 @@ export function PostComposer({ storeId, storeName, post }: { storeId: string; st
         p_post_id: post?.id ?? null,
       });
       if (error) throw error;
-      router.push("/owner");
+      pushWithLoading(router, "/owner");
       router.refresh();
     } catch (e) {
       show(errorMessage(e), "think");
@@ -118,7 +119,7 @@ export function PostComposer({ storeId, storeName, post }: { storeId: string; st
       </div>
 
       <div className="flex gap-2">
-        <button type="button" onClick={() => router.push("/owner")} className="min-h-16 shrink-0 rounded-[22px] border-2 border-line bg-card px-4 text-lg font-bold">
+        <button type="button" onClick={() => pushWithLoading(router, "/owner")} className="min-h-16 shrink-0 rounded-[22px] border-2 border-line bg-card px-4 text-lg font-bold">
           취소
         </button>
         <button type="submit" disabled={busy} className="min-h-16 flex-1 rounded-[22px] border-2 border-sage-deep bg-sage font-display text-[21px] text-white disabled:opacity-60">

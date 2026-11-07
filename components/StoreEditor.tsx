@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { errorMessage } from "@/lib/errors";
 import { formatPhone, kakaoMapUrl } from "@/lib/hours";
 import { uploadStoreImage } from "@/lib/images";
+import { pushWithLoading } from "@/lib/nav";
 import { PHOTO_CATEGORIES, STORE_CATEGORIES } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
 import type { PhotoCategory, RegularHours, StoreMenu, StorePhoto, Weekday } from "@/lib/types";
@@ -147,7 +148,7 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
       }
 
       show(registering ? "가게를 등록했어요! 이제 마을방송에 나와요." : "가게 정보를 고쳤어요.", "proud");
-      router.push(registering ? "/owner" : `/stores/${targetId}`);
+      pushWithLoading(router, registering ? "/owner" : `/stores/${targetId}`);
       router.refresh();
     } catch (e) {
       show(errorMessage(e), "think");

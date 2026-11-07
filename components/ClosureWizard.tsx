@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { addMonth, monthGrid, pickRange, seoulToday } from "@/lib/calendar";
 import { errorMessage } from "@/lib/errors";
+import { pushWithLoading } from "@/lib/nav";
 import { formatRange } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
 import { Osori } from "./Osori";
@@ -40,7 +41,7 @@ export function ClosureWizard({ storeId, storeName }: { storeId: string; storeNa
         p_reason: reason.trim() || null,
       });
       if (error) throw error;
-      router.push("/owner");
+      pushWithLoading(router, "/owner");
       router.refresh();
     } catch (e) {
       show(errorMessage(e), "think");
@@ -137,7 +138,7 @@ export function ClosureWizard({ storeId, storeName }: { storeId: string; storeNa
       </section>
 
       <div className="flex gap-2">
-        <button type="button" onClick={() => router.push("/owner")} className="min-h-16 shrink-0 rounded-[22px] border-2 border-line bg-card px-4 text-lg font-bold">
+        <button type="button" onClick={() => pushWithLoading(router, "/owner")} className="min-h-16 shrink-0 rounded-[22px] border-2 border-line bg-card px-4 text-lg font-bold">
           취소
         </button>
         <button
