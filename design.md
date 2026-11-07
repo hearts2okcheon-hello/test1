@@ -25,8 +25,8 @@
 |---|---|---|
 | 주민(열람) | 없음 | 마을방송·가게 팻말 보기 |
 | 이웃(제보) | Supabase 익명 로그인 (화면엔 안 보임) | 제보 4종, 나도 봤어요 |
-| 사장님 | **가게 코드 6자리** (옥천신문 발급) → 그 기기의 익명 세션이 가게에 연결됨 | 자기 가게 공지 5종·쪽지, 확인 질문 네/아니요 |
-| 옥천신문(관리자) | 이메일 로그인, `role = admin` | 확인 표시, 대리 등록, 가게 코드 발급, 가게 등록 |
+| 사장님 | **사장님 코드** (전화번호당 1개, 옥천신문 발급) → 그 기기의 익명 세션이 연결됨 | 가게 등록·수정, 소식·공지, 임시휴무, 공지 5종·쪽지, 확인 질문 네/아니요, 자기 가게 댓글 삭제 |
+| 옥천신문(관리자) | 이메일 로그인, `role = admin` | 확인 표시, 대리 등록, 사장님 코드 발급, 가게 등록, 게시물 관리 |
 
 - 이웃 제보의 신원은 어디에도 노출하지 않는다. 익명 세션 id는 중복 제보·도배 방지에만 쓴다.
 - 사장님 연결 방식은 adr.md ADR-006. 옥천신문이 전화·방문으로 사장님임을 확인한 뒤 코드를 불러 드리고, 사장님은 "내 가게" 탭에 한 번 넣는다. 가족 휴대폰도 같은 코드로 연결할 수 있고, 10분 안에 5번 틀리면 잠시 막힌다. 카카오 로그인은 나중에 다시 검토한다.
@@ -71,7 +71,8 @@
 2. 유효한 `pending` 제보가 있으면 → **"확인 중"** + 제보 내용 + "이웃 제보" 배지 + 제보 시각 + 나도 봤어요 수
 3. 둘 다 없으면 → **"소식 없음"** + 평소 영업시간 (있으면)
 
-- **절대 규칙:** 3번에서 평소 영업시간 안이라도 "영업 중"으로 표시하지 않는다.
+- **절대 규칙:** 3번에서 평소 영업시간 안이라도 팻말을 "영업 중"으로 표시하지 않는다. 영업시간으로 계산한 영업 상태는 팻말과 별개로 `okc_schedule_status`가 내고 "등록한 영업시간 기준" 문구와 함께 보여 준다 (ADR-007).
+- **임시휴무:** 오늘이 기간 안이면 팻말은 `temp_closed`. 임시휴무보다 나중에 올린 유효 공지가 있으면 그 공지가 우선한다.
 - 공지가 있어도 그 이후 들어온 `pending` 제보는 상세 화면에 "이웃 제보 (확인 중)"로 따로 보인다(팻말은 공지가 우선). 공지와 제보가 엇갈리면 관리자 화면의 "엇갈림" 목록에 뜬다.
 - 만료가 임박한 정보(남은 시간 < 1시간)는 흐리게 표시 `(가정)`.
 
@@ -114,7 +115,8 @@ create table stores (
   created_at timestamptz default now()
 );
 
-create table store_codes (           -- 가게 코드 (ADR-006). 가게당 1개, 재발급 가능
+-- store_codes 는 ADR-007에서 owner_codes 로 대체됨. 추가 표는 §4 끝 참고
+create table store_codes (           -- (삭제됨) 가게 코드 (ADR-006)
   store_id uuid primary key references stores(id),
   code text unique not null,        -- 숫자 6자리
   created_by uuid references profiles(id),
@@ -179,6 +181,10 @@ create table events (                -- 시범 지표 측정용
 );
 ```
 
+### 4.0 가게 페이지 표 (ADR-007, `20261107000000_store_profile.sql`)
+
+`stores`에 `neighborhood`·`phone`(공개)·`intro` 추가. `owner_codes`(phone·code·store_id 각각 unique), `owner_code_members`, `store_menus`, `store_photos`(store/food/daily), `store_posts`(news/notice, 소프트 삭제), `post_likes`, `store_comments`(소프트 삭제), `temp_closures`(취소는 `canceled_at`). 버킷 `store-media`.
+
 ### 4.1 파생 뷰
 - `current_sign(store_id)` — §3.3 규칙으로 가게의 현재 팻말 1행을 계산하는 DB 함수. 규칙은 이 함수에만 구현한다. `get_store_signs()`, `get_store_detail()`, `get_owner_home()`, `get_today_feed()`는 이 함수를 호출해서 쓰고, 화면은 이 RPC들의 결과만 읽는다. **규칙을 화면 코드나 다른 RPC에 중복 구현하지 않는다.**
 - `admin_get_queue()` RPC — 유효한 공지와 다른 `pending` 제보가 공존하는 가게(엇갈림), 또는 공지 없이 30분 넘게 사장님 답이 없는 제보(무응답).
@@ -199,7 +205,7 @@ create table events (                -- 시범 지표 측정용
 | notices | 모두 | 없음 (RPC) |
 | reports | **없음** — `reporter_id` 비노출, RPC로만 읽음 | 없음 (RPC) |
 | report_agrees | 없음 (RPC 집계) | 없음 (RPC) |
-| store_codes · store_members · code_attempts | 없음 (RPC) | 없음 (RPC) |
+| owner_codes · owner_code_members · store_members · code_attempts · store_menus · store_photos · store_posts · post_likes · store_comments · temp_closures | 없음 (RPC) | 없음 (RPC) |
 | profiles | 본인, admin | 없음 (RPC) |
 | events | 없음 | 없음 (`log_event`는 page_view·store_view만) |
 
@@ -224,8 +230,10 @@ create table events (                -- 시범 지표 측정용
 | `/` | 오늘의 마을방송 — 상단: 오늘 소식 피드(최신순), 하단: 가게 목록 + 팻말, 카테고리 필터 | 주민 |
 | `/stores/[id]` | 가게 상세 — 큰 팻말, 출처 배지·시각, 쪽지, 평소 영업시간, 확인 중 제보 + 나도 봤어요, 제보 버튼 4개 | 주민·이웃 |
 | `/owner` | 사장님 홈 — 내 가게 현재 팻말, 공지 버튼 5개, 쪽지 입력, **확인 질문 카드(네/아니요)** 상단 고정 | 사장님 |
-| `/owner` (연결 전) | 가게 코드 6자리 입력 → "내 가게 연결하기" | 사장님 |
-| `/admin` | 옥천신문 — 탭: 엇갈림·무응답 / 대리 등록 / 가게 코드 / 가게 관리 / 지표 | 관리자 |
+| `/owner` (연결 전) | 사장님 코드 입력(글자 버튼 + 숫자 5자리) | 사장님 |
+| `/owner/register` | 처음 가게 등록 (7구역) | 사장님 |
+| `/owner/edit` · `/owner/news` · `/owner/closure` | 가게 수정 · 소식·공지 쓰기·고치기 · 임시휴무(달력 → 사유) | 사장님 |
+| `/admin` | 옥천신문 — 탭: 사장님 코드 / 게시물 / 엇갈림·무응답 / 대리 등록 / 가게 관리 / 지표 | 관리자 |
 
 ### 5.3 핵심 플로우
 **사장님 공지 (목표: 앱 열고 2탭)**
@@ -264,11 +272,17 @@ MVP에 푸시 알림은 없다(brd 범위 밖). 그래서:
 | `post_report(store_id, kind)` | 익명 포함 로그인 | 30분 중복 제한 확인 후 제보 생성 |
 | `agree_report(report_id, on?)` | 익명 포함 로그인 | 나도 봤어요 켜기/끄기(본인 제보 불가), 동의 수 반환 |
 | `answer_report(report_id, yes)` | 해당 가게 owner, admin | §3.2 규칙으로 공지 생성 + confirmed/rejected. 호출자에 따라 source owner/okcheon |
-| `redeem_store_code(code)` | 익명 포함 로그인 | 가게 코드 확인 → 이 기기를 가게에 연결. 틀리면 `{ok:false, error}` (10분 5회 제한) |
-| `admin_issue_store_code(store_id, revoke?)` | admin | 6자리 코드 발급·재발급. revoke 면 연결된 기기 모두 끊기 |
+| `redeem_store_code(code)` | 익명 포함 로그인 | 사장님 코드 확인 → 이 기기를 연결. 가게가 없으면 `needs_store`. 틀리면 `{ok:false, error}` (10분 5회 제한) |
+| `admin_issue_code(phone, store_id?)` | admin | 번호의 코드 조회·없으면 발급. 같은 번호 = 같은 코드 |
+| `admin_reissue_code(phone)` | admin | 새 코드로 교체하고 연결된 기기 모두 끊기 |
+| `register_store(...)` · `update_store_profile(...)` · `save_store_media(store, menus, photos)` | 사장님 | 가게 등록·수정·메뉴와 사진 저장 |
+| `save_store_post(store, body, kind?, image?, post?)` · `delete_store_post(post)` | 사장님·admin | 소식·공지 쓰기·고치기·지우기 |
+| `toggle_post_like(post, on?)` · `post_store_comment(store, body)` · `delete_store_comment(comment)` | 익명 포함 로그인 | 공감·댓글. 삭제는 쓴 사람·사장님·admin |
+| `set_temp_closure(store, start, end, reason?)` · `cancel_temp_closure(id)` | 사장님·admin | 임시휴무 잡기·취소 |
+| `admin_list_content()` | admin | 소식·댓글 최근 50개 |
 | `admin_upsert_store(store_id?, name, category?, address?, regular_hours?, is_pilot?)` | admin | 가게 등록·수정 (store_id가 없으면 새로 등록) |
 | `admin_get_queue()` | admin | 엇갈림·무응답 제보 |
-| `admin_list_store_codes()` | admin | 가게별 코드와 연결된 기기 수 |
+| `admin_list_owner_codes()` | admin | 번호·코드·가게·연결된 기기 수 |
 | `admin_metrics(from, to)` | admin | §7 지표 |
 | `log_event(name, anon_id?, store_id?)` | 모두 | page_view·store_view만 (나머지 이벤트는 RPC 안에서 서버가 기록) |
 

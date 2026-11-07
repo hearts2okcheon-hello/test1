@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { SignOutButton } from "@/components/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
-import type { OwnerHome } from "@/lib/types";
+import type { OwnerHome, StoreDetail } from "@/lib/types";
 import { CodeEntry } from "./CodeEntry";
 import { OwnerPanel } from "./OwnerPanel";
 
@@ -13,10 +14,19 @@ export default async function OwnerPage() {
   const { data } = await supabase.rpc("get_owner_home");
   const home = (data ?? { state: "no_store", is_admin: false }) as OwnerHome;
 
+  // 코드는 넣었는데 가게가 아직 없다
+  if (home.state === "needs_store") redirect("/owner/register");
+
+  let detail: StoreDetail | null = null;
+  if (home.state === "owner") {
+    const { data: d } = await supabase.rpc("get_store_detail", { p_store_id: home.store.store_id });
+    detail = d as StoreDetail | null;
+  }
+
   return (
     <>
       <main className="flex flex-1 flex-col gap-4 px-[18px] pt-4 pb-5">
-        {home.state === "owner" ? <OwnerPanel home={home} /> : <CodeEntry />}
+        {home.state === "owner" ? <OwnerPanel home={home} posts={detail?.posts ?? []} closures={detail?.closures ?? []} /> : <CodeEntry />}
 
         <div className="mt-auto flex items-center gap-2 pt-2">
           <p className="flex-1 text-sm leading-normal text-muted">

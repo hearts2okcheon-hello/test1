@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
 import { Osori } from "@/components/Osori";
 import { PageView } from "@/components/PageView";
@@ -6,9 +7,9 @@ import { SignChip } from "@/components/SignChip";
 import { SourceLine } from "@/components/SourceLine";
 import { StoreCard } from "@/components/StoreCard";
 import { TimeAgo } from "@/components/TimeAgo";
-import { castLine } from "@/lib/signs";
+import { feedLine } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/server";
-import type { FeedItem, StoreSign } from "@/lib/types";
+import type { FeedItem, NoticeKind, StoreSign } from "@/lib/types";
 import { HomeReport } from "./HomeReport";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,9 @@ export default async function HomePage() {
   const stores = (signsRes.data ?? []) as StoreSign[];
   const feed = (feedRes.data ?? []) as FeedItem[];
   const latest = feed[0];
+  // 영업중이거나 오늘 소식이 있는 가게만 위에 띄운다. 나머지는 접어 두어 찾아갈 수는 있게 한다
+  const listed = stores.filter((s) => s.listed);
+  const others = stores.filter((s) => !s.listed);
 
   return (
     <>
@@ -33,7 +37,7 @@ export default async function HomePage() {
         {/* 오늘의 마을방송 */}
         <section className="flex items-end gap-1">
           <Osori mood="talk" size={92} className="ok-bob" />
-          <div className="relative mb-2.5 flex flex-1 flex-col gap-1.5 rounded-[22px] border-2 border-line bg-card px-4 py-3.5">
+          <div className="relative mb-2.5 flex min-w-0 flex-1 flex-col gap-1.5 rounded-[22px] border-2 border-line bg-card px-4 py-3.5">
             <span className="absolute bottom-[22px] -left-[9px] size-3.5 rotate-45 border-b-2 border-l-2 border-line bg-card" aria-hidden />
             <span className="self-start rounded-[10px] bg-yellow px-2.5 py-0.5 font-display text-sm">오늘의 마을방송</span>
             {latest ? (
@@ -41,7 +45,7 @@ export default async function HomePage() {
                 <span className="text-[13px] text-muted">
                   {latest.store_name} {latest.source === "owner" ? "사장님" : "· 옥천신문"} · <TimeAgo iso={latest.created_at} />
                 </span>
-                <span className="font-display text-xl leading-snug">{castLine(latest.kind, latest.at_time, latest.memo)}</span>
+                <span className="line-clamp-3 font-display text-xl leading-snug">{feedLine(latest)}</span>
               </>
             ) : (
               <span className="font-display text-xl leading-snug">아직 오늘 방송이 없어요. 사장님들 소식을 기다리는 중!</span>
@@ -62,7 +66,23 @@ export default async function HomePage() {
           ) : stores.length === 0 ? (
             <p className="rounded-[22px] border-2 border-dashed border-line px-4 py-3 text-sm text-muted">아직 등록된 가게가 없어요.</p>
           ) : (
-            stores.map((s) => <StoreCard key={s.store_id} store={s} />)
+            <>
+              {listed.length === 0 && (
+                <p className="rounded-[22px] border-2 border-dashed border-line px-4 py-3 text-sm text-muted">지금은 영업시간인 가게가 없어요.</p>
+              )}
+              {listed.map((s) => <StoreCard key={s.store_id} store={s} />)}
+              {others.length > 0 && (
+                <details className="group flex flex-col">
+                  <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center rounded-[18px] border-2 border-line bg-card text-sm font-bold text-muted">
+                    <span className="group-open:hidden">지금 문 닫은 가게 {others.length}곳 보기</span>
+                    <span className="hidden group-open:inline">문 닫은 가게 접기</span>
+                  </summary>
+                  <div className="mt-2.5 flex flex-col gap-2.5">
+                    {others.map((s) => <StoreCard key={s.store_id} store={s} />)}
+                  </div>
+                </details>
+              )}
+            </>
           )}
         </section>
 
@@ -79,18 +99,26 @@ export default async function HomePage() {
           ) : (
             <ul className="flex flex-col gap-2">
               {feed.map((f) => (
-                <li
-                  key={f.notice_id}
-                  className={`flex flex-col gap-1.5 rounded-[20px] border-2 border-line bg-card px-3.5 py-3 ${f.is_current ? "" : "opacity-60"}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="flex-1 truncate text-base font-bold">{f.store_name}</span>
-                    {f.is_current ? <SignChip sign={f.kind} atTime={f.at_time} /> : <span className="text-xs font-bold text-muted">지난 소식</span>}
-                  </div>
-                  <span className="text-[15px]">{castLine(f.kind, f.at_time, f.memo)}</span>
-                  <span className="text-[13px] text-muted">
-                    <SourceLine source={f.source} at={f.created_at} />
-                  </span>
+                <li key={`${f.item_type}-${f.item_id}`}>
+                  <Link
+                    href={`/stores/${f.store_id}`}
+                    className={`flex gap-2.5 rounded-[20px] border-2 border-line bg-card px-3.5 py-3 ${f.is_current ? "" : "opacity-60"}`}
+                  >
+                    <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <span className="flex items-center gap-2">
+                        <span className="flex-1 truncate text-base font-bold">{f.store_name}</span>
+                        <FeedChip item={f} />
+                      </span>
+                      <span className="line-clamp-3 text-[15px]">{feedLine(f)}</span>
+                      <span className="text-[13px] text-muted">
+                        <SourceLine source={f.source} at={f.created_at} />
+                      </span>
+                    </span>
+                    {f.image_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={f.image_url} alt="" loading="lazy" className="size-[72px] shrink-0 self-center rounded-xl object-cover" />
+                    )}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -102,4 +130,12 @@ export default async function HomePage() {
       <PageView />
     </>
   );
+}
+
+function FeedChip({ item }: { item: FeedItem }) {
+  if (item.item_type === "post") {
+    return <span className="shrink-0 rounded-xl border-2 border-yellow-line bg-yellow-soft px-2.5 py-1 text-sm font-bold text-[#7E5810]">{item.kind === "notice" ? "공지" : "소식"}</span>;
+  }
+  if (item.item_type === "closure") return <SignChip sign="temp_closed" />;
+  return item.is_current ? <SignChip sign={item.kind as NoticeKind} atTime={item.at_time} /> : <span className="text-xs font-bold text-muted">지난 소식</span>;
 }

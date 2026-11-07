@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { REPORT_STYLES, SIGN_STYLES } from "@/lib/signs";
+import { REPORT_STYLES, SCHEDULE_BASIS, SIGN_STYLES } from "@/lib/signs";
 import { todayHours } from "@/lib/time";
 import type { StoreSign } from "@/lib/types";
 import { Osori } from "./Osori";
+import { ScheduleBadge } from "./ScheduleBadge";
 import { SignChip } from "./SignChip";
 import { SourceLine } from "./SourceLine";
 
@@ -15,7 +16,12 @@ export function StoreCard({ store }: { store: StoreSign }) {
       className="flex min-h-[78px] w-full items-center gap-2.5 rounded-[22px] border-2 border-line bg-card py-2 pr-3 pl-2 text-left"
     >
       <span className="flex size-[60px] shrink-0 items-center justify-center overflow-hidden rounded-[18px]" style={{ background: s.bg }}>
-        <Osori mood={s.mood} size={54} />
+        {store.cover_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={store.cover_url} alt="" loading="lazy" className="size-full object-cover" />
+        ) : (
+          <Osori mood={s.mood} size={54} />
+        )}
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate text-[17px] font-bold">{store.name}</span>
@@ -23,14 +29,14 @@ export function StoreCard({ store }: { store: StoreSign }) {
           <StoreNote store={store} />
         </span>
       </span>
-      <SignChip sign={store.sign} atTime={store.at_time} />
+      {store.sign === "none" ? <ScheduleBadge status={store.schedule_status} /> : <SignChip sign={store.sign} atTime={store.at_time} />}
     </Link>
   );
 }
 
 function StoreNote({ store }: { store: StoreSign }) {
   if (store.sign === "none") {
-    return <>{todayHours(store.regular_hours) ?? "평소 영업시간 정보 없음"}</>;
+    return <>{todayHours(store.regular_hours) ?? "평소 영업시간 정보 없음"}{store.schedule_status === "open" ? ` · ${SCHEDULE_BASIS.hours}` : ""}</>;
   }
   if (store.sign === "checking" && store.signed_at) {
     return (

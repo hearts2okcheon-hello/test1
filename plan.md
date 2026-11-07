@@ -37,7 +37,7 @@
 1. `get_store_signs` / `get_store_detail` / `get_today_feed` RPC (제보 부분은 빈 채로, §3.3의 1·3번 규칙)
 2. `/` 마을방송 + 가게 목록 팻말 화면
 3. `/stores/[id]` 가게 상세(팻말·배지·시각·쪽지·평소 영업시간)
-4. 가게 코드: 관리자 발급(`admin_issue_store_code`) + 사장님 입력(`redeem_store_code`) 화면
+4. 사장님 코드: 관리자 발급(`admin_issue_code`) + 사장님 입력(`redeem_store_code`) 화면 (ADR-007)
 5. `post_notice` / `undo_notice` / `end_notice` RPC + 만료 계산
 6. `/owner` 공지 버튼 5개 + 시각 선택 + 쪽지 + 되돌리기 토스트
 

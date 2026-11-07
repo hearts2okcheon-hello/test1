@@ -1,7 +1,7 @@
 // 팻말 코드 → 문구·색·오소리 표정 (design-system.md §2, §7)
 // 상태를 "계산"하지 않는다. 계산은 DB(get_store_signs)에서만 한다. (ADR-001)
 
-import type { NoticeKind, ReportKind, SignKind, Source } from "./types";
+import type { FeedItem, NoticeKind, PhotoCategory, ReportKind, ScheduleStatus, SignKind, Source } from "./types";
 
 export type Mood =
   | "basic" | "happy" | "curious" | "surprise" | "proud" | "smile" | "move"
@@ -25,9 +25,30 @@ export const SIGN_STYLES: Record<SignKind, SignStyle> = {
   late_open: { chip: "늦게 열어요", title: "조금 늦게 열어요", button: "늦게 열어요", bg: "#FFF1CF", fg: "#7E5810", border: "#F0D697", mood: "move", moodAlt: "가게로 가는 오소리" },
   sold_out: { chip: "재료 소진", title: "재료가 다 떨어졌어요", button: "재료 소진", bg: "#FDE7D6", fg: "#954A18", border: "#F2C7A6", mood: "surprise", moodAlt: "놀란 오소리" },
   early_close: { chip: "일찍 닫아요", title: "오늘은 일찍 닫아요", button: "일찍 닫아요", bg: "#F9E6E9", fg: "#97404F", border: "#EDBFC7", mood: "smile", moodAlt: "웃는 오소리" },
+  temp_closed: { chip: "임시휴무", title: "임시휴무 중이에요", button: "", bg: "#FBE3E1", fg: "#A4423F", border: "#EFB9B5", mood: "rest", moodAlt: "쉬고 있는 오소리" },
   checking: { chip: "확인 중", title: "사장님께 확인 중이에요", button: "", bg: "#FFF4D6", fg: "#715212", border: "#F0D697", mood: "curious", moodAlt: "궁금한 오소리" },
   none: { chip: "소식 없음", title: "아직 오늘 소식이 없어요", button: "", bg: "#EFE9DF", fg: "#5F5249", border: "#DCD1C0", mood: "basic", moodAlt: "오소리" },
 };
+
+/** 영업 상태 동그라미 색 (ADR-007). 색 + 글자로 표시한다 */
+export const SCHEDULE_STYLES: Record<ScheduleStatus, { label: string; dot: string }> = {
+  open: { label: "영업중", dot: "#22C55E" },
+  closed: { label: "영업종료", dot: "#9CA3AF" },
+  regular_holiday: { label: "정기휴일", dot: "#F59E0B" },
+  temp_closed: { label: "임시휴무", dot: "#EF4444" },
+  unknown: { label: "영업시간 정보 없음", dot: "#9CA3AF" },
+};
+
+/** 어디서 나온 상태인지 함께 보여 준다. 시간으로 계산한 값은 실제와 다를 수 있다 */
+export const SCHEDULE_BASIS = { hours: "등록한 영업시간 기준", notice: "오늘 알림 기준" } as const;
+
+export const PHOTO_CATEGORIES: { id: PhotoCategory; label: string }[] = [
+  { id: "store", label: "매장" },
+  { id: "food", label: "음식" },
+  { id: "daily", label: "일상" },
+];
+
+export const STORE_CATEGORIES = ["식당", "분식", "카페·간식", "약국·의원", "미용", "마트·상점", "기타"];
 
 /** 사장님 공지 버튼 순서 */
 export const NOTICE_KINDS: NoticeKind[] = ["open", "closed_today", "late_open", "sold_out", "early_close"];
@@ -95,6 +116,26 @@ export function castLine(kind: NoticeKind, atTime: string | null, memo: string |
   if (memo) return memo;
   if (atTime && (kind === "late_open" || kind === "early_close")) return signTitle(kind, atTime);
   return SIGN_STYLES[kind].button;
+}
+
+/** "2026-11-07" → "11월 7일" */
+export function formatDate(date: string): string {
+  const [, m, d] = date.split("-").map(Number);
+  return `${m}월 ${d}일`;
+}
+
+/** 임시휴무 기간 문구. 하루면 하루만 */
+export function formatRange(start: string, end: string): string {
+  return start === end ? formatDate(start) : `${formatDate(start)} ~ ${formatDate(end)}`;
+}
+
+/** 오늘 들어온 소식 한 줄 */
+export function feedLine(f: Pick<FeedItem, "item_type" | "kind" | "at_time" | "memo" | "closure_start" | "closure_end">): string {
+  if (f.item_type === "closure" && f.closure_start && f.closure_end) {
+    return `${formatRange(f.closure_start, f.closure_end)} 임시휴무${f.memo ? ` · ${f.memo}` : ""}`;
+  }
+  if (f.item_type === "post") return f.memo ?? "";
+  return castLine(f.kind as NoticeKind, f.at_time, f.memo);
 }
 
 /** 30분 단위 시각 버튼 (오전 7시 ~ 오후 10시) */

@@ -5,13 +5,12 @@ import { useState } from "react";
 import { ConfirmCard } from "@/components/ConfirmCard";
 import { NoticeButtons } from "@/components/NoticeButtons";
 import { SignChip } from "@/components/SignChip";
-import { TimeAgo } from "@/components/TimeAgo";
 import { useToast } from "@/components/Toast";
 import { errorMessage } from "@/lib/errors";
 import { parseHours } from "@/lib/hours";
 import { SIGN_STYLES } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
-import type { OwnerNotice, QueueItem, StoreCodeItem, StoreSign, Weekday } from "@/lib/types";
+import type { OwnerNotice, QueueItem, StoreSign, Weekday } from "@/lib/types";
 
 // ── 엇갈림·무응답 ────────────────────────────────────
 export function QueueList({ items }: { items: QueueItem[] }) {
@@ -96,69 +95,6 @@ export function ProxyPanel({ stores, notices }: { stores: StoreSign[]; notices: 
           <NoticeButtons key={store.store_id} storeId={store.store_id} current={current} proxy />
         </>
       )}
-    </section>
-  );
-}
-
-// ── 가게 코드 (ADR-006) ──────────────────────────────
-export function StoreCodeList({ items }: { items: StoreCodeItem[] }) {
-  const router = useRouter();
-  const { node, show } = useToast();
-  const [busy, setBusy] = useState(false);
-
-  async function issue(item: StoreCodeItem, revoke: boolean) {
-    if (revoke && !window.confirm(`${item.store_name}에 연결된 기기 ${item.member_count}대를 모두 끊고 새 코드를 만들까요?`)) return;
-    setBusy(true);
-    const { data, error } = await createClient().rpc("admin_issue_store_code", { p_store_id: item.store_id, p_revoke: revoke });
-    setBusy(false);
-    if (error) return show(errorMessage(error), "think");
-    show(`${item.store_name} 새 코드: ${String(data)}`, "proud", undefined, 6000);
-    router.refresh();
-  }
-
-  if (items.length === 0) {
-    return <p className="rounded-[20px] border-2 border-dashed border-line px-4 py-3 text-sm text-muted">등록된 가게가 없어요. 가게 관리 탭에서 먼저 등록해 주세요.</p>;
-  }
-  return (
-    <section className="flex flex-col gap-3">
-      <p className="text-sm leading-relaxed text-muted">
-        사장님이 맞는지 전화나 방문으로 확인한 뒤 코드를 불러 드리세요. 사장님은 &ldquo;내 가게&rdquo; 탭에서 코드 6자리를 한 번 넣으면 돼요. 가족 휴대폰도 같은 코드로 연결할 수 있어요.
-      </p>
-      {items.map((c) => (
-        <div key={c.store_id} className="flex flex-col gap-2 rounded-[20px] border-2 border-line bg-card px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="flex-1 text-base font-bold">{c.store_name}</span>
-            <span className="text-xs text-muted">연결된 기기 {c.member_count}대</span>
-          </div>
-          {c.code ? (
-            <span className="font-display text-[30px] tracking-[0.3em]">{c.code}</span>
-          ) : (
-            <span className="text-sm text-muted">아직 코드가 없어요</span>
-          )}
-          {c.code_created_at && (
-            <span className="text-xs text-muted">
-              <TimeAgo iso={c.code_created_at} suffix=" 발급" />
-            </span>
-          )}
-          <div className="flex gap-2">
-            {!c.code ? (
-              <button type="button" disabled={busy} onClick={() => issue(c, false)} className="min-h-12 flex-1 rounded-2xl border-2 border-yellow-deep bg-yellow font-bold">
-                코드 만들기
-              </button>
-            ) : (
-              <>
-                <button type="button" disabled={busy} onClick={() => issue(c, false)} className="min-h-12 flex-1 rounded-2xl border-2 border-line bg-white text-sm font-bold">
-                  새 코드로 바꾸기
-                </button>
-                <button type="button" disabled={busy} onClick={() => issue(c, true)} className="min-h-12 flex-1 rounded-2xl border-2 border-line bg-white text-sm font-bold text-[#A4423F]">
-                  연결 모두 끊고 새 코드
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      ))}
-      {node}
     </section>
   );
 }

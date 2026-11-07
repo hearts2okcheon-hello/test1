@@ -3,15 +3,18 @@ import { redirect } from "next/navigation";
 import { Osori } from "@/components/Osori";
 import { SignOutButton } from "@/components/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
-import type { Metrics, QueueItem, StoreCodeItem, StoreSign } from "@/lib/types";
-import { ProxyPanel, QueueList, StoreCodeList, StoreForm } from "./AdminPanels";
+import type { AdminContent, Metrics, OwnerCodeItem, QueueItem, StoreSign } from "@/lib/types";
+import { ProxyPanel, QueueList, StoreForm } from "./AdminPanels";
+import { CodePanel } from "./CodePanel";
+import { ContentPanel } from "./ContentPanel";
 
 export const dynamic = "force-dynamic";
 
 const TABS = [
+  { id: "codes", label: "사장님 코드" },
+  { id: "content", label: "게시물" },
   { id: "queue", label: "엇갈림·무응답" },
   { id: "proxy", label: "대리 등록" },
-  { id: "codes", label: "가게 코드" },
   { id: "stores", label: "가게 관리" },
   { id: "metrics", label: "지표" },
 ] as const;
@@ -19,7 +22,7 @@ type Tab = (typeof TABS)[number]["id"];
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; from?: string; to?: string }> }) {
   const sp = await searchParams;
-  const tab: Tab = TABS.some((t) => t.id === sp.tab) ? (sp.tab as Tab) : "queue";
+  const tab: Tab = TABS.some((t) => t.id === sp.tab) ? (sp.tab as Tab) : "codes";
 
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -62,6 +65,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {tab === "queue" && <QueueTab />}
       {tab === "proxy" && <ProxyTab />}
       {tab === "codes" && <CodesTab />}
+      {tab === "content" && <ContentTab />}
       {tab === "stores" && <StoreForm />}
       {tab === "metrics" && <MetricsTab from={sp.from} to={sp.to} />}
     </main>
@@ -87,8 +91,17 @@ async function ProxyTab() {
 
 async function CodesTab() {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("admin_list_store_codes");
-  return <StoreCodeList items={(data ?? []) as StoreCodeItem[]} />;
+  const [codes, signs] = await Promise.all([supabase.rpc("admin_list_owner_codes"), supabase.rpc("get_store_signs")]);
+  const items = (codes.data ?? []) as OwnerCodeItem[];
+  const linked = new Set(items.map((c) => c.store_id));
+  const unlinked = ((signs.data ?? []) as StoreSign[]).filter((s) => !linked.has(s.store_id)).map((s) => ({ store_id: s.store_id, name: s.name }));
+  return <CodePanel items={items} unlinkedStores={unlinked} />;
+}
+
+async function ContentTab() {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("admin_list_content");
+  return <ContentPanel content={(data ?? { posts: [], comments: [] }) as AdminContent} />;
 }
 
 /** 기본 기간: 최근 7일 */
