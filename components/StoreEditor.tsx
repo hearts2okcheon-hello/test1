@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
 import { formatPhone, kakaoMapUrl } from "@/lib/hours";
 import { uploadStoreImage } from "@/lib/images";
@@ -9,6 +11,7 @@ import { pushWithLoading } from "@/lib/nav";
 import { PHOTO_CATEGORIES, STORE_CATEGORIES } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
 import type { PhotoCategory, RegularHours, StoreMenu, StorePhoto, Weekday } from "@/lib/types";
+import { AddressSearch } from "./AddressSearch";
 import { Osori } from "./Osori";
 import { PhotoPicker } from "./PhotoPicker";
 import { useToast } from "./Toast";
@@ -50,7 +53,9 @@ function initialDays(hours: RegularHours | null): Record<Weekday, DayRow> {
 
 const INPUT = "min-h-14 w-full min-w-0 rounded-2xl border-2 border-line bg-white px-3.5 text-lg";
 
-/** 가게 등록·수정 화면 하나로 쓴다. 번호는 가게 페이지 순서와 같다 */
+const CUSTOM_CATEGORY = "__custom";
+
+/** 가게 등록·수정 화면 하나로 쓴다. 순서는 가게 페이지와 같고, 번호는 보이는 구역대로 매긴다 */
 export function StoreEditor({ initial, code }: { initial: StoreEditorValues; code?: string }) {
   const router = useRouter();
   const { node, show } = useToast();
@@ -60,6 +65,7 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
   const [name, setName] = useState(initial.name);
   const [phone, setPhone] = useState(formatPhone(initial.phone));
   const [category, setCategory] = useState(initial.category ?? "");
+  const [customCategory, setCustomCategory] = useState(false);
   const [neighborhood, setNeighborhood] = useState(initial.neighborhood ?? "");
   const [firstPost, setFirstPost] = useState("");
   const [intro, setIntro] = useState(initial.intro ?? "");
@@ -158,6 +164,8 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
   }
 
   const tabPhotos = photos.filter((p) => p.category === galleryTab);
+  let sectionNo = 0;
+  const nextNo = () => ++sectionNo;
 
   return (
     <form
@@ -167,6 +175,16 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
         submit();
       }}
     >
+      {registering ? (
+        <Link href="/owner?entry=1" className="flex min-h-12 w-fit items-center gap-1.5 rounded-2xl border-2 border-line bg-card px-3.5 text-base font-bold">
+          <span aria-hidden>‹</span> 뒤로
+        </Link>
+      ) : (
+        <button type="button" onClick={() => router.back()} className="flex min-h-12 w-fit items-center gap-1.5 rounded-2xl border-2 border-line bg-card px-3.5 text-base font-bold">
+          <span aria-hidden>‹</span> 뒤로
+        </button>
+      )}
+
       <header className="flex items-center gap-2.5">
         <Osori mood={registering ? "proud" : "work"} size={76} />
         <div className="flex flex-1 flex-col gap-0.5">
@@ -175,18 +193,30 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
         </div>
       </header>
 
-      <Section n={1} title="가게 이름 · 카테고리 · 동네 태그">
+      <Section n={nextNo()} title="가게 이름 · 카테고리 · 동네 태그">
         <Field label="가게 이름" required>
           <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder="예: 대박 맛집 카페" className={INPUT} />
         </Field>
         <Field label="카테고리">
-          <select value={category} onChange={(e) => setCategory(e.target.value)} className={INPUT}>
+          <select
+            value={customCategory ? CUSTOM_CATEGORY : category}
+            onChange={(e) => {
+              const custom = e.target.value === CUSTOM_CATEGORY;
+              setCustomCategory(custom);
+              setCategory(custom ? "" : e.target.value);
+            }}
+            className={INPUT}
+          >
             <option value="">골라 주세요</option>
             {[...new Set([...STORE_CATEGORIES, ...(initial.category ? [initial.category] : [])])].map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
+            <option value={CUSTOM_CATEGORY}>직접 적기</option>
           </select>
         </Field>
+        {customCategory && (
+          <input aria-label="카테고리 직접 적기" autoFocus value={category} maxLength={20} onChange={(e) => setCategory(e.target.value)} placeholder="예: 꽃집" className={INPUT} />
+        )}
         <Field label="동네 태그">
           <input value={neighborhood} maxLength={30} onChange={(e) => setNeighborhood(e.target.value)} placeholder="예: 구읍 사랑방" className={INPUT} />
         </Field>
@@ -196,18 +226,18 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
       </Section>
 
       {registering && (
-        <Section n={2} title="실시간 사장님 소식 & 공지" optional>
+        <Section n={nextNo()} title="실시간 사장님 소식 & 공지" optional>
           <p className="text-base text-muted">손님께 전할 첫 소식이 있으면 써 주세요. 사진은 등록한 뒤에 소식을 올릴 때 넣을 수 있어요.</p>
           <textarea value={firstPost} maxLength={500} rows={3} onChange={(e) => setFirstPost(e.target.value)} placeholder="예: 오늘 갓 만든 떡볶이 나왔어요!" className={`${INPUT} py-3`} />
         </Section>
       )}
 
-      <Section n={3} title="소개글" optional>
+      <Section n={nextNo()} title="소개글" optional>
         <p className="text-base text-muted">주민 댓글은 가게 페이지에서 소개글 아래에 달려요.</p>
         <textarea value={intro} maxLength={500} rows={3} onChange={(e) => setIntro(e.target.value)} placeholder="예: 이웃들과 소소한 정을 나누는 분식집입니다." className={`${INPUT} py-3`} />
       </Section>
 
-      <Section n={4} title="대표 메뉴 & 가격" optional>
+      <Section n={nextNo()} title="대표 메뉴 & 가격" optional>
         {menus.map((m) => (
           <div key={m.key} className="flex items-start gap-2.5 rounded-[18px] border-2 border-line bg-white p-2.5">
             <PhotoPicker
@@ -221,7 +251,13 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
                 <input aria-label="가격" inputMode="numeric" value={m.price} onChange={(e) => setMenu(m.key, { price: e.target.value.replace(/\D/g, "").slice(0, 7) })} placeholder="가격" className="min-h-12 w-full min-w-0 rounded-xl border-2 border-line px-3 text-lg" />
                 <span className="text-lg">원</span>
               </span>
-              <button type="button" onClick={() => setMenus((cur) => cur.filter((x) => x.key !== m.key))} className="min-h-11 self-end rounded-xl px-2 text-base font-bold text-[#A4423F]">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (await askDelete({ detail: m.name.trim() ? `메뉴 "${m.name.trim()}"` : "이 메뉴 칸" })) setMenus((cur) => cur.filter((x) => x.key !== m.key));
+                }}
+                className="min-h-11 self-end rounded-xl px-2 text-base font-bold text-[#A4423F]"
+              >
                 이 메뉴 지우기
               </button>
             </div>
@@ -230,10 +266,11 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
         <AddButton onClick={() => setMenus((cur) => [...cur, { key: nextKey(), name: "", price: "", photo_url: null, file: null, preview: null }])}>메뉴 더하기</AddButton>
       </Section>
 
-      <Section n={5} title="위치 & 바로 연결" optional>
-        <Field label="도로명 주소" hint="손님이 지도를 누르면 카카오맵에서 이 주소를 찾아 줘요.">
+      <Section n={nextNo()} title="위치 & 바로 연결" optional>
+        <Field label="도로명 주소" hint="직접 적거나, 아래 버튼으로 찾아 누르면 주소가 들어와요. 손님이 지도를 누르면 카카오맵에서 이 주소를 찾아 줘요.">
           <input value={address} maxLength={100} onChange={(e) => setAddress(e.target.value)} placeholder="예: 충북 옥천군 옥천읍 중앙로 1" className={INPUT} />
         </Field>
+        <AddressSearch onPick={setAddress} />
         {address.trim() && (
           <a href={kakaoMapUrl(address)} target="_blank" rel="noopener noreferrer" className="flex min-h-12 items-center justify-center rounded-2xl border-2 border-line bg-white text-base font-bold">
             카카오맵에서 위치 확인하기
@@ -241,7 +278,7 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
         )}
       </Section>
 
-      <Section n={6} title="운영 날짜 & 영업시간" required>
+      <Section n={nextNo()} title="운영 날짜 & 영업시간" required>
         <p className="text-base text-muted">쉬는 요일은 눌러서 &ldquo;휴무&rdquo;로 바꿔 주세요. 영업중·영업종료·정기휴일은 이 시간으로 자동 표시돼요.</p>
         {DAYS.map(([d, label]) => (
           <div key={d} className="flex flex-wrap items-center gap-2">
@@ -270,7 +307,7 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
         )}
       </Section>
 
-      <Section n={7} title="사진 갤러리" optional>
+      <Section n={nextNo()} title="사진 갤러리" optional>
         <div role="tablist" aria-label="사진 종류" className="flex gap-1.5">
           {PHOTO_CATEGORIES.map((c) => (
             <button
@@ -293,7 +330,9 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
               <button
                 type="button"
                 aria-label="이 사진 지우기"
-                onClick={() => setPhotos((cur) => cur.filter((x) => x.key !== p.key))}
+                onClick={async () => {
+                  if (await askDelete({ detail: "이 사진이 빠져요." })) setPhotos((cur) => cur.filter((x) => x.key !== p.key));
+                }}
                 className="absolute top-1 right-1 flex size-9 items-center justify-center rounded-full border-2 border-line bg-card text-lg font-bold"
               >
                 ×

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { TimeAgo } from "@/components/TimeAgo";
 import { useToast } from "@/components/Toast";
+import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/client";
 import type { AdminContent } from "@/lib/types";
@@ -16,7 +17,7 @@ export function ContentPanel({ content }: { content: AdminContent }) {
   const [busy, setBusy] = useState(false);
 
   async function remove(rpc: "delete_store_post" | "delete_store_comment", id: string) {
-    if (!window.confirm("이 글을 지울까요? 되돌릴 수 없어요.")) return;
+    if (!(await askDelete({ detail: "이 글은 되돌릴 수 없어요." }))) return;
     setBusy(true);
     const { error } = await (rpc === "delete_store_post"
       ? createClient().rpc(rpc, { p_post_id: id })

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
 import { createClient, ensureSession } from "@/lib/supabase/client";
 import type { StoreComment, StorePost } from "@/lib/types";
@@ -128,8 +129,8 @@ export function StoreSocial({
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => {
-                      if (window.confirm("이 댓글을 지울까요?")) withSession((s) => s.rpc("delete_store_comment", { p_comment_id: c.id }));
+                    onClick={async () => {
+                      if (await askDelete({ detail: "이 댓글이 사라져요." })) withSession((s) => s.rpc("delete_store_comment", { p_comment_id: c.id }));
                     }}
                     className="shrink-0 text-xs font-bold text-[#A4423F] underline"
                   >

@@ -1,16 +1,19 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ConfirmCard } from "@/components/ConfirmCard";
 import { NoticeButtons } from "@/components/NoticeButtons";
+import { ScheduleBadge } from "@/components/ScheduleBadge";
 import { SignChip } from "@/components/SignChip";
 import { useToast } from "@/components/Toast";
+import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
-import { parseHours } from "@/lib/hours";
+import { formatPhone, parseHours } from "@/lib/hours";
 import { SIGN_STYLES } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
-import type { OwnerNotice, QueueItem, StoreSign, Weekday } from "@/lib/types";
+import type { IssuedCode, OwnerCodeItem, OwnerNotice, QueueItem, StoreSign, Weekday } from "@/lib/types";
 
 // ── 엇갈림·무응답 ────────────────────────────────────
 export function QueueList({ items }: { items: QueueItem[] }) {
@@ -99,6 +102,112 @@ export function ProxyPanel({ stores, notices }: { stores: StoreSign[]; notices: 
   );
 }
 
+// ── 등록된 가게 고르기·지우기 ────────────────────────
+export function StoreManager({ stores, codes }: { stores: StoreSign[]; codes: OwnerCodeItem[] }) {
+  const router = useRouter();
+  const { node, show } = useToast();
+  const [storeId, setStoreId] = useState("");
+  const [phone, setPhone] = useState("");
+  const [busy, setBusy] = useState(false);
+  const store = stores.find((s) => s.store_id === storeId);
+  const code = codes.find((c) => c.store_id === storeId);
+
+  async function link() {
+    setBusy(true);
+    try {
+      const { data, error } = await createClient().rpc("admin_issue_code", { p_phone: phone, p_store_id: storeId });
+      if (error) throw error;
+      setPhone("");
+      show(`코드 ${(data as IssuedCode).code}와(과) 연결했어요.`, "proud");
+      router.refresh();
+    } catch (e) {
+      show(errorMessage(e), "think");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove() {
+    if (!store) return;
+    const answer = await askDelete({
+      detail: `${store.name}의 소식·메뉴·사진·댓글이 모두 사라지고 되돌릴 수 없어요.${code ? "\n사장님 코드는 남아요." : ""}`,
+    });
+    if (!answer) return;
+    setBusy(true);
+    try {
+      const supabase = createClient();
+      // 가게가 지워지면 사진 폴더 권한도 사라지므로 먼저 지운다
+      const bucket = supabase.storage.from("store-media");
+      const { data: files } = await bucket.list(store.store_id, { limit: 1000 });
+      if (files?.length) await bucket.remove(files.map((f) => `${store.store_id}/${f.name}`));
+
+      const { error } = await supabase.rpc("admin_delete_store", { p_store_id: store.store_id });
+      if (error) throw error;
+      show(`${store.name}을(를) 지웠어요.`, "proud");
+      setStoreId("");
+      router.refresh();
+    } catch (e) {
+      show(errorMessage(e), "think");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="font-display text-[22px] font-normal">등록된 가게 {stores.length}곳</h2>
+      <label className="flex flex-col gap-1.5">
+        <span className="text-sm font-bold">가게</span>
+        <select value={storeId} onChange={(e) => setStoreId(e.target.value)} className="min-h-12 rounded-2xl border-2 border-line bg-white px-3 text-base">
+          <option value="">가게를 고르세요</option>
+          {stores.map((s) => (
+            <option key={s.store_id} value={s.store_id}>{s.name}</option>
+          ))}
+        </select>
+      </label>
+      {store && (
+        <div className="flex flex-col gap-3 rounded-[20px] border-2 border-line bg-card px-3.5 py-3.5">
+          <div className="flex items-center gap-2">
+            <span className="min-w-0 flex-1 truncate font-display text-xl">{store.name}</span>
+            {store.sign === "none" ? <ScheduleBadge status={store.schedule_status} /> : <SignChip sign={store.sign} atTime={store.at_time} />}
+          </div>
+          {code ? (
+            <p className="text-sm">
+              사장님 코드 <b>{code.code}</b> · {formatPhone(code.phone)}
+              {code.protected && " · 보호됨"}
+            </p>
+          ) : (
+            <form
+              className="flex flex-col gap-1.5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                link();
+              }}
+            >
+              <span className="text-sm font-bold">사장님 코드와 연결 (전화번호)</span>
+              <span className="flex gap-2">
+                <input type="tel" inputMode="tel" aria-label="사장님 전화번호" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="010-0000-0000" className="min-h-12 min-w-0 flex-1 rounded-2xl border-2 border-line bg-white px-3 text-base" />
+                <button type="submit" disabled={busy || phone.replace(/\D/g, "").length < 9} className="min-h-12 shrink-0 rounded-2xl border-2 border-yellow-deep bg-yellow px-4 font-bold disabled:opacity-50">
+                  연결
+                </button>
+              </span>
+            </form>
+          )}
+          <div className="flex gap-2">
+            <Link href={`/stores/${store.store_id}`} className="flex min-h-12 flex-1 items-center justify-center rounded-2xl border-2 border-line bg-white text-sm font-bold">
+              가게 페이지 보기
+            </Link>
+            <button type="button" disabled={busy} onClick={remove} className="min-h-12 flex-1 rounded-2xl border-2 border-line bg-white text-sm font-bold text-[#A4423F]">
+              이 가게 지우기
+            </button>
+          </div>
+        </div>
+      )}
+      {node}
+    </section>
+  );
+}
+
 // ── 가게 등록 ────────────────────────────────────────
 const DAYS: [Weekday, string][] = [
   ["mon", "월"], ["tue", "화"], ["wed", "수"], ["thu", "목"], ["fri", "금"], ["sat", "토"], ["sun", "일"],
@@ -108,6 +217,9 @@ export function StoreForm() {
   const router = useRouter();
   const { node, show } = useToast();
   const [busy, setBusy] = useState(false);
+  const [ownerPhone, setOwnerPhone] = useState("");
+  const [linked, setLinked] = useState<{ name: string; code: string; phone: string } | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   async function onSubmit(form: FormData) {
     const name = String(form.get("name") ?? "").trim();
@@ -120,21 +232,28 @@ export function StoreForm() {
       if (v !== undefined) hours[d] = v;
     }
     setBusy(true);
-    const { error } = await createClient().rpc("admin_upsert_store", {
+    setLinked(null);
+    const { data, error } = await createClient().rpc("admin_register_store", {
       p_name: name,
       p_category: String(form.get("category") ?? "").trim() || null,
       p_address: String(form.get("address") ?? "").trim() || null,
       p_regular_hours: Object.keys(hours).length ? hours : null,
       p_is_pilot: form.get("is_pilot") === "on",
+      p_phone: ownerPhone.trim() || null,
     });
     setBusy(false);
     if (error) return show(errorMessage(error), "think");
+    const result = data as { code: string | null; phone: string | null };
+    if (result.code && result.phone) setLinked({ name, code: result.code, phone: result.phone });
     show(`${name}을(를) 등록했어요.`, "proud");
+    formRef.current?.reset();
+    setOwnerPhone("");
     router.refresh();
   }
 
   return (
     <form
+      ref={formRef}
       className="flex flex-col gap-3"
       onSubmit={(e) => {
         e.preventDefault();
@@ -142,10 +261,16 @@ export function StoreForm() {
         onSubmit(new FormData(el)).then(() => undefined);
       }}
     >
-      <p className="text-sm text-muted">새 가게를 등록해요. 영업시간은 &ldquo;09:00-19:00&rdquo;처럼 쓰고, 쉬는 날은 &ldquo;휴무&rdquo;, 모르면 비워 두세요.</p>
+      <h2 className="font-display text-[22px] font-normal">새 가게 등록</h2>
+      <p className="text-sm text-muted">영업시간은 &ldquo;09:00-19:00&rdquo;처럼 쓰고, 쉬는 날은 &ldquo;휴무&rdquo;, 모르면 비워 두세요.</p>
       <Field name="name" label="가게 이름" required />
       <Field name="category" label="종류 (식당·카페·간식·약국·의원 등)" />
       <Field name="address" label="주소" />
+      <label className="flex flex-col gap-1.5">
+        <span className="text-sm font-bold">사장님 전화번호 (선택)</span>
+        <input type="tel" inputMode="tel" value={ownerPhone} onChange={(e) => setOwnerPhone(formatPhone(e.target.value))} placeholder="010-0000-0000" className="min-h-12 rounded-2xl border-2 border-line bg-white px-3 text-base" />
+        <span className="text-xs leading-normal text-muted">넣으면 이 번호의 고유 코드와 가게가 연결돼요. 코드가 없으면 새로 만들어요. 이 번호는 가게 페이지에 공개되지 않아요.</span>
+      </label>
       <fieldset className="grid grid-cols-2 gap-2">
         <legend className="mb-1.5 text-sm font-bold">평소 영업시간</legend>
         {DAYS.map(([d, label]) => (
@@ -161,6 +286,13 @@ export function StoreForm() {
       <button type="submit" disabled={busy} className="min-h-14 rounded-[22px] border-2 border-sage-deep bg-sage font-display text-xl text-white">
         가게 등록
       </button>
+      {linked && (
+        <div role="status" className="ok-pop flex flex-col items-center gap-1 rounded-[20px] border-2 border-sage-deep bg-sage-soft px-3 py-4 text-center">
+          <span className="text-sm">{linked.name} · {formatPhone(linked.phone)}</span>
+          <span className="font-display text-[34px] leading-tight">{linked.code}</span>
+          <span className="text-sm text-muted">이 코드와 연결했어요. 사장님께 불러 드리세요.</span>
+        </div>
+      )}
       {node}
     </form>
   );

@@ -143,6 +143,7 @@ export type OwnerCodeItem = {
   store_id: string | null;
   store_name: string | null;
   member_count: number;
+  protected: boolean;
 };
 
 export type IssuedCode = { phone: string; code: string; created?: boolean; store_id?: string | null; store_name?: string | null };

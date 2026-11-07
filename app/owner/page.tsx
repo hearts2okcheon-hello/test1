@@ -10,13 +10,14 @@ import { OwnerPanel } from "./OwnerPanel";
 
 export const dynamic = "force-dynamic";
 
-export default async function OwnerPage() {
+export default async function OwnerPage({ searchParams }: { searchParams: Promise<{ entry?: string }> }) {
+  const { entry } = await searchParams;
   const supabase = await createClient();
   const { data } = await supabase.rpc("get_owner_home");
   const home = (data ?? { state: "no_store", is_admin: false }) as OwnerHome;
 
-  // 코드는 넣었는데 가게가 아직 없다
-  if (home.state === "needs_store") redirect("/owner/register");
+  // 코드는 넣었는데 가게가 아직 없다. 등록 화면에서 "뒤로"를 누르면 코드 입력으로 돌아온다
+  if (home.state === "needs_store" && !entry) redirect("/owner/register");
 
   let detail: StoreDetail | null = null;
   if (home.state === "owner") {

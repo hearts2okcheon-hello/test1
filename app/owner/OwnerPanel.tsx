@@ -8,6 +8,7 @@ import { NoticeButtons } from "@/components/NoticeButtons";
 import { Osori } from "@/components/Osori";
 import { TimeAgo } from "@/components/TimeAgo";
 import { useToast } from "@/components/Toast";
+import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
 import { SIGN_STYLES, formatClock, formatRange, signTitle } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
@@ -51,8 +52,8 @@ export function OwnerPanel({ home, posts, closures }: { home: Home; posts: Store
     run(() => createClient().rpc("cancel_temp_closure", { p_closure_id: c.id }), "임시휴무를 취소했어요.");
   }
 
-  function deletePost(p: StorePost) {
-    if (!window.confirm("이 소식을 지울까요?")) return;
+  async function deletePost(p: StorePost) {
+    if (!(await askDelete({ detail: "이 소식이 사라져요." }))) return;
     run(() => createClient().rpc("delete_store_post", { p_post_id: p.id }), "소식을 지웠어요.");
   }
 

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "@/components/Toast";
+import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
 import { formatPhone } from "@/lib/hours";
 import { createClient } from "@/lib/supabase/client";
@@ -41,6 +42,28 @@ export function CodePanel({ items, unlinkedStores }: { items: OwnerCodeItem[]; u
       const { data, error } = await createClient().rpc("admin_reissue_code", { p_phone: item.phone });
       if (error) throw error;
       setIssued(data as IssuedCode);
+      router.refresh();
+    } catch (e) {
+      show(errorMessage(e), "think");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(item: OwnerCodeItem) {
+    const answer = await askDelete({
+      detail: `${formatPhone(item.phone)} · ${item.code}\n연결된 기기 ${item.member_count}대가 끊어져요.${item.store_name ? ` 가게 "${item.store_name}"는 남아요.` : ""}`,
+      password: item.protected,
+    });
+    if (!answer) return;
+    setBusy(true);
+    try {
+      const { data, error } = await createClient().rpc("admin_delete_code", { p_phone: item.phone, p_password: answer.password || null });
+      if (error) throw error;
+      const result = data as { ok: boolean; error?: string };
+      if (!result.ok) throw new Error(result.error);
+      if (issued?.phone === item.phone) setIssued(null);
+      show("코드를 지웠어요.", "proud");
       router.refresh();
     } catch (e) {
       show(errorMessage(e), "think");
@@ -125,10 +148,15 @@ export function CodePanel({ items, unlinkedStores }: { items: OwnerCodeItem[]; u
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="font-display text-[22px] leading-tight">{c.code}</span>
               <span className="text-sm">{formatPhone(c.phone)}</span>
-              <span className="truncate text-xs text-muted">{c.store_name ?? "가게 등록 전"} · 기기 {c.member_count}대</span>
+              <span className="truncate text-xs text-muted">{c.store_name ?? "가게 등록 전"} · 기기 {c.member_count}대{c.protected ? " · 보호됨" : ""}</span>
             </span>
-            <button type="button" disabled={busy} onClick={() => reissue(c)} className="min-h-11 shrink-0 rounded-2xl border-2 border-line bg-white px-3 text-sm font-bold text-[#A4423F]">
-              새 코드로
+            {!c.protected && (
+              <button type="button" disabled={busy} onClick={() => reissue(c)} className="min-h-11 shrink-0 rounded-2xl border-2 border-line bg-white px-2.5 text-sm font-bold">
+                새 코드로
+              </button>
+            )}
+            <button type="button" disabled={busy} onClick={() => remove(c)} className="min-h-11 shrink-0 rounded-2xl border-2 border-line bg-white px-2.5 text-sm font-bold text-[#A4423F]">
+              지우기
             </button>
           </div>
         ))}

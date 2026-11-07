@@ -4,7 +4,7 @@ import { Osori } from "@/components/Osori";
 import { SignOutButton } from "@/components/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
 import type { AdminContent, Metrics, OwnerCodeItem, QueueItem, StoreSign } from "@/lib/types";
-import { ProxyPanel, QueueList, StoreForm } from "./AdminPanels";
+import { ProxyPanel, QueueList, StoreForm, StoreManager } from "./AdminPanels";
 import { CodePanel } from "./CodePanel";
 import { ContentPanel } from "./ContentPanel";
 
@@ -66,7 +66,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {tab === "proxy" && <ProxyTab />}
       {tab === "codes" && <CodesTab />}
       {tab === "content" && <ContentTab />}
-      {tab === "stores" && <StoreForm />}
+      {tab === "stores" && <StoresTab />}
       {tab === "metrics" && <MetricsTab from={sp.from} to={sp.to} />}
     </main>
   );
@@ -96,6 +96,17 @@ async function CodesTab() {
   const linked = new Set(items.map((c) => c.store_id));
   const unlinked = ((signs.data ?? []) as StoreSign[]).filter((s) => !linked.has(s.store_id)).map((s) => ({ store_id: s.store_id, name: s.name }));
   return <CodePanel items={items} unlinkedStores={unlinked} />;
+}
+
+async function StoresTab() {
+  const supabase = await createClient();
+  const [signs, codes] = await Promise.all([supabase.rpc("get_store_signs"), supabase.rpc("admin_list_owner_codes")]);
+  return (
+    <div className="flex flex-col gap-5">
+      <StoreManager stores={(signs.data ?? []) as StoreSign[]} codes={(codes.data ?? []) as OwnerCodeItem[]} />
+      <StoreForm />
+    </div>
+  );
 }
 
 async function ContentTab() {

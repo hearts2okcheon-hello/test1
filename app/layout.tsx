@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Jua, Noto_Sans_KR } from "next/font/google";
 import { Suspense } from "react";
+import { ConfirmDeleteHost } from "@/components/ConfirmDeleteHost";
 import { NavLoading } from "@/components/NavLoading";
 import { TouchRipple } from "@/components/TouchRipple";
 import "./globals.css";
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}>
           <NavLoading />
         </Suspense>
+        <ConfirmDeleteHost />
         <TouchRipple />
       </body>
     </html>
