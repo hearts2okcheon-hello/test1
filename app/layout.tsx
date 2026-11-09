@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F8F3E8",
+  themeColor: "#FBF5E6",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko" className={`${jua.variable} ${noto.variable}`}>
       <body>
-        <div className="mx-auto flex min-h-dvh max-w-[480px] flex-col">{children}</div>
+        <div className="ok-shell mx-auto flex min-h-dvh max-w-[480px] flex-col">{children}</div>
         <Suspense fallback={null}>
           <NavLoading />
         </Suspense>

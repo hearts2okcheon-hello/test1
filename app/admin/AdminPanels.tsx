@@ -12,7 +12,7 @@ import { deleteStoreWithPhotos } from "@/lib/admin-store";
 import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
 import { formatPhone, parseHours } from "@/lib/hours";
-import { SIGN_STYLES } from "@/lib/signs";
+import { SIGN_STYLES, STORE_CATEGORIES } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
 import type { OwnerNotice, QueueItem, StoreSign, Weekday } from "@/lib/types";
 
@@ -180,7 +180,13 @@ export function StoreForm() {
       <h2 className="font-display text-[22px] font-normal">새 가게 등록</h2>
       <p className="text-sm text-muted">영업시간은 &ldquo;09:00-19:00&rdquo;처럼 쓰고, 쉬는 날은 &ldquo;휴무&rdquo;, 모르면 비워 두세요.</p>
       <Field name="name" label="가게 이름" required />
-      <Field name="category" label="종류 (식당·카페·간식·약국·의원 등)" />
+      <label className="flex flex-col gap-1.5">
+        <span className="text-sm font-bold">종류</span>
+        <select name="category" defaultValue="" className="min-h-12 rounded-2xl border-2 border-line bg-white px-3 text-base">
+          <option value="">골라 주세요</option>
+          {STORE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </label>
       <Field name="address" label="주소" />
       <label className="flex flex-col gap-1.5">
         <span className="text-sm font-bold">사장님 전화번호 (선택)</span>

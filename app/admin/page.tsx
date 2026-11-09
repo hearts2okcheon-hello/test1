@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Osori } from "@/components/Osori";
 import { SignOutButton } from "@/components/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
-import type { AdminContent, Metrics, QueueItem, StoreInfoItem, StoreSign } from "@/lib/types";
+import type { AdminContent, CommunityAdminPost, Metrics, QueueItem, StoreInfoItem, StoreSign } from "@/lib/types";
 import { QueueList, StoreForm, StoreManager } from "./AdminPanels";
 import { ContentPanel } from "./ContentPanel";
 import { StoreInfoPanel } from "./StoreInfoPanel";
@@ -97,8 +97,8 @@ async function StoresTab() {
 
 async function ContentTab() {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("admin_list_content");
-  return <ContentPanel content={(data ?? { posts: [], comments: [] }) as AdminContent} />;
+  const [{ data }, community] = await Promise.all([supabase.rpc("admin_list_content"), supabase.rpc("admin_list_community")]);
+  return <ContentPanel content={(data ?? { posts: [], comments: [] }) as AdminContent} community={(community.data ?? []) as CommunityAdminPost[]} />;
 }
 
 /** 기본 기간: 최근 7일 */

@@ -50,10 +50,11 @@ Next.js 15 (App Router) · TypeScript · Tailwind CSS · Supabase (Postgres + Au
 - 출처 배지나 시각 없이 상태를 표시하는 것
 - 제보자 신원(`reporter_id` 등)을 화면·API 응답에 노출하는 것
 - 주민 열람에 로그인을 요구하는 것
-- 종합 커뮤니티 기능(자유게시판·중고거래·구인구직)·별점 리뷰·결제·푸시 알림 추가. 가게 페이지의 주민 댓글·공감만 예외 (ADR-007)
+- 종합 커뮤니티 기능(자유게시판·중고거래·구인구직)·별점 리뷰·결제·푸시 알림 추가. 가게 페이지의 주민 댓글·공감(ADR-007)과 소통광장 동네 이야기(ADR-012)만 예외
 - 사장님 전화번호(`owner_codes.phone`)나 코드를 저장소 파일에 넣거나, 관리자 외 응답에 내보내는 것
 - 비공개 전화번호(`phone_public = false`)를 화면·API 응답에 노출하는 것 (ADR-010)
 - `askDelete` 확인 창 없이 삭제하는 것 (왼쪽 예, 오른쪽 아니오)
+- 동네 이야기 작성자를 사유 기록(`admin_reveal_community_author`) 없이 보여 주는 것
 - 댓글 작성자 id(`author_id`)를 화면·API 응답에 노출하는 것
 - `.env*`·Supabase service role key를 커밋하거나 클라이언트 코드에서 쓰는 것
 

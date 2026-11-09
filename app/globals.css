@@ -2,21 +2,21 @@
 
 /* 옥!소리 디자인 토큰 — design-system.md. 상태별 색은 lib/signs.ts */
 @theme {
-  --color-ink: #4A3D37;
-  --color-muted: #776859;
-  --color-paper: #F8F3E8;
-  --color-card: #FFFDF8;
+  --color-ink: #5B4636;
+  --color-muted: #7A6654;
+  --color-paper: #FBF5E6;
+  --color-card: #FFFDF6;
   --color-cream: #FFF8E6;
-  --color-line: #E8DCC8;
-  --color-line-strong: #C9B89C;
+  --color-line: #E8DAB8;
+  --color-line-strong: #C9B48A;
 
-  --color-yellow: #F4C25B;
-  --color-yellow-deep: #D9A132;
+  --color-yellow: #F5C96A;
+  --color-yellow-deep: #D9A43A;
   --color-yellow-soft: #FFF1CF;
-  --color-yellow-line: #F0D697;
+  --color-yellow-line: #F0D89A;
 
-  --color-sage: #7E9F72;
-  --color-sage-deep: #5E7F55;
+  --color-sage: #5E7A50;
+  --color-sage-deep: #4A6340;
   --color-sage-soft: #E6F0DF;
 
   --color-coral: #D9706F;
@@ -37,7 +37,9 @@ html {
 }
 
 body {
-  background: var(--color-paper);
+  background-color: var(--color-paper);
+  background-image: radial-gradient(#EFE3C4 1.6px, transparent 1.7px);
+  background-size: 22px 22px;
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
@@ -79,6 +81,41 @@ a:active {
   stroke-width: 3px;
   stroke-linejoin: round;
   paint-order: stroke;
+}
+
+/* 모든 카드: 도톰한 테두리 + 아래로 딱 떨어지는 그림자 */
+.ok-sticker,
+:where(section, div, a, button, form, label).bg-card.border-line {
+  border-width: 2.5px;
+  box-shadow: 0 4px 0 var(--color-line);
+}
+
+:where(a, button).bg-sage.border-sage-deep {
+  box-shadow: 0 3px 0 var(--color-sage-deep);
+}
+
+:where(a, button).bg-yellow.border-yellow-deep {
+  box-shadow: 0 3px 0 var(--color-yellow-deep);
+}
+
+/* 나무 팻말처럼 살짝 기운 상태 표시 */
+.ok-sign {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 8px;
+  border-width: 2px;
+  border-radius: 9px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  white-space: nowrap;
+  transform: rotate(-3deg);
+}
+
+/* 홈·소식·가게 목록은 PC 에서 넓게 쓴다 */
+.ok-shell:has(.ok-wide) {
+  max-width: 1040px;
 }
 
 .ok-scroll-x {

@@ -24,7 +24,7 @@ describe("팻말 문구", () => {
     expect(signTitle("early_close", "17:30")).toBe("오후 5시 30분에 닫아요");
     expect(signTitle("late_open", null)).toBe("조금 늦게 열어요");
     expect(signChip("late_open", "11:00")).toBe("11시 오픈");
-    expect(signChip("open", null)).toBe("영업 중");
+    expect(signChip("open", null)).toBe("영업중");
   });
 
   it("마을방송 한 줄은 쪽지가 먼저", () => {

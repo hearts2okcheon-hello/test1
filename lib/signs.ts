@@ -1,6 +1,7 @@
 // 팻말 코드 → 문구·색·오소리 표정 (design-system.md §2, §7)
 // 상태를 "계산"하지 않는다. 계산은 DB(get_store_signs)에서만 한다. (ADR-001)
 
+import { CATEGORIES } from "./categories";
 import type { FeedItem, NoticeKind, PhotoCategory, ReportKind, ScheduleStatus, SignKind, Source } from "./types";
 
 export type Mood =
@@ -15,26 +16,34 @@ export type SignStyle = {
   bg: string;
   fg: string;
   border: string;
+  /** 팻말 안의 동그라미 */
+  dot: string;
   mood: Mood;
   moodAlt: string;
 };
 
+// 팻말 색은 세 갈래: 영업 / 주의 / 닫힘
+const TONE_OPEN = { bg: "#DDF3DF", fg: "#2F6E3B", border: "#6DBA78", dot: "#3FA052" };
+const TONE_WARN = { bg: "#FFE9CC", fg: "#8A4A0B", border: "#E7A35A", dot: "#E58A2E" };
+const TONE_CLOSED = { bg: "#EFE9DF", fg: "#5E5246", border: "#BFB19A", dot: "#A8987F" };
+const TONE_HOLIDAY = { bg: "#FBE3E1", fg: "#A4423F", border: "#E5A29E", dot: "#D9706F" };
+
 export const SIGN_STYLES: Record<SignKind, SignStyle> = {
-  open: { chip: "영업 중", title: "오늘도 열었어요", button: "영업 중이에요", bg: "#E6F0DF", fg: "#4E6E44", border: "#B9D0AC", mood: "happy", moodAlt: "신난 오소리" },
-  closed_today: { chip: "오늘 휴무", title: "오늘은 쉬어요", button: "오늘 쉬어요", bg: "#FBE3E1", fg: "#A4423F", border: "#EFB9B5", mood: "rest", moodAlt: "쉬고 있는 오소리" },
-  late_open: { chip: "늦게 열어요", title: "조금 늦게 열어요", button: "늦게 열어요", bg: "#FFF1CF", fg: "#7E5810", border: "#F0D697", mood: "move", moodAlt: "가게로 가는 오소리" },
-  sold_out: { chip: "재료 소진", title: "재료가 다 떨어졌어요", button: "재료 소진", bg: "#FDE7D6", fg: "#954A18", border: "#F2C7A6", mood: "surprise", moodAlt: "놀란 오소리" },
-  early_close: { chip: "일찍 닫아요", title: "오늘은 일찍 닫아요", button: "일찍 닫아요", bg: "#F9E6E9", fg: "#97404F", border: "#EDBFC7", mood: "smile", moodAlt: "웃는 오소리" },
-  temp_closed: { chip: "임시휴무", title: "임시휴무 중이에요", button: "", bg: "#FBE3E1", fg: "#A4423F", border: "#EFB9B5", mood: "rest", moodAlt: "쉬고 있는 오소리" },
-  checking: { chip: "확인 중", title: "사장님께 확인 중이에요", button: "", bg: "#FFF4D6", fg: "#715212", border: "#F0D697", mood: "curious", moodAlt: "궁금한 오소리" },
-  none: { chip: "소식 없음", title: "아직 오늘 소식이 없어요", button: "", bg: "#EFE9DF", fg: "#5F5249", border: "#DCD1C0", mood: "basic", moodAlt: "오소리" },
+  open: { chip: "영업중", title: "오늘도 열었어요", button: "영업 중이에요", ...TONE_OPEN, mood: "happy", moodAlt: "신난 오소리" },
+  closed_today: { chip: "오늘 휴무", title: "오늘은 쉬어요", button: "오늘 쉬어요", ...TONE_HOLIDAY, mood: "rest", moodAlt: "쉬고 있는 오소리" },
+  late_open: { chip: "늦게 열어요", title: "조금 늦게 열어요", button: "늦게 열어요", ...TONE_WARN, mood: "move", moodAlt: "가게로 가는 오소리" },
+  sold_out: { chip: "재료 소진", title: "재료가 다 떨어졌어요", button: "재료 소진", ...TONE_WARN, mood: "surprise", moodAlt: "놀란 오소리" },
+  early_close: { chip: "일찍 닫아요", title: "오늘은 일찍 닫아요", button: "일찍 닫아요", ...TONE_WARN, mood: "smile", moodAlt: "웃는 오소리" },
+  temp_closed: { chip: "임시휴무", title: "임시휴무 중이에요", button: "", ...TONE_HOLIDAY, mood: "rest", moodAlt: "쉬고 있는 오소리" },
+  checking: { chip: "확인 중", title: "사장님께 확인 중이에요", button: "", ...TONE_WARN, mood: "curious", moodAlt: "궁금한 오소리" },
+  none: { chip: "소식 없음", title: "아직 오늘 소식이 없어요", button: "", ...TONE_CLOSED, mood: "basic", moodAlt: "오소리" },
 };
 
 /** 영업 상태 칩. 공지 칩과 같은 색을 써서 어디서 나온 상태든 같은 모양으로 보인다 */
 function scheduleChip(label: string, s: SignStyle) {
-  return { label, bg: s.bg, fg: s.fg, border: s.border };
+  return { label, bg: s.bg, fg: s.fg, border: s.border, dot: s.dot };
 }
-export const SCHEDULE_STYLES: Record<ScheduleStatus, { label: string; bg: string; fg: string; border: string }> = {
+export const SCHEDULE_STYLES: Record<ScheduleStatus, { label: string; bg: string; fg: string; border: string; dot: string }> = {
   open: scheduleChip(SIGN_STYLES.open.chip, SIGN_STYLES.open),
   closed: scheduleChip("영업종료", SIGN_STYLES.none),
   regular_holiday: scheduleChip("정기휴일", SIGN_STYLES.late_open),
@@ -51,7 +60,7 @@ export const PHOTO_CATEGORIES: { id: PhotoCategory; label: string }[] = [
   { id: "daily", label: "일상" },
 ];
 
-export const STORE_CATEGORIES = ["식당", "분식", "카페·간식", "약국·의원", "미용", "마트·상점", "기타"];
+export const STORE_CATEGORIES = CATEGORIES.map((c) => c.name);
 
 /** 사장님 공지 버튼 순서 */
 export const NOTICE_KINDS: NoticeKind[] = ["open", "closed_today", "late_open", "sold_out", "early_close"];

@@ -139,6 +139,8 @@ export type QueueItem = {
 
 export type StoreInfoItem = { store_id: string; name: string; phone: string | null; category: string | null; created_at: string };
 
+export type CommunityAdminPost = { id: string; anon_name: string; body: string; created_at: string };
+
 export type AdminContent = {
   posts: { id: string; store_id: string; store_name: string; kind: "news" | "notice"; body: string; image_url: string | null; created_at: string }[];
   comments: { id: string; store_id: string; store_name: string; body: string; created_at: string }[];

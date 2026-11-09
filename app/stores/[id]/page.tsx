@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BackButton } from "@/components/BackButton";
 import { Gallery } from "@/components/Gallery";
 import { MapTile } from "@/components/MapTile";
 import { PageView } from "@/components/PageView";
@@ -40,11 +41,7 @@ export default async function StorePage({
     <>
       {/* 1. 가게 이름 · 카테고리 · 동네 태그 · 전화번호 */}
       <header className="flex items-center gap-2.5 px-[18px] pt-3.5 pb-1">
-        <Link href="/stores" aria-label="뒤로" className="flex size-[46px] shrink-0 items-center justify-center rounded-full border-2 border-line bg-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
-        </Link>
+        <BackButton />
         <div className="flex min-w-0 flex-1 flex-col">
           <h1 className="truncate font-display text-[26px] leading-tight font-normal">{store.name}</h1>
           {tags && <span className="truncate text-[13px] text-muted">{tags}</span>}

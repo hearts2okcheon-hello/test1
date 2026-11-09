@@ -8,13 +8,36 @@ import { useToast } from "@/components/Toast";
 import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/client";
-import type { AdminContent } from "@/lib/types";
+import type { AdminContent, CommunityAdminPost } from "@/lib/types";
 
 /** 옥천신문: 소식·댓글 살펴보고 문제 있는 글 지우기 */
-export function ContentPanel({ content }: { content: AdminContent }) {
+export function ContentPanel({ content, community }: { content: AdminContent; community: CommunityAdminPost[] }) {
   const router = useRouter();
   const { node, show } = useToast();
   const [busy, setBusy] = useState(false);
+  const [revealing, setRevealing] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const [revealed, setRevealed] = useState<Record<string, { nickname: string | null; account: string; post_count: number }>>({});
+
+  async function removeCommunity(id: string) {
+    if (!(await askDelete({ detail: "이 글은 되돌릴 수 없어요." }))) return;
+    setBusy(true);
+    const { error } = await createClient().rpc("delete_community_post", { p_post_id: id });
+    setBusy(false);
+    if (error) return show(errorMessage(error), "think");
+    show("지웠어요.", "proud");
+    router.refresh();
+  }
+
+  async function reveal(id: string) {
+    setBusy(true);
+    const { data, error } = await createClient().rpc("admin_reveal_community_author", { p_post_id: id, p_reason: reason });
+    setBusy(false);
+    if (error) return show(errorMessage(error), "think");
+    setRevealed((cur) => ({ ...cur, [id]: data as { nickname: string | null; account: string; post_count: number } }));
+    setRevealing(null);
+    setReason("");
+  }
 
   async function remove(rpc: "delete_store_post" | "delete_store_comment", id: string) {
     if (!(await askDelete({ detail: "이 글은 되돌릴 수 없어요." }))) return;
@@ -30,6 +53,49 @@ export function ContentPanel({ content }: { content: AdminContent }) {
 
   return (
     <section className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <h2 className="font-display text-[22px] font-normal">동네 이야기 {community.length}개</h2>
+        {community.length === 0 && <Empty text="아직 올라온 글이 없어요." />}
+        {community.map((p) => (
+          <article key={p.id} className="flex flex-col gap-1.5 rounded-[20px] border-2 border-line bg-card px-3.5 py-3">
+            <span className="text-xs text-muted"><b>{p.anon_name}</b> · <TimeAgo iso={p.created_at} /></span>
+            <p className="text-[15px] leading-normal break-words whitespace-pre-wrap">{p.body}</p>
+            {revealed[p.id] && (
+              <p className="rounded-xl bg-yellow-soft px-3 py-2 text-sm">
+                카카오 닉네임 <b>{revealed[p.id].nickname ?? "없음"}</b> · 계정 {revealed[p.id].account} · 지금까지 쓴 글 {revealed[p.id].post_count}개
+              </p>
+            )}
+            {revealing === p.id && (
+              <form
+                className="flex flex-col gap-1.5"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  reveal(p.id);
+                }}
+              >
+                <input aria-label="확인하는 이유" autoFocus value={reason} maxLength={200} onChange={(e) => setReason(e.target.value)} placeholder="확인하는 이유 (기록에 남아요)" className="min-h-11 rounded-xl border-2 border-line bg-white px-3 text-base" />
+                <button type="submit" disabled={busy || !reason.trim()} className="min-h-11 rounded-xl border-2 border-yellow-deep bg-yellow text-sm font-bold disabled:opacity-50">기록을 남기고 확인</button>
+              </form>
+            )}
+            <div className="flex gap-2">
+              {!revealed[p.id] && revealing !== p.id && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    setReason("");
+                    setRevealing(p.id);
+                  }}
+                  className="min-h-10 rounded-xl border-2 border-line bg-white px-3 text-sm font-bold"
+                >
+                  작성자 확인
+                </button>
+              )}
+              <button type="button" disabled={busy} onClick={() => removeCommunity(p.id)} className="min-h-10 rounded-xl border-2 border-line bg-white px-3 text-sm font-bold text-[#A4423F]">지우기</button>
+            </div>
+          </article>
+        ))}
+      </div>
       <div className="flex flex-col gap-2">
         <h2 className="font-display text-[22px] font-normal">사장님 소식 {content.posts.length}개</h2>
         {content.posts.length === 0 && <Empty text="아직 올라온 소식이 없어요." />}
