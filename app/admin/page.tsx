@@ -3,15 +3,15 @@ import { redirect } from "next/navigation";
 import { Osori } from "@/components/Osori";
 import { SignOutButton } from "@/components/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
-import type { AdminContent, Metrics, OwnerCodeItem, QueueItem, StoreSign } from "@/lib/types";
-import { ProxyPanel, QueueList, StoreForm, StoreManager } from "./AdminPanels";
-import { CodePanel } from "./CodePanel";
+import type { AdminContent, Metrics, QueueItem, StoreInfoItem, StoreSign } from "@/lib/types";
+import { QueueList, StoreForm, StoreManager } from "./AdminPanels";
 import { ContentPanel } from "./ContentPanel";
+import { StoreInfoPanel } from "./StoreInfoPanel";
 
 export const dynamic = "force-dynamic";
 
 const TABS = [
-  { id: "codes", label: "사장님 코드" },
+  { id: "info", label: "가게 정보" },
   { id: "content", label: "게시물" },
   { id: "queue", label: "엇갈림·무응답" },
   { id: "proxy", label: "대리 등록" },
@@ -22,7 +22,7 @@ type Tab = (typeof TABS)[number]["id"];
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; from?: string; to?: string }> }) {
   const sp = await searchParams;
-  const tab: Tab = TABS.some((t) => t.id === sp.tab) ? (sp.tab as Tab) : "codes";
+  const tab: Tab = TABS.some((t) => t.id === sp.tab) ? (sp.tab as Tab) : "info";
 
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -63,8 +63,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       </nav>
 
       {tab === "queue" && <QueueTab />}
-      {tab === "proxy" && <ProxyTab />}
-      {tab === "codes" && <CodesTab />}
+      {tab === "proxy" && <StoreForm />}
+      {tab === "info" && <InfoTab />}
       {tab === "content" && <ContentTab />}
       {tab === "stores" && <StoresTab />}
       {tab === "metrics" && <MetricsTab from={sp.from} to={sp.to} />}
@@ -78,7 +78,13 @@ async function QueueTab() {
   return <QueueList items={(data ?? []) as QueueItem[]} />;
 }
 
-async function ProxyTab() {
+async function InfoTab() {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("admin_list_store_info");
+  return <StoreInfoPanel items={(data ?? []) as StoreInfoItem[]} />;
+}
+
+async function StoresTab() {
   const supabase = await createClient();
   const { data } = await supabase.rpc("get_store_signs");
   const { data: notices } = await supabase
@@ -86,27 +92,7 @@ async function ProxyTab() {
     .select("id, store_id, kind, at_time, memo, source, created_at, from_report_id")
     .is("ended_at", null)
     .gt("expires_at", new Date().toISOString());
-  return <ProxyPanel stores={(data ?? []) as StoreSign[]} notices={notices ?? []} />;
-}
-
-async function CodesTab() {
-  const supabase = await createClient();
-  const [codes, signs] = await Promise.all([supabase.rpc("admin_list_owner_codes"), supabase.rpc("get_store_signs")]);
-  const items = (codes.data ?? []) as OwnerCodeItem[];
-  const linked = new Set(items.map((c) => c.store_id));
-  const unlinked = ((signs.data ?? []) as StoreSign[]).filter((s) => !linked.has(s.store_id)).map((s) => ({ store_id: s.store_id, name: s.name }));
-  return <CodePanel items={items} unlinkedStores={unlinked} />;
-}
-
-async function StoresTab() {
-  const supabase = await createClient();
-  const [signs, codes] = await Promise.all([supabase.rpc("get_store_signs"), supabase.rpc("admin_list_owner_codes")]);
-  return (
-    <div className="flex flex-col gap-5">
-      <StoreManager stores={(signs.data ?? []) as StoreSign[]} codes={(codes.data ?? []) as OwnerCodeItem[]} />
-      <StoreForm />
-    </div>
-  );
+  return <StoreManager stores={(data ?? []) as StoreSign[]} notices={notices ?? []} />;
 }
 
 async function ContentTab() {

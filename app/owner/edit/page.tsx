@@ -15,7 +15,8 @@ export default async function EditStorePage({ searchParams }: { searchParams: Pr
         initial={{
           storeId: detail.store.store_id,
           name: detail.store.name,
-          phone: detail.profile.phone ?? "",
+          phone: detail.profile.manage_phone ?? "",
+          phonePublic: detail.profile.phone_public,
           category: detail.store.category,
           neighborhood: detail.store.neighborhood,
           intro: detail.profile.intro,

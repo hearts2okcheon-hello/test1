@@ -40,7 +40,7 @@ export default async function StorePage({
     <>
       {/* 1. 가게 이름 · 카테고리 · 동네 태그 · 전화번호 */}
       <header className="flex items-center gap-2.5 px-[18px] pt-3.5 pb-1">
-        <Link href="/" aria-label="뒤로" className="flex size-[46px] shrink-0 items-center justify-center rounded-full border-2 border-line bg-card">
+        <Link href="/stores" aria-label="뒤로" className="flex size-[46px] shrink-0 items-center justify-center rounded-full border-2 border-line bg-card">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M15 5l-7 7 7 7" />
           </svg>

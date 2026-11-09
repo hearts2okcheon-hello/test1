@@ -52,7 +52,7 @@ Next.js 15 (App Router) · TypeScript · Tailwind CSS · Supabase (Postgres + Au
 - 주민 열람에 로그인을 요구하는 것
 - 종합 커뮤니티 기능(자유게시판·중고거래·구인구직)·별점 리뷰·결제·푸시 알림 추가. 가게 페이지의 주민 댓글·공감만 예외 (ADR-007)
 - 사장님 전화번호(`owner_codes.phone`)나 코드를 저장소 파일에 넣거나, 관리자 외 응답에 내보내는 것
-- 보호 코드 삭제 비밀번호를 저장소 파일에 넣는 것 (DB `okc_secrets`에 해시로만, ADR-008)
+- 비공개 전화번호(`phone_public = false`)를 화면·API 응답에 노출하는 것 (ADR-010)
 - `askDelete` 확인 창 없이 삭제하는 것 (왼쪽 예, 오른쪽 아니오)
 - 댓글 작성자 id(`author_id`)를 화면·API 응답에 노출하는 것
 - `.env*`·Supabase service role key를 커밋하거나 클라이언트 코드에서 쓰는 것

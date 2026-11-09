@@ -18,7 +18,7 @@ import type { NoticeKind, OwnerHome, StorePost, TempClosure } from "@/lib/types"
 type Home = Extract<OwnerHome, { state: "owner" }>;
 
 export function OwnerPanel({ home, posts, closures }: { home: Home; posts: StorePost[]; closures: TempClosure[] }) {
-  const { store, notice, questions, code } = home;
+  const { store, notice, questions } = home;
   const router = useRouter();
   const { node, show } = useToast();
   const [busy, setBusy] = useState(false);
@@ -62,7 +62,7 @@ export function OwnerPanel({ home, posts, closures }: { home: Home; posts: Store
       <header className="flex items-center gap-2.5">
         <Osori mood="proud" size={70} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="text-base text-muted">사장님 화면{code ? ` · 코드 ${code}` : ""}</span>
+          <span className="text-base text-muted">사장님 화면</span>
           <h1 className="truncate font-display text-2xl leading-tight font-normal">{store.name}</h1>
         </div>
         <Link href={`/stores/${store.store_id}`} className="flex min-h-12 shrink-0 items-center rounded-2xl border-2 border-line bg-card px-3 text-base font-bold">

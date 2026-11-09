@@ -65,7 +65,8 @@ export type TempClosure = { id: string; start_date: string; end_date: string; re
 
 export type StoreDetail = {
   store: StoreSign;
-  profile: { phone: string | null; intro: string | null };
+  /** phone: 공개한 번호만. manage_phone: 관리할 수 있는 사람에게만 */
+  profile: { phone: string | null; intro: string | null; phone_public: boolean; manage_phone: string | null };
   can_manage: boolean;
   reports: StoreReport[];
   menus: StoreMenu[];
@@ -136,17 +137,7 @@ export type QueueItem = {
   notice_kind: NoticeKind | null;
 };
 
-export type OwnerCodeItem = {
-  phone: string;
-  code: string;
-  code_created_at: string;
-  store_id: string | null;
-  store_name: string | null;
-  member_count: number;
-  protected: boolean;
-};
-
-export type IssuedCode = { phone: string; code: string; created?: boolean; store_id?: string | null; store_name?: string | null };
+export type StoreInfoItem = { store_id: string; name: string; phone: string | null; category: string | null; created_at: string };
 
 export type AdminContent = {
   posts: { id: string; store_id: string; store_name: string; kind: "news" | "notice"; body: string; image_url: string | null; created_at: string }[];

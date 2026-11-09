@@ -81,6 +81,14 @@ a:active {
   paint-order: stroke;
 }
 
+.ok-scroll-x {
+  scrollbar-width: none;
+}
+
+.ok-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
 .ok-road {
   stroke: var(--color-line);
   animation: ok-road 0.6s linear infinite;

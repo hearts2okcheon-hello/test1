@@ -36,7 +36,7 @@ select throws_ok($$ select register_store('가게', '0432001234', '{"mon":null}'
 select throws_ok($$ select register_store('가게', '0432001234', '{"mon":[["아침","20:00"]]}') $$, 'P0001', 'INVALID_HOURS', 'T-STORE-04 영업시간 형식');
 insert into v select 'store', register_store('대박 분식', '043-200-1234',
   '{"mon":[["00:00","00:00"]],"tue":[["00:00","00:00"]],"wed":[["00:00","00:00"]],"thu":[["00:00","00:00"]],"fri":[["00:00","00:00"]],"sat":[["00:00","00:00"]],"sun":[["00:00","00:00"]]}',
-  '분식', '우리동네 사랑방', '소개글', '충북 옥천군 옥천읍 중앙로 1');
+  '분식', '우리동네 사랑방', '소개글', '충북 옥천군 옥천읍 중앙로 1', true);
 select is(get_owner_home() ->> 'state', 'owner', 'T-STORE-05 등록하면 사장님 화면');
 select throws_ok($$ select register_store('또', '0432001234', '{"mon":[["09:00","20:00"]]}') $$, 'P0001', 'ALREADY_REGISTERED', 'T-STORE-06 코드 하나에 가게 하나');
 select is(get_store_detail((select val::uuid from v where k = 'store')) -> 'profile' ->> 'phone', '0432001234', 'T-STORE-07 공개 전화번호');

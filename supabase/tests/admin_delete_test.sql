@@ -31,16 +31,15 @@ select is(admin_delete_code('01099990001', '0000') ->> 'error', 'WRONG_PASSWORD'
 select throws_ok($$ select admin_reissue_code('01099990001') $$, 'P0001', 'PROTECTED_CODE', 'T-DEL-03 새 코드로 못 바꿈');
 select is((select code from owner_codes where phone = '01099990001'), '타-00091', 'T-DEL-03 코드는 그대로');
 
--- 새 가게 + 코드 연결
+-- 새 가게와 전화번호 (ADR-010)
 insert into v select 'store', admin_register_store('연결 가게', null, null, null, true, '010-9999-0001') ->> 'store_id';
-select is((select store_id::text from owner_codes where phone = '01099990001'), (select val from v where k = 'store'), 'T-DEL-04 새 가게가 코드와 연결됨');
-select is((select phone from stores where id = (select val::uuid from v where k = 'store')), null, 'T-DEL-04 사장님 번호를 가게 전화로 공개하지 않음');
-select throws_ok($$ select admin_register_store('다른 가게', null, null, null, true, '010-9999-0001') $$, 'P0001', 'CODE_HAS_STORE', 'T-DEL-04 이미 연결된 번호는 거절');
-select is((select count(*)::int from stores where name = '다른 가게'), 0, 'T-DEL-04 연결 실패하면 가게도 안 만들어짐');
+select is((select phone from stores where id = (select val::uuid from v where k = 'store')), '01099990001', 'T-DEL-04 새 가게에 전화번호 저장');
+select lives_ok($$ select admin_set_store_phone((select val::uuid from v where k = 'store'), '043-200-1234') $$, 'T-DEL-04 전화번호 고치기');
+select is((select name || ',' || phone from admin_list_store_info() where store_id = (select val::uuid from v where k = 'store')), '연결 가게,0432001234', 'T-DEL-04 가게 정보에 이름과 번호');
+select throws_ok($$ select admin_set_store_phone((select val::uuid from v where k = 'store'), '12') $$, 'P0001', 'INVALID_PHONE', 'T-DEL-04 잘못된 번호 거절');
 
--- 보호는 코드에만 건다. 연결된 가게는 비밀번호 없이 지워진다
-select is(admin_delete_store((select val::uuid from v where k = 'store')) ->> 'ok', 'true', 'T-DEL-05 보호 코드와 연결된 가게도 비밀번호 없이 삭제');
-select is((select store_id from owner_codes where phone = '01099990001'), null, 'T-DEL-05 코드는 남고 가게 등록 전으로');
+select is(admin_delete_store((select val::uuid from v where k = 'store')) ->> 'ok', 'true', 'T-DEL-05 가게 삭제');
+select is((select count(*)::int from stores where name = '연결 가게'), 0, 'T-DEL-05 목록에서 사라짐');
 
 -- 너무 많이 틀리면 막는다 (위에서 2번 틀림)
 select admin_delete_code('01099990001', '0000');

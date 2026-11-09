@@ -28,6 +28,7 @@ export type StoreEditorValues = {
   storeId: string | null;
   name: string;
   phone: string;
+  phonePublic: boolean;
   category: string | null;
   neighborhood: string | null;
   intro: string | null;
@@ -56,7 +57,7 @@ const INPUT = "min-h-14 w-full min-w-0 rounded-2xl border-2 border-line bg-white
 const CUSTOM_CATEGORY = "__custom";
 
 /** 가게 등록·수정 화면 하나로 쓴다. 순서는 가게 페이지와 같고, 번호는 보이는 구역대로 매긴다 */
-export function StoreEditor({ initial, code }: { initial: StoreEditorValues; code?: string }) {
+export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
   const router = useRouter();
   const { node, show } = useToast();
   const [storeId, setStoreId] = useState(initial.storeId);
@@ -64,6 +65,7 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
   const [busy, setBusy] = useState(false);
   const [name, setName] = useState(initial.name);
   const [phone, setPhone] = useState(formatPhone(initial.phone));
+  const [phonePublic, setPhonePublic] = useState(initial.phonePublic);
   const [category, setCategory] = useState(initial.category ?? "");
   const [customCategory, setCustomCategory] = useState(false);
   const [neighborhood, setNeighborhood] = useState(initial.neighborhood ?? "");
@@ -109,6 +111,7 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
     const fields = {
       p_name: name.trim(),
       p_phone: phone,
+      p_phone_public: phonePublic,
       p_regular_hours: hours,
       p_category: category || null,
       p_neighborhood: neighborhood.trim() || null,
@@ -189,7 +192,7 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
         <Osori mood={registering ? "proud" : "work"} size={76} />
         <div className="flex flex-1 flex-col gap-0.5">
           <h1 className="font-display text-[26px] leading-tight font-normal">{registering ? "우리 가게 등록하기" : "가게 정보 고치기"}</h1>
-          <p className="text-base text-muted">{registering ? (code ? `${code} 코드로 들어왔어요.` : "카카오 계정으로 들어왔어요.") : "언제든 다시 고칠 수 있어요."}</p>
+          <p className="text-base text-muted">{registering ? "카카오 계정으로 들어왔어요." : "언제든 다시 고칠 수 있어요."}</p>
         </div>
       </header>
 
@@ -220,9 +223,16 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
         <Field label="동네 태그">
           <input value={neighborhood} maxLength={30} onChange={(e) => setNeighborhood(e.target.value)} placeholder="예: 구읍 사랑방" className={INPUT} />
         </Field>
-        <Field label="전화번호" required hint="가게 페이지에 보이고, 손님이 누르면 전화가 걸려요.">
+        <Field label="전화번호" required hint="옥천신문이 연락할 때 써요.">
           <input type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="010-0000-0000" className={INPUT} />
         </Field>
+        <label className="flex min-h-14 items-center gap-3 rounded-2xl border-2 border-line bg-white px-3.5 py-2">
+          <input type="checkbox" checked={phonePublic} onChange={(e) => setPhonePublic(e.target.checked)} className="size-6 shrink-0" />
+          <span className="flex flex-col">
+            <span className="text-lg font-bold">가게 페이지에 전화번호 공개</span>
+            <span className="text-sm leading-normal text-muted">켜면 손님이 전화하기 버튼으로 전화할 수 있어요. 언제든 고칠 수 있어요.</span>
+          </span>
+        </label>
       </Section>
 
       {registering && (

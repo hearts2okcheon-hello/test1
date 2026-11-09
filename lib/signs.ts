@@ -30,13 +30,16 @@ export const SIGN_STYLES: Record<SignKind, SignStyle> = {
   none: { chip: "소식 없음", title: "아직 오늘 소식이 없어요", button: "", bg: "#EFE9DF", fg: "#5F5249", border: "#DCD1C0", mood: "basic", moodAlt: "오소리" },
 };
 
-/** 영업 상태 동그라미 색 (ADR-007). 색 + 글자로 표시한다 */
-export const SCHEDULE_STYLES: Record<ScheduleStatus, { label: string; dot: string }> = {
-  open: { label: "영업중", dot: "#22C55E" },
-  closed: { label: "영업종료", dot: "#9CA3AF" },
-  regular_holiday: { label: "정기휴일", dot: "#F59E0B" },
-  temp_closed: { label: "임시휴무", dot: "#EF4444" },
-  unknown: { label: "영업시간 정보 없음", dot: "#9CA3AF" },
+/** 영업 상태 칩. 공지 칩과 같은 색을 써서 어디서 나온 상태든 같은 모양으로 보인다 */
+function scheduleChip(label: string, s: SignStyle) {
+  return { label, bg: s.bg, fg: s.fg, border: s.border };
+}
+export const SCHEDULE_STYLES: Record<ScheduleStatus, { label: string; bg: string; fg: string; border: string }> = {
+  open: scheduleChip(SIGN_STYLES.open.chip, SIGN_STYLES.open),
+  closed: scheduleChip("영업종료", SIGN_STYLES.none),
+  regular_holiday: scheduleChip("정기휴일", SIGN_STYLES.late_open),
+  temp_closed: scheduleChip(SIGN_STYLES.temp_closed.chip, SIGN_STYLES.temp_closed),
+  unknown: scheduleChip("영업시간 정보 없음", SIGN_STYLES.none),
 };
 
 /** 어디서 나온 상태인지 함께 보여 준다. 시간으로 계산한 값은 실제와 다를 수 있다 */
