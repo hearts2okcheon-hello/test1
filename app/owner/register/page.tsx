@@ -15,8 +15,8 @@ export default async function RegisterPage() {
   return (
     <main className="flex flex-1 flex-col px-[18px] pt-4">
       <StoreEditor
-        code={home.code}
-        initial={{ storeId: null, name: "", phone: home.phone, category: null, neighborhood: null, intro: null, address: null, hours: null, menus: [], photos: [] }}
+        code={home.code ?? undefined}
+        initial={{ storeId: null, name: "", phone: home.phone ?? "", category: null, neighborhood: null, intro: null, address: null, hours: null, menus: [], photos: [] }}
       />
     </main>
   );

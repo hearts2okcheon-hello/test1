@@ -115,7 +115,7 @@ export type OwnerQuestion = {
 /** no_store = 코드를 넣지 않은 기기 · needs_store = 코드는 넣었고 가게 등록 전 (ADR-007) */
 export type OwnerHome =
   | { state: "no_store"; is_admin: boolean }
-  | { state: "needs_store"; is_admin: boolean; code: string; phone: string }
+  | { state: "needs_store"; is_admin: boolean; code: string | null; phone: string | null }
   | {
       state: "owner";
       is_admin: boolean;

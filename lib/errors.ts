@@ -30,6 +30,7 @@ const MESSAGES: Record<string, string> = {
   STORE_HAS_CODE: "이 가게는 이미 다른 번호와 연결돼 있어요.",
   CLOSURE_OVERLAP: "이미 임시휴무가 잡힌 날이 있어요. 먼저 취소해 주세요.",
   COMMENT_TOO_FAST: "조금 뒤에 다시 써 주세요.",
+  LOGIN_REQUIRED: "카카오로 로그인한 뒤 등록할 수 있어요.",
   WRONG_PASSWORD: "비밀번호가 맞지 않아요.",
   PROTECTED_CODE: "보호된 코드는 바꿀 수 없어요.",
 };

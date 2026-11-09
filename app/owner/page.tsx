@@ -5,19 +5,19 @@ import { BottomNav } from "@/components/BottomNav";
 import { SignOutButton } from "@/components/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
 import type { OwnerHome, StoreDetail } from "@/lib/types";
-import { CodeEntry } from "./CodeEntry";
+import { KakaoLogin } from "./KakaoLogin";
 import { OwnerPanel } from "./OwnerPanel";
 
 export const dynamic = "force-dynamic";
 
-export default async function OwnerPage({ searchParams }: { searchParams: Promise<{ entry?: string }> }) {
-  const { entry } = await searchParams;
+export default async function OwnerPage({ searchParams }: { searchParams: Promise<{ login?: string }> }) {
+  const { login } = await searchParams;
   const supabase = await createClient();
   const { data } = await supabase.rpc("get_owner_home");
   const home = (data ?? { state: "no_store", is_admin: false }) as OwnerHome;
 
-  // 코드는 넣었는데 가게가 아직 없다. 등록 화면에서 "뒤로"를 누르면 코드 입력으로 돌아온다
-  if (home.state === "needs_store" && !entry) redirect("/owner/register");
+  // 카카오로 로그인했는데 가게가 아직 없다
+  if (home.state === "needs_store") redirect("/owner/register");
 
   let detail: StoreDetail | null = null;
   if (home.state === "owner") {
@@ -33,7 +33,11 @@ export default async function OwnerPage({ searchParams }: { searchParams: Promis
             <AdminDoor href={home.is_admin ? "/admin" : "/admin/login"} />
           </div>
         )}
-        {home.state === "owner" ? <OwnerPanel home={home} posts={detail?.posts ?? []} closures={detail?.closures ?? []} /> : <CodeEntry />}
+        {home.state === "owner" ? (
+          <OwnerPanel home={home} posts={detail?.posts ?? []} closures={detail?.closures ?? []} />
+        ) : (
+          <KakaoLogin failed={login === "failed"} />
+        )}
 
         <div className="mt-auto flex items-center gap-2 pt-2">
           <p className="flex-1 text-sm leading-normal text-muted">
@@ -44,7 +48,7 @@ export default async function OwnerPage({ searchParams }: { searchParams: Promis
               관리자
             </Link>
           )}
-          {home.state === "owner" && <SignOutButton label="이 기기 연결 끊기" />}
+          {home.state === "owner" && <SignOutButton label="로그아웃" />}
         </div>
       </main>
       <BottomNav />

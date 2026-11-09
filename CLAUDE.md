@@ -41,7 +41,7 @@ Next.js 15 (App Router) · TypeScript · Tailwind CSS · Supabase (Postgres + Au
 - RLS 정책 완화
 - 유효기간·중복 제한 같은 `(가정)` 값 변경
 - 새 외부 서비스·라이브러리 추가
-- 사장님 연결 방식 변경 (ADR-007 사장님 코드 → 카카오 등)
+- 사장님 연결 방식 변경 (ADR-009 카카오 로그인으로 바로 등록)
 
 ## 절대 금지
 

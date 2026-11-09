@@ -27,7 +27,7 @@ select is(admin_issue_code('010-5555-6666') ->> 'code', '타-00001', 'T-CODE-06 
 -- ── 코드 입력 → 가게 등록 ──────────────────────────
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000c1","role":"authenticated","is_anonymous":true}';
 select is(get_owner_home() ->> 'state', 'no_store', 'T-STORE-01 코드 전에는 코드 입력 화면');
-select throws_ok($$ select register_store('가게', '0432001234', '{"mon":[["09:00","20:00"]]}') $$, 'P0001', 'NOT_OWNER', 'T-STORE-02 코드 없이 등록 불가');
+select throws_ok($$ select register_store('가게', '0432001234', '{"mon":[["09:00","20:00"]]}') $$, 'P0001', 'LOGIN_REQUIRED', 'T-STORE-02 익명 세션은 코드 없이 등록 불가');
 select is(redeem_store_code('타 00001') ->> 'needs_store', 'true', 'T-STORE-03 가게 없는 코드는 등록 화면으로');
 select is(get_owner_home() ->> 'state', 'needs_store', 'T-STORE-03 사장님 홈 상태 needs_store');
 select throws_ok($$ select register_store('', '0432001234', '{"mon":[["09:00","20:00"]]}') $$, 'P0001', 'INVALID_NAME', 'T-STORE-04 이름 필수');

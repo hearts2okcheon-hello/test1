@@ -176,7 +176,7 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
       }}
     >
       {registering ? (
-        <Link href="/owner?entry=1" className="flex min-h-12 w-fit items-center gap-1.5 rounded-2xl border-2 border-line bg-card px-3.5 text-base font-bold">
+        <Link href="/" className="flex min-h-12 w-fit items-center gap-1.5 rounded-2xl border-2 border-line bg-card px-3.5 text-base font-bold">
           <span aria-hidden>‹</span> 뒤로
         </Link>
       ) : (
@@ -189,7 +189,7 @@ export function StoreEditor({ initial, code }: { initial: StoreEditorValues; cod
         <Osori mood={registering ? "proud" : "work"} size={76} />
         <div className="flex flex-1 flex-col gap-0.5">
           <h1 className="font-display text-[26px] leading-tight font-normal">{registering ? "우리 가게 등록하기" : "가게 정보 고치기"}</h1>
-          <p className="text-base text-muted">{registering ? `${code ?? ""} 코드로 들어왔어요.` : "언제든 다시 고칠 수 있어요."}</p>
+          <p className="text-base text-muted">{registering ? (code ? `${code} 코드로 들어왔어요.` : "카카오 계정으로 들어왔어요.") : "언제든 다시 고칠 수 있어요."}</p>
         </div>
       </header>
 
