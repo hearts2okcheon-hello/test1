@@ -65,3 +65,4 @@ on conflict (id) do update set role = 'admin';
 ## 배포 (Vercel)
 
 Vercel 프로젝트 환경변수 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`에 `.env.local`과 같은 값을 넣고 Redeploy 한다.
+사장님 카카오 로그인에는 `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET`(Secret)도 넣는다. 카카오 개발자 콘솔에서 OpenID Connect를 켜고, 카카오 로그인 Redirect URI에 `<사이트 주소>/auth/kakao/callback`을 등록한다 (ADR-009).

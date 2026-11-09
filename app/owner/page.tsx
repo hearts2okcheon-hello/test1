@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AdminDoor } from "@/components/AdminDoor";
 import { BottomNav } from "@/components/BottomNav";
 import { SignOutButton } from "@/components/SignOutButton";
+import { kakaoEnv } from "@/lib/kakao";
 import { createClient } from "@/lib/supabase/server";
 import type { OwnerHome, StoreDetail } from "@/lib/types";
 import { KakaoLogin } from "./KakaoLogin";
@@ -36,7 +37,7 @@ export default async function OwnerPage({ searchParams }: { searchParams: Promis
         {home.state === "owner" ? (
           <OwnerPanel home={home} posts={detail?.posts ?? []} closures={detail?.closures ?? []} />
         ) : (
-          <KakaoLogin failed={login === "failed"} />
+          <KakaoLogin ready={kakaoEnv() !== null} login={login} />
         )}
 
         <div className="mt-auto flex items-center gap-2 pt-2">
