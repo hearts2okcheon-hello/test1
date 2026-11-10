@@ -20,6 +20,8 @@ describe("앱 안 브라우저 감지", () => {
   });
   it("아이폰 iOS 버전", () => {
     expect(iosMajor(IOS_SAFARI)).toBe(26);
+    // iOS 26 부터 사파리는 OS 를 18_6 으로 고정해 알려 준다. Version/ 이 실제 버전
+    expect(iosMajor("Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0.1 Mobile/15E148 Safari/604.1")).toBe(27);
     expect(iosMajor(IOS_KAKAO)).toBe(18);
     expect(iosMajor(AND_KAKAO)).toBeNull();
   });

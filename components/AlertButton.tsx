@@ -7,10 +7,13 @@ import { useToast } from "./Toast";
 
 function Bell({ off = false }: { off?: boolean }) {
   return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M6 10.5a6 6 0 0 1 12 0v3.7l1.6 2.6H4.4L6 14.2z" />
-      <path d="M10 19.5a2 2 0 0 0 4 0" />
-      {off && <path d="M4 4l16 16" />}
+    <svg width={off ? 19 : 17} height={off ? 19 : 17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <g transform={off ? "translate(-2.2 2) scale(0.88)" : undefined}>
+        <path d="M6 10.5a6 6 0 0 1 12 0v3.7l1.6 2.6H4.4L6 14.2z" />
+        <path d="M10 19.5a2 2 0 0 0 4 0" />
+      </g>
+      {/* 꺼짐: 벨 오른쪽 위에 X */}
+      {off && <path d="M17 2.5l4.5 4.5M21.5 2.5L17 7" strokeWidth="2.6" />}
     </svg>
   );
 }
@@ -66,11 +69,11 @@ export function AlertButton() {
         disabled={busy}
         onClick={() => (state === "off" ? turnOn() : setSheet(true))}
         className={`ok-sticker inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border-2 px-4 py-2 font-display text-[16px] disabled:opacity-60 ${
-          on ? "border-line bg-card text-sage-deep" : "border-yellow-deep bg-yellow text-ink"
+          on ? "border-line bg-card text-sage-deep" : state === "denied" ? "border-ink bg-muted text-white" : "border-[#A4423F] bg-coral text-white"
         }`}
       >
-        <Bell off={state === "denied"} />
-        {busy ? "켜는 중…" : on ? "알림 켜짐" : state === "denied" ? "알림 막힘" : "알림 켜기"}
+        <Bell off={!on} />
+        {busy ? "켜는 중…" : on ? "알림 켜짐" : state === "denied" ? "알림 막힘" : "알림 꺼짐"}
       </button>
 
       {sheet && (

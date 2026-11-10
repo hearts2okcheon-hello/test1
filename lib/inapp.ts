@@ -10,10 +10,15 @@ export function inAppBrowser(ua: string): InApp | null {
   return null;
 }
 
-/** 아이폰 iOS 큰 버전 (아이폰이 아니면 null) */
+/**
+ * 아이폰 iOS 큰 버전 (아이폰이 아니면 null).
+ * iOS 26 부터 사파리는 OS 를 18_6 으로 고정해 알려 주므로, 사파리 버전(Version/N)이 더 크면 그것을 쓴다
+ */
 export function iosMajor(ua: string): number | null {
   const m = ua.match(/(?:iPhone|iPad|iPod)[^)]*OS (\d+)_/);
-  return m ? Number(m[1]) : null;
+  if (!m) return null;
+  const safari = ua.match(/Version\/(\d+)/);
+  return Math.max(Number(m[1]), safari ? Number(safari[1]) : 0);
 }
 
 /**
