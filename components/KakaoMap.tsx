@@ -63,8 +63,9 @@ export function KakaoMap({ address, name }: { address: string; name: string }) {
 
   if (failed) return <MapTile address={address} />;
 
+  // isolate: 카카오 지도 안의 z-index 가 아래 고정 버튼 위로 새어 나오지 않게 가둔다
   return (
-    <div className="relative" data-no-swipe>
+    <div className="relative isolate z-0" data-no-swipe>
       <div ref={box} role="img" aria-label={`${name} 위치 지도`} className="aspect-[2/1] w-full overflow-hidden rounded-2xl border-2 border-line bg-cream" />
       <a
         href={kakaoMapUrl(address)}

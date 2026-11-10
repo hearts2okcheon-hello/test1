@@ -104,7 +104,7 @@ export function StoreClient({ detail, reported }: { detail: StoreDetail; reporte
         )}
       </section>
 
-      <div className="sticky bottom-0 -mx-[18px] mt-auto bg-paper px-[18px] pt-2.5 pb-[max(18px,env(safe-area-inset-bottom))]">
+      <div className="sticky bottom-0 z-20 -mx-[18px] mt-auto bg-paper px-[18px] pt-2.5 pb-[max(18px,env(safe-area-inset-bottom))]">
         <button
           type="button"
           onClick={() => setSheet(true)}
