@@ -61,7 +61,9 @@ export function NavLoading() {
 
   useEffect(finish, [pathname, search]);
 
-  if (!visible) return null;
+  // 로딩 화면은 잠깐만 뜨므로 그림을 미리 받아 둔다
+  // eslint-disable-next-line @next/next/no-img-element
+  if (!visible) return <img src="/osori/move.webp" alt="" aria-hidden className="hidden" />;
 
   return (
     <div role="status" aria-live="polite" className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/20">
@@ -78,7 +80,7 @@ export function NavLoading() {
         </svg>
         <div className="absolute top-[106px] left-1/2 -ml-[52px]">
           <div className="ok-walk">
-            <Osori mood="move" size={104} />
+            <Osori mood="move" size={104} eager />
           </div>
         </div>
       </div>
