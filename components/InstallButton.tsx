@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { isIos, isStandalone } from "@/lib/push";
+import { AlertButton } from "./AlertButton";
 import { canInstallApp, installApp, onInstallChange } from "./PwaSetup";
 
 /**
  * 홈 오른쪽 위 "앱 설치" 버튼.
  * 안드로이드 크롬은 바로 설치 창을, 아이폰·그 밖의 브라우저는 홈 화면에 추가하는 방법을 보여 준다.
- * 이미 홈 화면 앱으로 열었으면 보이지 않는다
+ * 이미 홈 화면 앱으로 열었으면 그 자리에 알림 켜기 버튼을 둔다
  */
 export function InstallButton() {
   const [ready, setReady] = useState(false);
@@ -22,7 +23,9 @@ export function InstallButton() {
     return onInstallChange(() => setReady(true));
   }, []);
 
-  if (!ready || standalone) return null;
+  if (!ready) return null;
+  // 이미 홈 화면 앱으로 열었으면 같은 자리에 알림 버튼
+  if (standalone) return <AlertButton />;
 
   async function click() {
     if (canInstallApp()) {
