@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackButton } from "@/components/BackButton";
+import { FavoriteStar } from "@/components/FavoriteStar";
 import { Gallery } from "@/components/Gallery";
-import { MapTile } from "@/components/MapTile";
+import { KakaoMap } from "@/components/KakaoMap";
 import { PageView } from "@/components/PageView";
 import { ScheduleBadge } from "@/components/ScheduleBadge";
 import { SignBoard } from "@/components/SignBoard";
@@ -46,6 +47,7 @@ export default async function StorePage({
           <h1 className="truncate font-display text-[26px] leading-tight font-normal">{store.name}</h1>
           {tags && <span className="truncate text-[13px] text-muted">{tags}</span>}
         </div>
+        <FavoriteStar storeId={store.store_id} storeName={store.name} size={30} />
         {detail.can_manage && (
           <Link href={`/owner/edit${editQuery}`} className="flex min-h-11 shrink-0 items-center rounded-2xl border-2 border-line bg-card px-3 text-sm font-bold">
             고치기
@@ -99,7 +101,7 @@ export default async function StorePage({
             <h2 id="place-title" className="font-display text-[21px] font-normal">위치 & 바로 연결</h2>
             {store.address && (
               <>
-                <MapTile address={store.address} />
+                <KakaoMap address={store.address} name={store.name} />
                 <p className="text-center text-base font-bold">{store.address}</p>
               </>
             )}

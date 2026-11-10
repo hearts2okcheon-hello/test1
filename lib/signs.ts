@@ -161,3 +161,13 @@ export function timeOptions(from = 7, to = 22): string[] {
   }
   return out;
 }
+
+/** 가게마다 가장 최근 것 하나만, 최신순으로 (홈 마을방송이 한 가게로 도배되지 않게) */
+export function latestPerStore<T extends { store_id: string; created_at: string }>(items: T[]): T[] {
+  const best = new Map<string, T>();
+  for (const it of items) {
+    const cur = best.get(it.store_id);
+    if (!cur || it.created_at > cur.created_at) best.set(it.store_id, it);
+  }
+  return [...best.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
+}

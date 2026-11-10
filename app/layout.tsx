@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { ConfirmDeleteHost } from "@/components/ConfirmDeleteHost";
 import { NavLoading } from "@/components/NavLoading";
 import { OwnerAlertHost } from "@/components/OwnerAlertHost";
+import { PwaSetup } from "@/components/PwaSetup";
 import { TabSwipe } from "@/components/TabSwipe";
 import { TouchRipple } from "@/components/TouchRipple";
 import "./globals.css";
@@ -21,7 +22,8 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/app-icon.jpg", apple: "/app-icon.jpg" },
+  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: "옥!소리", statusBarStyle: "default" },
   // 카카오톡·문자로 링크를 보낼 때 보이는 카드
   openGraph: {
     type: "website",
@@ -55,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ConfirmDeleteHost />
         <TouchRipple />
         <TabSwipe />
+        <PwaSetup />
       </body>
     </html>
   );

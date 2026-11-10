@@ -6,9 +6,10 @@ import { PageView } from "@/components/PageView";
 import { TimeAgo } from "@/components/TimeAgo";
 import { WriteFab } from "@/components/WriteFab";
 import { CATEGORIES, categoryOf } from "@/lib/categories";
-import { feedLine } from "@/lib/signs";
+import { feedLine, latestPerStore } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/server";
 import type { FeedItem, StoreSign } from "@/lib/types";
+import { HomeFavorites } from "./HomeFavorites";
 import { HomeSearch } from "./HomeSearch";
 
 export const dynamic = "force-dynamic";
@@ -18,15 +19,17 @@ const CARD = "ok-sticker w-[78%] max-w-[320px] shrink-0 snap-start scroll-ml-5 r
 
 export default async function HomePage() {
   const supabase = await createClient();
-  const [feedRes, signsRes, indexRes] = await Promise.all([
-    supabase.rpc("get_today_feed", { p_limit: 20 }),
+  const [feedRes, signsRes, indexRes, favRes] = await Promise.all([
+    supabase.rpc("get_today_feed", { p_limit: 50 }),
     supabase.rpc("get_store_signs"),
     supabase.rpc("get_store_search_index"),
+    supabase.rpc("get_my_favorites"),
   ]);
+  const favoriteIds = ((favRes.data ?? []) as string[]).map(String);
   const feed = (feedRes.data ?? []) as FeedItem[];
   const stores = (signsRes.data ?? []) as StoreSign[];
   const menus = Object.fromEntries(((indexRes.data ?? []) as { store_id: string; menus: string[] }[]).map((r) => [r.store_id, r.menus]));
-  const broadcasts = feed.filter((f) => f.is_current).slice(0, BROADCAST_CARDS);
+  const broadcasts = latestPerStore(feed.filter((f) => f.is_current)).slice(0, BROADCAST_CARDS);
   const isOpen = (s: StoreSign) => s.schedule_status === "open";
   const openTotal = stores.filter(isOpen).length;
 
@@ -70,6 +73,8 @@ export default async function HomePage() {
               )}
             </div>
           </section>
+
+          <HomeFavorites stores={stores} initialIds={favoriteIds} />
 
           <div className="flex items-baseline justify-between">
             <h2 className="font-display text-[22px] font-normal">무엇을 찾아요?</h2>

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { errorMessage } from "@/lib/errors";
 import { addMonth, monthGrid, pickRange, seoulToday } from "@/lib/calendar";
 import { formatPhone, formatWon, kakaoMapUrl, parseHours, summarizeHours } from "@/lib/hours";
-import { feedLine } from "@/lib/signs";
+import { feedLine, latestPerStore } from "@/lib/signs";
 import type { RegularHours } from "@/lib/types";
 
 describe("errorMessage", () => {
@@ -82,5 +82,16 @@ describe("feedLine", () => {
   });
   it("소식은 글 그대로", () => {
     expect(feedLine({ item_type: "post", kind: "news", at_time: null, memo: "떡볶이 나왔어요", closure_start: null, closure_end: null })).toBe("떡볶이 나왔어요");
+  });
+});
+
+describe("latestPerStore", () => {
+  it("가게마다 가장 최근 소식 하나만 남긴다", () => {
+    const items = [
+      { store_id: "a", created_at: "2026-11-10T10:00:00Z" },
+      { store_id: "b", created_at: "2026-11-10T11:00:00Z" },
+      { store_id: "a", created_at: "2026-11-10T12:00:00Z" },
+    ];
+    expect(latestPerStore(items).map((i) => `${i.store_id}@${i.created_at.slice(11, 13)}`)).toEqual(["a@12", "b@11"]);
   });
 });

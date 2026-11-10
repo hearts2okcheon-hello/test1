@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AppAlertCard } from "@/components/AppAlertCard";
 import { NoticeButtons } from "@/components/NoticeButtons";
 import { Osori } from "@/components/Osori";
 import { TimeAgo } from "@/components/TimeAgo";
@@ -68,6 +69,8 @@ export function OwnerPanel({ home, posts, closures }: { home: Home; posts: Store
           내 가게 보기
         </Link>
       </header>
+
+      <AppAlertCard who="owner" />
 
       <div className="flex items-center gap-2.5 rounded-[18px] px-3.5 py-2.5" style={{ background: s.bg }}>
         <Osori mood={s.mood} size={44} />

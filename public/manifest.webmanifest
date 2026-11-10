@@ -1,13 +1,18 @@
 {
+  "id": "/",
   "name": "옥!소리 — 주머니 속 마을방송",
   "short_name": "옥!소리",
   "description": "옥천 가게의 오늘 소식",
-  "start_url": "/",
+  "start_url": "/?from=app",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#F8F3E8",
-  "theme_color": "#F8F3E8",
+  "orientation": "portrait",
+  "background_color": "#FBF5E6",
+  "theme_color": "#FBF5E6",
   "lang": "ko",
   "icons": [
-    { "src": "/app-icon.jpg", "sizes": "1254x1254", "type": "image/jpeg", "purpose": "any" }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

@@ -3,6 +3,7 @@ import { categoryById, categoryOf } from "@/lib/categories";
 import { REPORT_STYLES, SCHEDULE_BASIS } from "@/lib/signs";
 import { todayHours } from "@/lib/time";
 import type { StoreSign } from "@/lib/types";
+import { FavoriteStar } from "./FavoriteStar";
 import { ScheduleBadge } from "./ScheduleBadge";
 import { SignChip } from "./SignChip";
 import { SourceLine } from "./SourceLine";
@@ -11,7 +12,8 @@ import { SourceLine } from "./SourceLine";
 export function StoreCard({ store, extra }: { store: StoreSign; extra?: string }) {
   const c = categoryById(categoryOf(store.category))!;
   return (
-    <Link href={`/stores/${store.store_id}`} className="ok-sticker flex min-h-[78px] w-full items-center gap-3.5 rounded-[22px] border-2 border-line bg-card px-4 py-3.5 text-left">
+    <div className="relative">
+    <Link href={`/stores/${store.store_id}`} className="ok-sticker flex min-h-[78px] w-full items-center gap-3.5 rounded-[22px] border-2 border-line bg-card py-3.5 pr-11 pl-4 text-left">
       <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl font-display text-lg" style={{ background: c.bg, color: c.fg }}>
         {store.cover_url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -34,6 +36,8 @@ export function StoreCard({ store, extra }: { store: StoreSign; extra?: string }
         <path d="M9 6l6 6-6 6" />
       </svg>
     </Link>
+    <FavoriteStar storeId={store.store_id} storeName={store.name} size={22} className="absolute top-0.5 right-0.5" />
+    </div>
   );
 }
 
