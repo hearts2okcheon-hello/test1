@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { isIos, isStandalone } from "@/lib/push";
+import { inAppBrowser, iosMajor, type InApp } from "@/lib/inapp";
 import { AlertButton } from "./AlertButton";
+import { openExternally } from "./InAppGate";
+import { IosInstallGuide } from "./IosInstallGuide";
 import { canInstallApp, installApp, onInstallChange } from "./PwaSetup";
 
 /**
@@ -15,10 +18,14 @@ export function InstallButton() {
   const [standalone, setStandalone] = useState(false);
   const [ios, setIos] = useState(false);
   const [help, setHelp] = useState(false);
+  const [inApp, setInApp] = useState<InApp | null>(null);
+  const [iosVersion, setIosVersion] = useState<number | null>(null);
 
   useEffect(() => {
     setStandalone(isStandalone());
     setIos(isIos());
+    setInApp(inAppBrowser(navigator.userAgent));
+    setIosVersion(iosMajor(navigator.userAgent));
     setReady(true);
     return onInstallChange(() => setReady(true));
   }, []);
@@ -52,18 +59,26 @@ export function InstallButton() {
 
       {help && (
         <div role="dialog" aria-modal="true" aria-labelledby="install-title" className="fixed inset-0 z-[90] flex items-end justify-center bg-ink/30 px-3 pb-3 sm:items-center" onClick={() => setHelp(false)}>
-          <div className="ok-pop relative flex w-full max-w-[440px] flex-col gap-3 rounded-[28px] border-2 border-line bg-card px-5 pt-5 pb-5 shadow-lg" onClick={(e) => e.stopPropagation()}>
+          <div className="ok-pop relative flex max-h-[92dvh] w-full max-w-[440px] flex-col gap-3 overflow-y-auto rounded-[28px] border-2 border-line bg-card px-5 pt-5 pb-5 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <button type="button" aria-label="닫기" onClick={() => setHelp(false)} className="absolute top-2 right-2 flex size-11 items-center justify-center rounded-full text-2xl leading-none text-muted">
               ×
             </button>
             <h2 id="install-title" className="font-display text-[23px] font-normal">홈 화면에 옥!소리 앱 추가하기</h2>
-            {ios ? (
-              <ol className="flex list-decimal flex-col gap-2 pl-5 text-[17px] leading-relaxed">
-                <li><b>사파리</b>로 이 화면을 열어 주세요.</li>
-                <li>아래쪽 <b>공유 버튼(□↑)</b>을 눌러요.</li>
-                <li><b>홈 화면에 추가</b> → 오른쪽 위 <b>추가</b>를 눌러요.</li>
-                <li>홈 화면의 옥!소리를 누르면 앱처럼 열리고, 알림도 켤 수 있어요.</li>
-              </ol>
+            {inApp ? (
+              <>
+                <p className="text-[17px] leading-relaxed">
+                  {inApp === "kakao" ? "카카오톡" : "이 앱"} 안에서는 홈 화면에 추가할 수 없어요. <b>{ios ? "사파리" : "크롬"}</b>로 다시 열어 주세요.
+                </p>
+                {inApp === "kakao" || !ios ? (
+                  <button type="button" onClick={openExternally} className="min-h-14 rounded-[18px] border-2 border-sage-deep bg-sage font-display text-lg text-white">
+                    {ios ? "사파리" : "크롬"}로 열기
+                  </button>
+                ) : (
+                  <p className="text-[16px] leading-relaxed text-muted">오른쪽 아래 <b className="text-ink">⋯</b> 또는 <b className="text-ink">공유</b>에서 <b className="text-ink">Safari로 열기</b>를 눌러 주세요.</p>
+                )}
+              </>
+            ) : ios ? (
+              <IosInstallGuide ios={iosVersion} />
             ) : (
               <ol className="flex list-decimal flex-col gap-2 pl-5 text-[17px] leading-relaxed">
                 <li><b>크롬</b>(또는 삼성 인터넷)으로 이 화면을 열어 주세요.</li>

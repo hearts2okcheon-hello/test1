@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Jua, Noto_Sans_KR } from "next/font/google";
 import { Suspense } from "react";
 import { ConfirmDeleteHost } from "@/components/ConfirmDeleteHost";
+import { InAppGate } from "@/components/InAppGate";
 import { NavLoading } from "@/components/NavLoading";
 import { OwnerAlertHost } from "@/components/OwnerAlertHost";
 import { PwaSetup } from "@/components/PwaSetup";
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko" className={`${jua.variable} ${noto.variable}`}>
       <body>
         <div className="ok-shell mx-auto flex min-h-dvh max-w-[480px] flex-col">
+          <InAppGate />
           <OwnerAlertHost />
           {children}
         </div>
