@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ConfirmCard } from "@/components/ConfirmCard";
 import { NoticeButtons } from "@/components/NoticeButtons";
 import { Osori } from "@/components/Osori";
+import { ReportAlert } from "@/components/ReportAlert";
 import { TimeAgo } from "@/components/TimeAgo";
 import { useToast } from "@/components/Toast";
 import { askDelete } from "@/lib/confirm";
@@ -35,15 +35,17 @@ export function OwnerPanel({ home, posts, closures }: { home: Home; posts: Store
       if (error) throw error;
       show(done, "proud");
       router.refresh();
+      return true;
     } catch (e) {
       show(errorMessage(e), "think");
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
-  const answer = (reportId: string, yes: boolean) =>
-    run(() => createClient().rpc("answer_report", { p_report_id: reportId, p_yes: yes }), "확인해 주셔서 고마워요. 팻말을 바꿔 걸었어요!");
+  const reply = (open: boolean, memo: string) =>
+    run(() => createClient().rpc("reply_reports", { p_store_id: store.store_id, p_open: open, p_memo: memo || null }), "이웃에게 알렸어요. 팻말을 바꿔 걸었어요!");
   const quick = (kind: NoticeKind) =>
     run(() => createClient().rpc("post_notice", { p_store_id: store.store_id, p_kind: kind }), "마을방송 했어요!");
 
@@ -59,6 +61,8 @@ export function OwnerPanel({ home, posts, closures }: { home: Home; posts: Store
 
   return (
     <>
+      <ReportAlert questions={questions} busy={busy} onReply={reply} />
+
       <header className="flex items-center gap-2.5">
         <Osori mood="proud" size={70} />
         <div className="flex min-w-0 flex-1 flex-col">
@@ -77,10 +81,6 @@ export function OwnerPanel({ home, posts, closures }: { home: Home; posts: Store
           {signTitle(store.sign, store.at_time)}
         </span>
       </div>
-
-      {questions.map((q) => (
-        <ConfirmCard key={q.id} kind={q.kind} createdAt={q.created_at} agreeCount={q.agree_count} busy={busy} onAnswer={(yes) => answer(q.id, yes)} />
-      ))}
 
       {askOpen && openAt && (
         <section className="flex flex-col gap-2.5 rounded-[22px] border-2 border-yellow-line bg-cream px-4 py-3.5">

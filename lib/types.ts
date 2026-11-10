@@ -59,6 +59,8 @@ export type StorePost = {
   updated_at: string | null;
   like_count: number;
   liked_by_me: boolean;
+  comment_count: number;
+  comments: StoreComment[];
 };
 export type StoreComment = { id: string; body: string; created_at: string; is_mine: boolean };
 export type TempClosure = { id: string; start_date: string; end_date: string; reason: string | null };

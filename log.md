@@ -59,3 +59,5 @@
   - 로컬 테스트용 개발 이메일 로그인(`NEXT_PUBLIC_DEV_EMAIL_LOGIN`) 추가.
 - 막힌 것: 작성 PC에 Node가 없어 설치·빌드·테스트를 못 돌림. 코드는 실행 확인 전.
 - 다음: README "처음 실행하기"대로 `npm install` → `npm run typecheck` → `npx supabase start` → `npm run test:db` → `npm test` → `npm run dev`. 에러 나면 고치고 todo `[~]` → `[x]`.
+- 2026-11-10: 소통광장 뉴스를 글자 위주 목록으로(사진 제거). 로딩 화면을 '오늘 소식을 모으고 있어요' 게이지 하나로 통일(끝은 발자국, 위로 가방 오소리가 걸음)
+- 2026-11-10: 가게 팻말 위 오소리 제거. 사장님 화면 맨 위 '이웃 제보가 왔어요' 알림 띠(x로 닫기) + 열었어요/오늘 쉬어요·한 줄 쪽지 답장 창(reply_reports). 사장님 소식마다 주민 댓글, 동네 이야기 익명 댓글(community_comments). 소통광장 글에 카테고리 표시, 가게 이름 작게·내용 크게. 마이그레이션 20261110000000_comments_reply, 테스트 comments_reply_test 20개 통과

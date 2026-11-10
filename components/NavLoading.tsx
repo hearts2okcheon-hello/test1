@@ -3,7 +3,7 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { NAV_START, isInternalNav } from "@/lib/nav";
-import { Osori } from "./Osori";
+import { LoadingGauge } from "./LoadingGauge";
 
 const SHOW_AFTER_MS = 120; // 바로 넘어가는 화면에서는 깜빡이지 않게
 const MIN_VISIBLE_MS = 600;
@@ -66,23 +66,10 @@ export function NavLoading() {
   if (!visible) return <img src="/osori/move.webp" alt="" aria-hidden className="hidden" />;
 
   return (
-    <div role="status" aria-live="polite" className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/20">
-      <span className="sr-only">로딩 중</span>
-      <div aria-hidden className="ok-pop relative size-[260px] rounded-full border-2 border-line bg-card shadow-lg">
-        <svg viewBox="0 0 260 260" className="absolute inset-0 size-full overflow-visible">
-          <path id="ok-loading-arc" d="M 42 136 A 88 88 0 0 1 218 136" fill="none" />
-          <text className="ok-loading-text font-display" fontSize="44" letterSpacing="2" textAnchor="middle">
-            <textPath href="#ok-loading-arc" startOffset="50%">
-              로 딩 중
-            </textPath>
-          </text>
-          <line className="ok-road" x1="62" y1="212" x2="198" y2="212" strokeWidth="5" strokeLinecap="round" strokeDasharray="14 16" />
-        </svg>
-        <div className="absolute top-[106px] left-1/2 -ml-[52px]">
-          <div className="ok-walk">
-            <Osori mood="move" size={104} eager />
-          </div>
-        </div>
+    <div role="status" aria-live="polite" className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/20 px-6">
+      <span className="sr-only">오늘 소식을 모으고 있어요</span>
+      <div className="ok-pop w-full max-w-[320px] rounded-[28px] border-2 border-line bg-card px-5 pt-3 pb-5 shadow-lg">
+        <LoadingGauge />
       </div>
     </div>
   );

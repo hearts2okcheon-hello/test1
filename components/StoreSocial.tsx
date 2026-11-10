@@ -23,6 +23,8 @@ export function StoreSocial({
   const { node, show } = useToast();
   const [busy, setBusy] = useState(false);
   const [text, setText] = useState("");
+  const [openPost, setOpenPost] = useState<string | null>(null);
+  const [postText, setPostText] = useState("");
 
   async function withSession(action: (s: ReturnType<typeof createClient>) => PromiseLike<{ error: unknown }>, done?: () => void) {
     setBusy(true);
@@ -38,6 +40,10 @@ export function StoreSocial({
     } finally {
       setBusy(false);
     }
+  }
+
+  async function removeComment(id: string) {
+    if (await askDelete({ detail: "이 댓글이 사라져요." })) withSession((s) => s.rpc("delete_store_comment", { p_comment_id: id }));
   }
 
   return (
@@ -77,13 +83,40 @@ export function StoreSocial({
                   </svg>
                   공감 {p.like_count}
                 </button>
-                <a href="#comments" className="flex min-h-11 items-center gap-1.5 text-base font-bold">
+                <button
+                  type="button"
+                  aria-expanded={openPost === p.id}
+                  onClick={() => {
+                    setOpenPost(openPost === p.id ? null : p.id);
+                    setPostText("");
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 text-base font-bold"
+                >
                   <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round">
                     <path d="M4 5.5h16v11H10l-4.5 3.5V16.5H4z" />
                   </svg>
-                  주민 댓글 {commentCount}
-                </a>
+                  댓글 {p.comment_count}
+                </button>
               </div>
+              {openPost === p.id && (
+                <div className="flex flex-col gap-2">
+                  {p.comments.length > 0 && (
+                    <ul className="flex flex-col gap-1.5">
+                      {p.comments.map((c) => (
+                        <CommentRow key={c.id} body={c.body} at={c.created_at} canDelete={c.is_mine || canManage} busy={busy} onDelete={() => removeComment(c.id)} />
+                      ))}
+                    </ul>
+                  )}
+                  <CommentInput
+                    id={`post-comment-${p.id}`}
+                    value={postText}
+                    onChange={setPostText}
+                    busy={busy}
+                    placeholder="이 소식에 댓글 달기"
+                    onSubmit={() => withSession((s) => s.rpc("post_store_comment", { p_store_id: storeId, p_body: postText.trim(), p_post_id: p.id }), () => setPostText(""))}
+                  />
+                </div>
+              )}
             </article>
           ))
         )}
@@ -93,56 +126,68 @@ export function StoreSocial({
         <h2 id="intro-title" className="font-display text-[21px] font-normal">소개글 & 주민 소통 공간</h2>
         <p className="text-base leading-relaxed whitespace-pre-wrap">{intro ?? "아직 소개글이 없어요."}</p>
 
-        <form
-          className="flex gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!text.trim()) return;
-            withSession((s) => s.rpc("post_store_comment", { p_store_id: storeId, p_body: text.trim() }), () => setText(""));
-          }}
-        >
-          <label className="sr-only" htmlFor="comment-input">주민 댓글</label>
-          <input
-            id="comment-input"
-            value={text}
-            maxLength={COMMENT_MAX}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="따뜻한 한마디를 남겨 주세요"
-            className="min-h-12 min-w-0 flex-1 rounded-2xl border-2 border-line bg-white px-3 text-base"
-          />
-          <button type="submit" disabled={busy || !text.trim()} className="min-h-12 shrink-0 rounded-2xl border-2 border-yellow-deep bg-yellow px-4 font-bold disabled:opacity-50">
-            남기기
-          </button>
-        </form>
+        <CommentInput
+          id="comment-input"
+          value={text}
+          onChange={setText}
+          busy={busy}
+          placeholder="따뜻한 한마디를 남겨 주세요"
+          onSubmit={() => withSession((s) => s.rpc("post_store_comment", { p_store_id: storeId, p_body: text.trim() }), () => setText(""))}
+        />
 
+        {commentCount > 0 && <span className="text-sm font-bold text-muted">주민 댓글 {commentCount}개</span>}
         {comments.length === 0 ? (
           <p className="text-sm text-muted">첫 댓글을 남겨 보세요.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {comments.map((c) => (
-              <li key={c.id} className="flex items-start gap-2 rounded-2xl bg-cream px-3 py-2">
-                <span className="min-w-0 flex-1 text-[15px] leading-normal whitespace-pre-wrap">{c.body}</span>
-                <span className="shrink-0 text-xs text-muted">
-                  <TimeAgo iso={c.created_at} />
-                </span>
-                {(c.is_mine || canManage) && (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={async () => {
-                      if (await askDelete({ detail: "이 댓글이 사라져요." })) withSession((s) => s.rpc("delete_store_comment", { p_comment_id: c.id }));
-                    }}
-                    className="shrink-0 text-xs font-bold text-[#A4423F] underline"
-                  >
-                    지우기
-                  </button>
-                )}
-              </li>
+              <CommentRow key={c.id} body={c.body} at={c.created_at} canDelete={c.is_mine || canManage} busy={busy} onDelete={() => removeComment(c.id)} />
             ))}
           </ul>
         )}
       </section>
       {node}
     </>
+  );
+}
+
+function CommentInput({ id, value, onChange, busy, placeholder, onSubmit }: { id: string; value: string; onChange: (v: string) => void; busy: boolean; placeholder: string; onSubmit: () => void }) {
+  return (
+    <form
+      className="flex gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (value.trim()) onSubmit();
+      }}
+    >
+      <label className="sr-only" htmlFor={id}>주민 댓글</label>
+      <input
+        id={id}
+        value={value}
+        maxLength={COMMENT_MAX}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="min-h-12 min-w-0 flex-1 rounded-2xl border-2 border-line bg-white px-3 text-base"
+      />
+      <button type="submit" disabled={busy || !value.trim()} className="min-h-12 shrink-0 rounded-2xl border-2 border-yellow-deep bg-yellow px-4 font-bold disabled:opacity-50">
+        남기기
+      </button>
+    </form>
+  );
+}
+
+function CommentRow({ body, at, canDelete, busy, onDelete }: { body: string; at: string; canDelete: boolean; busy: boolean; onDelete: () => void }) {
+  return (
+    <li className="flex items-start gap-2 rounded-2xl bg-cream px-3 py-2">
+      <span className="min-w-0 flex-1 text-[15px] leading-normal whitespace-pre-wrap">{body}</span>
+      <span className="shrink-0 text-xs text-muted">
+        <TimeAgo iso={at} />
+      </span>
+      {canDelete && (
+        <button type="button" disabled={busy} onClick={onDelete} className="shrink-0 text-xs font-bold text-[#A4423F] underline">
+          지우기
+        </button>
+      )}
+    </li>
   );
 }

@@ -1,7 +1,6 @@
 import { SIGN_STYLES, REPORT_STYLES, signTitle } from "@/lib/signs";
 import { todayHours } from "@/lib/time";
 import type { StoreSign } from "@/lib/types";
-import { Osori } from "./Osori";
 import { SourceLine } from "./SourceLine";
 import { TimeAgo } from "./TimeAgo";
 
@@ -12,9 +11,8 @@ export function SignBoard({ store }: { store: StoreSign }) {
   return (
     <>
       <section className="flex flex-col items-center">
-        <Osori mood={s.mood} size={130} alt={s.moodAlt} className="ok-bob relative z-10 -mb-3.5" />
         <div
-          className="flex w-full flex-col items-center gap-1 rounded-[26px] border-2 px-4 pt-[22px] pb-4 text-center"
+          className="flex w-full flex-col items-center gap-1 rounded-[26px] border-2 px-4 pt-4 pb-4 text-center"
           style={{ background: s.bg, borderColor: s.border, borderStyle: store.sign === "checking" ? "dashed" : "solid" }}
         >
           <span className="font-display text-[34px] leading-tight" style={{ color: s.fg }}>

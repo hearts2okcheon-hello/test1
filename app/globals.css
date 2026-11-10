@@ -75,14 +75,6 @@ a:active {
   animation: ok-ripple 0.45s ease-out forwards;
 }
 
-.ok-loading-text {
-  fill: var(--color-yellow-deep);
-  stroke: var(--color-ink);
-  stroke-width: 3px;
-  stroke-linejoin: round;
-  paint-order: stroke;
-}
-
 /* 모든 카드: 도톰한 테두리 + 아래로 딱 떨어지는 그림자 */
 .ok-sticker,
 :where(section, div, a, button, form, label).bg-card.border-line {
@@ -126,11 +118,6 @@ a:active {
   display: none;
 }
 
-.ok-road {
-  stroke: var(--color-line);
-  animation: ok-road 0.6s linear infinite;
-}
-
 :focus-visible {
   outline: 3px solid var(--color-sage-deep);
   outline-offset: 2px;
@@ -156,11 +143,20 @@ a:active {
   100% { opacity: 0; }
 }
 
-@keyframes ok-road {
-  to { stroke-dashoffset: 30; }
+/* 로딩 게이지: 왼쪽에서 오른쪽으로 차오르고, 다 차면 잠깐 쉬었다 다시 */
+@keyframes ok-gauge {
+  0% { width: 52px; }
+  82%, 100% { width: 100%; }
 }
 
-/* 오른쪽으로 걷는 것처럼 뒤뚱거린다. 길이 뒤로 흘러간다 */
+/* 사장님 알림 종이 흔들린다 */
+@keyframes ok-ring {
+  0%, 60%, 100% { transform: rotate(0); }
+  10%, 30%, 50% { transform: rotate(14deg); }
+  20%, 40% { transform: rotate(-14deg); }
+}
+
+/* 오른쪽으로 걷는 것처럼 뒤뚱거린다 */
 @keyframes ok-walk {
   0%, 100% { transform: translateY(0) rotate(-4deg); }
   25% { transform: translateY(-6px) rotate(0deg); }
@@ -170,9 +166,12 @@ a:active {
 
 .ok-bob { animation: ok-bob 1.6s ease-in-out infinite; }
 .ok-pop { animation: ok-pop 0.2s ease-out; }
+.ok-ring { animation: ok-ring 1.8s ease-in-out infinite; transform-origin: 50% 10%; }
+.ok-gauge { animation: ok-gauge 2.8s ease-in-out infinite; }
 .ok-walk { animation: ok-walk 0.6s ease-in-out infinite; transform-origin: 50% 90%; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ok-bob, .ok-pop, .ok-walk, .ok-road { animation: none; }
+  .ok-bob, .ok-pop, .ok-walk, .ok-gauge, .ok-ring { animation: none; }
+  .ok-gauge { width: 70%; }
   .ok-ripple { animation-name: ok-ripple-still; }
 }

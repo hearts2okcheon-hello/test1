@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { Osori } from "@/components/Osori";
 import { PageView } from "@/components/PageView";
 import { TimeAgo } from "@/components/TimeAgo";
 import { WriteFab } from "@/components/WriteFab";
@@ -54,13 +53,11 @@ export default async function HomePage() {
             <div className="ok-scroll-x flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pt-1 pb-2">
               {broadcasts.length === 0 ? (
                 <div className={`${CARD} flex items-center gap-2.5`}>
-                  <Osori mood="talk" size={56} />
                   <p className="font-display text-[17px] leading-snug">아직 오늘 방송이 없어요. 사장님들 소식을 기다리는 중!</p>
                 </div>
               ) : (
                 broadcasts.map((f) => (
                   <Link key={`${f.item_type}-${f.item_id}`} href={`/stores/${f.store_id}`} className={`${CARD} flex min-h-[112px] items-center gap-2.5`}>
-                    <Osori mood="talk" size={56} />
                     <span className="flex min-w-0 flex-1 flex-col gap-1">
                       <span className="truncate font-display text-[18px]">{f.store_name}</span>
                       <span className="line-clamp-2 text-[15px] leading-snug">{feedLine(f)}</span>
