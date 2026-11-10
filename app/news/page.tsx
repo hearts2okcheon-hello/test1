@@ -6,7 +6,7 @@ import { getTopNews } from "@/lib/okinews";
 import { createClient } from "@/lib/supabase/server";
 import type { FeedItem } from "@/lib/types";
 import { CommunityComposer } from "./Community";
-import { NewsCards } from "./NewsCards";
+import { NewsCards, type NewsStat } from "./NewsCards";
 import { NewsList, type CommunityPost, type TodayReport } from "./NewsList";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +23,7 @@ export default async function PlazaPage() {
     supabase.rpc("okc_is_admin"),
   ]);
   const signedIn = !!auth.data.user && !auth.data.user.is_anonymous;
+  const stats = news.length > 0 ? await supabase.rpc("get_news_stats", { p_article_ids: news.map((n) => n.id) }) : { data: [] };
 
   return (
     <>
@@ -36,7 +37,7 @@ export default async function PlazaPage() {
         </header>
 
         <section aria-label="옥천신문 오늘의 뉴스" className="flex flex-col gap-2.5">
-          <NewsCards news={news} />
+          <NewsCards news={news} stats={(stats.data ?? []) as NewsStat[]} />
         </section>
 
         <section aria-labelledby="community-title" className="flex flex-col gap-3 pt-1">
