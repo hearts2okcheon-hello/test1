@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { errorMessage } from "@/lib/errors";
 import { disablePush, enablePush, getPushState, isIos, isStandalone, type PushState } from "@/lib/push";
-import { canInstallApp, installApp, onInstallChange } from "./PwaSetup";
 import { useToast } from "./Toast";
 
 const TEXT = {
@@ -14,7 +13,6 @@ const TEXT = {
 /** 홈 화면 앱 설치 + 휴대폰 알림 켜기 (ADR-013) */
 export function AppAlertCard({ who }: { who: keyof typeof TEXT }) {
   const [state, setState] = useState<PushState | null>(null);
-  const [installable, setInstallable] = useState(false);
   const [standalone, setStandalone] = useState(true);
   const [ios, setIos] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -23,12 +21,10 @@ export function AppAlertCard({ who }: { who: keyof typeof TEXT }) {
   useEffect(() => {
     setStandalone(isStandalone());
     setIos(isIos());
-    setInstallable(canInstallApp());
     getPushState().then(setState);
-    return onInstallChange(() => setInstallable(canInstallApp()));
   }, []);
 
-  if (state === null || (state === "unsupported" && !installable && !(ios && !standalone))) return null;
+  if (state === null || (state === "unsupported" && !(ios && !standalone))) return null;
   const t = TEXT[who];
 
   async function turnOn() {
@@ -69,15 +65,9 @@ export function AppAlertCard({ who }: { who: keyof typeof TEXT }) {
         </span>
       </div>
 
-      {!standalone && installable && (
-        <button type="button" onClick={() => installApp()} className="min-h-14 rounded-[18px] border-2 border-sage-deep bg-sage font-display text-lg text-white">
-          📲 옥!소리 앱 설치하기
-        </button>
-      )}
-
       {(state === "need-install" || (ios && !standalone)) && (
         <p className="rounded-2xl bg-card px-3.5 py-2.5 text-[15px] leading-relaxed">
-          아이폰은 사파리 아래 <b>공유 버튼(□↑)</b> → <b>홈 화면에 추가</b>를 누르세요. 홈 화면의 옥!소리로 들어오면 알림을 켤 수 있어요.
+          아이폰은 홈 화면 앱에서만 알림을 받을 수 있어요. 홈 오른쪽 위 <b>앱 설치</b>를 눌러 추가한 뒤, 홈 화면의 옥!소리로 들어와 알림을 켜 주세요.
         </p>
       )}
 

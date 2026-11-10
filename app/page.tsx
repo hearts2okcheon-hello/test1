@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { InstallButton } from "@/components/InstallButton";
 import { PageView } from "@/components/PageView";
 import { TimeAgo } from "@/components/TimeAgo";
 import { WriteFab } from "@/components/WriteFab";
@@ -41,13 +42,7 @@ export default async function HomePage() {
             <Image unoptimized src="/logo.webp" alt="OK!소리" width={115} height={72} priority className="h-[72px] w-auto" />
             <span className="hidden font-display text-[15px] text-muted min-[400px]:inline">주머니 속 마을방송</span>
           </div>
-          <span className="ok-sticker inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 border-line bg-card px-3.5 py-2 font-display text-[15px]">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
-              <circle cx="12" cy="10" r="2.5" />
-            </svg>
-            옥천읍
-          </span>
+          <InstallButton />
         </header>
 
         <HomeSearch stores={stores} menus={menus}>
