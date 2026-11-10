@@ -21,7 +21,18 @@ export function NewsCards({ news }: { news: NewsItem[] }) {
               {top && <span className="self-start rounded-full bg-yellow-soft px-2 py-0.5 text-xs font-bold text-[#7E5810]">주요 뉴스</span>}
               <span className={`font-bold tracking-[-0.01em] break-keep text-ink ${top ? "line-clamp-2 text-[19px] leading-[1.4]" : "line-clamp-2 text-[17px] leading-[1.45]"}`}>{n.title}</span>
               {n.summary && <span className={`text-[14px] leading-[1.55] break-keep text-muted ${top ? "line-clamp-3" : "line-clamp-2"}`}>{n.summary}</span>}
-              <span className="text-[12px] text-muted/80">옥천신문{date ? ` · ${date}` : ""}</span>
+              <span className="flex items-center gap-1 text-[12px] text-muted/80">
+                옥천신문{date ? ` · ${date}` : ""}
+                {typeof n.comments === "number" && (
+                  <>
+                    {" · "}
+                    <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round">
+                      <path d="M4 5.5h16v11H10l-4.5 3.5V16.5H4z" />
+                    </svg>
+                    <span>댓글 {n.comments}</span>
+                  </>
+                )}
+              </span>
             </a>
           </li>
         );

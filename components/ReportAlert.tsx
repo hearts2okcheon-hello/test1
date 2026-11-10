@@ -20,11 +20,12 @@ function Bell({ className = "" }: { className?: string }) {
  * x 로 닫으면 같은 제보에 대해서는 다시 뜨지 않고, 새 제보가 오면 다시 뜬다.
  */
 export function ReportAlert({
-  questions, busy, onReply,
+  questions, busy, onReply, className = "",
 }: {
   questions: OwnerQuestion[];
   busy: boolean;
   onReply: (open: boolean, memo: string) => Promise<boolean>;
+  className?: string;
 }) {
   const key = questions.map((q) => q.id).sort().join(",");
   const [hidden, setHidden] = useState(true);
@@ -61,7 +62,7 @@ export function ReportAlert({
   return (
     <>
       {!hidden && (
-        <div className="sticky top-2 z-40 -mt-1">
+        <div className={`sticky top-2 z-40 ${className}`}>
           <div className="ok-pop relative flex items-center rounded-[22px] border-2 border-yellow-deep bg-yellow shadow-[0_4px_0_var(--color-yellow-deep)]">
             <button type="button" onClick={() => setSheet(true)} className="flex min-h-16 flex-1 items-center justify-center gap-2 py-2 pr-10 pl-4 font-display text-xl text-ink">
               <Bell className="ok-ring" />

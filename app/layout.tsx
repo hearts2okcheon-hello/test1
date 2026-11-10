@@ -3,6 +3,8 @@ import { Jua, Noto_Sans_KR } from "next/font/google";
 import { Suspense } from "react";
 import { ConfirmDeleteHost } from "@/components/ConfirmDeleteHost";
 import { NavLoading } from "@/components/NavLoading";
+import { OwnerAlertHost } from "@/components/OwnerAlertHost";
+import { TabSwipe } from "@/components/TabSwipe";
 import { TouchRipple } from "@/components/TouchRipple";
 import "./globals.css";
 
@@ -43,12 +45,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko" className={`${jua.variable} ${noto.variable}`}>
       <body>
-        <div className="ok-shell mx-auto flex min-h-dvh max-w-[480px] flex-col">{children}</div>
+        <div className="ok-shell mx-auto flex min-h-dvh max-w-[480px] flex-col">
+          <OwnerAlertHost />
+          {children}
+        </div>
         <Suspense fallback={null}>
           <NavLoading />
         </Suspense>
         <ConfirmDeleteHost />
         <TouchRipple />
+        <TabSwipe />
       </body>
     </html>
   );

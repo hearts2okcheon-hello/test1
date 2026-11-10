@@ -5,7 +5,8 @@ const SITE = "https://www.okinews.com";
 const IMAGE_HOST = "https://cdn.okinews.com/";
 const REVALIDATE_SECONDS = 1800;
 
-export type NewsItem = { id: string; url: string; title: string; image: string | null; summary: string | null; publishedAt: string | null };
+/** comments: 옥천신문 기사에 달린 댓글 수. 조회수·공감은 옥천신문이 공개하지 않아 가져올 수 없다 */
+export type NewsItem = { id: string; url: string; title: string; image: string | null; summary: string | null; publishedAt: string | null; comments?: number | null };
 
 function decodeHtml(text: string): string {
   return text
@@ -67,6 +68,12 @@ export function mergeNews(front: ReturnType<typeof parseFrontPage>, rss: ReturnT
   return [...fromFront, ...rest].slice(0, count);
 }
 
+/** 기사 정보 줄(기자명 · 입력 · 호수 · 댓글 N)에서 댓글 수 */
+export function parseCommentCount(html: string): number | null {
+  const n = html.match(/<li>\s*댓글\s*(\d+)\s*<\/li>/)?.[1];
+  return n === undefined ? null : Number(n);
+}
+
 async function fetchText(path: string): Promise<string> {
   try {
     const res = await fetch(`${SITE}${path}`, { next: { revalidate: REVALIDATE_SECONDS }, headers: { "User-Agent": "Mozilla/5.0 (compatible; oksori)" }, signal: AbortSignal.timeout(6000) });
@@ -78,5 +85,7 @@ async function fetchText(path: string): Promise<string> {
 
 export async function getTopNews(): Promise<NewsItem[]> {
   const [html, xml] = await Promise.all([fetchText("/"), fetchText("/rss/allArticle.xml")]);
-  return mergeNews(parseFrontPage(html), parseRss(xml));
+  const news = mergeNews(parseFrontPage(html), parseRss(xml));
+  const pages = await Promise.all(news.map((n) => fetchText(`/news/articleView.html?idxno=${n.id}`)));
+  return news.map((n, i) => ({ ...n, comments: parseCommentCount(pages[i]) }));
 }

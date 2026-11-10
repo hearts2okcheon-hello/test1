@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
 import { createClient, ensureSession } from "@/lib/supabase/client";
@@ -25,6 +25,27 @@ export function StoreSocial({
   const [text, setText] = useState("");
   const [openPost, setOpenPost] = useState<string | null>(null);
   const [postText, setPostText] = useState("");
+  // 공감은 누르는 즉시 화면에 반영하고, 저장은 뒤에서 차례로 한다
+  const [likes, setLikes] = useState<Record<string, { on: boolean; count: number }>>({});
+  const likeQueue = useRef<Promise<unknown>>(Promise.resolve());
+  useEffect(() => setLikes({}), [posts]);
+
+  function toggleLike(p: StorePost) {
+    const cur = likes[p.id] ?? { on: p.liked_by_me, count: p.like_count };
+    const next = { on: !cur.on, count: Math.max(0, cur.count + (cur.on ? -1 : 1)) };
+    setLikes((m) => ({ ...m, [p.id]: next }));
+    likeQueue.current = likeQueue.current.then(async () => {
+      try {
+        const supabase = createClient();
+        await ensureSession(supabase);
+        const { error } = await supabase.rpc("toggle_post_like", { p_post_id: p.id, p_on: next.on });
+        if (error) throw error;
+      } catch (e) {
+        setLikes((m) => ({ ...m, [p.id]: cur }));
+        show(errorMessage(e), "think");
+      }
+    });
+  }
 
   async function withSession(action: (s: ReturnType<typeof createClient>) => PromiseLike<{ error: unknown }>, done?: () => void) {
     setBusy(true);
@@ -56,7 +77,9 @@ export function StoreSocial({
             아직 올라온 소식이 없어요
           </div>
         ) : (
-          posts.map((p) => (
+          posts.map((p) => {
+            const like = likes[p.id] ?? { on: p.liked_by_me, count: p.like_count };
+            return (
             <article key={p.id} className="flex flex-col gap-2.5 rounded-[20px] border-2 border-line bg-card px-3.5 py-3">
               {p.kind === "notice" && <span className="self-start rounded-[10px] bg-yellow px-2.5 py-0.5 font-display text-sm">공지</span>}
               <div className="flex gap-3">
@@ -73,15 +96,14 @@ export function StoreSocial({
               <div className="flex items-center gap-4 border-t-2 border-line pt-2">
                 <button
                   type="button"
-                  aria-pressed={p.liked_by_me}
-                  disabled={busy}
-                  onClick={() => withSession((s) => s.rpc("toggle_post_like", { p_post_id: p.id, p_on: !p.liked_by_me }))}
-                  className="flex min-h-11 items-center gap-1.5 text-base font-bold"
+                  aria-pressed={like.on}
+                  onClick={() => toggleLike(p)}
+                  className="flex min-h-11 items-center gap-1.5 text-base font-bold active:scale-95"
                 >
-                  <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden fill={p.liked_by_me ? "#D9706F" : "none"} stroke={p.liked_by_me ? "#D9706F" : "currentColor"} strokeWidth="2.2" strokeLinejoin="round">
+                  <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden fill={like.on ? "#D9706F" : "none"} stroke={like.on ? "#D9706F" : "currentColor"} strokeWidth="2.2" strokeLinejoin="round">
                     <path d="M12 20s-7.5-4.6-9.3-9.2C1.5 7.5 3.6 4.5 6.8 4.5c2.2 0 3.9 1.2 5.2 3 1.3-1.8 3-3 5.2-3 3.2 0 5.3 3 4.1 6.3C19.5 15.4 12 20 12 20z" />
                   </svg>
-                  공감 {p.like_count}
+                  공감 {like.count}
                 </button>
                 <button
                   type="button"
@@ -118,7 +140,8 @@ export function StoreSocial({
                 </div>
               )}
             </article>
-          ))
+            );
+          })
         )}
       </section>
 
