@@ -11,7 +11,7 @@ import { REPORT_STYLES } from "@/lib/signs";
 import { createClient, ensureSession } from "@/lib/supabase/client";
 import type { ReportKind, StoreDetail, StoreReport } from "@/lib/types";
 
-const THANKS = "고마워요! 이웃들에게 알리고, 사장님께도 확인을 부탁했어요.";
+const THANKS = "고마워요! 이웃들에게 알리고, 사장님께도 확인을 부탁했어요. 알림을 켜 두면 사장님 답도 바로 알려 드려요.";
 const THANKS_LINE = "고마워요! 이웃들에게 알렸어요.";
 
 export function StoreClient({ detail, reported }: { detail: StoreDetail; reported?: string }) {

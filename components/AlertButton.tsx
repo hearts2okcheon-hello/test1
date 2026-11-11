@@ -86,6 +86,7 @@ export function AlertButton() {
             {on ? (
               <ul className="flex flex-col gap-1.5 text-[17px] leading-relaxed">
                 <li>⭐ 즐겨찾는 가게가 <b>문 열었을 때 · 재료 소진 · 임시휴무</b></li>
+                <li>💬 내가 한 제보에 <b>사장님이 답했을 때</b></li>
                 <li>🔔 사장님이면 <b>이웃 제보</b>가 왔을 때</li>
                 <li>⏰ 사장님이면 <b>여는 시간</b>이 지났는데 오늘 소식이 없을 때</li>
               </ul>

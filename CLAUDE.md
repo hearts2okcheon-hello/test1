@@ -51,7 +51,7 @@ Next.js 15 (App Router) · TypeScript · Tailwind CSS · Supabase (Postgres + Au
 - 제보자 신원(`reporter_id` 등)을 화면·API 응답에 노출하는 것
 - 주민 열람에 로그인을 요구하는 것
 - 종합 커뮤니티 기능(자유게시판·중고거래·구인구직)·별점 리뷰·결제 추가. 가게 페이지의 주민 댓글·공감(ADR-007)과 소통광장 동네 이야기(ADR-012)만 예외
-- ADR-013의 세 가지(사장님 제보·즐겨찾기 가게 소식·사장님 오픈 시간) 밖의 푸시 알림, 광고·마케팅 알림
+- ADR-013의 네 가지(사장님 제보·즐겨찾기 가게 소식·사장님 오픈 시간·제보한 이웃에게 답장) 밖의 푸시 알림, 광고·마케팅 알림
 - VAPID 개인키·`PUSH_DISPATCH_SECRET`을 저장소에 넣는 것 (Vercel 환경변수·Supabase Vault 에만)
 - 사장님 전화번호(`owner_codes.phone`)나 코드를 저장소 파일에 넣거나, 관리자 외 응답에 내보내는 것
 - 비공개 전화번호(`phone_public = false`)를 화면·API 응답에 노출하는 것 (ADR-010)
