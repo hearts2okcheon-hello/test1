@@ -1,5 +1,6 @@
 "use client";
 
+import { PrefetchKind } from "next/dist/client/components/router-reducer/router-reducer-types";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { pushWithLoading } from "@/lib/nav";
@@ -42,16 +43,23 @@ export function TabSwipe() {
     el.classList.remove("ok-slide-in-left", "ok-slide-in-right");
     void el.offsetWidth;
     el.classList.add(from === "right" ? "ok-slide-in-right" : "ok-slide-in-left");
-    const done = () => el.classList.remove("ok-slide-in-left", "ok-slide-in-right");
+    const done = () => {
+      el.classList.remove("ok-slide-in-left", "ok-slide-in-right");
+      // 미리 받아 둔 화면은 몇 분 전 것일 수 있다. 들어온 뒤 조용히 최신으로 바꾼다
+      router.refresh();
+    };
     el.addEventListener("animationend", done, { once: true });
     return () => el.removeEventListener("animationend", done);
-  }, [pathname]);
+  }, [pathname, router]);
 
-  // 이웃 탭을 미리 받아 둔다
+  // 이웃 탭 화면을 통째로 미리 받아 둔다. 그래야 넘길 때 로딩 화면 없이 바로 바뀐다
   useEffect(() => {
     const i = TAB_ORDER.indexOf(pathname as (typeof TAB_ORDER)[number]);
     if (i < 0) return;
-    for (const to of [TAB_ORDER[i - 1], TAB_ORDER[i + 1]]) if (to) router.prefetch(to);
+    const timer = window.setTimeout(() => {
+      for (const to of [TAB_ORDER[i - 1], TAB_ORDER[i + 1]]) if (to) router.prefetch(to, { kind: PrefetchKind.FULL });
+    }, 300);
+    return () => window.clearTimeout(timer);
   }, [pathname, router]);
 
   useEffect(() => {

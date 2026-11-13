@@ -17,7 +17,7 @@ export function BottomNav() {
         {TABS.map((t) => {
           const on = t.match(path);
           return (
-            <Link key={t.href} href={t.href} aria-current={on ? "page" : undefined} className={`flex flex-col items-center justify-center gap-[3px] font-display text-sm ${on ? "text-sage-deep" : "text-muted"}`}>
+            <Link key={t.href} href={t.href} prefetch aria-current={on ? "page" : undefined} className={`flex flex-col items-center justify-center gap-[3px] font-display text-sm ${on ? "text-sage-deep" : "text-muted"}`}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 {t.paths.map((d) => <path key={d} d={d} />)}
               </svg>
