@@ -1,6 +1,6 @@
 // RPC 응답 타입 (supabase/migrations/20261103000100_functions.sql 과 맞춘다)
 
-export type NoticeKind = "open" | "closed_today" | "late_open" | "sold_out" | "early_close";
+export type NoticeKind = "open" | "closed_today" | "late_open" | "sold_out" | "early_close" | "out";
 export type SignKind = NoticeKind | "temp_closed" | "checking" | "none";
 /** 영업 상태. 계산은 DB okc_schedule_status 한 곳에서만 (ADR-007) */
 export type ScheduleStatus = "open" | "closed" | "regular_holiday" | "temp_closed" | "unknown";
@@ -33,6 +33,10 @@ export type StoreSign = {
   /** 마을방송 "오늘 우리 동네 가게"에 뜨는가 */
   listed: boolean;
   cover_url: string | null;
+  /** 가게 프로필 사진 (이름 앞 동그라미). 없으면 첫 글자 */
+  logo_url: string | null;
+  /** 목록 카드에 보일 사진: 갤러리 먼저, 그다음 메뉴 사진 (4장까지) */
+  card_photos: string[];
 };
 
 export type StoreReport = {
@@ -64,11 +68,25 @@ export type StorePost = {
 };
 export type StoreComment = { id: string; body: string; created_at: string; is_mine: boolean };
 export type TempClosure = { id: string; start_date: string; end_date: string; reason: string | null };
+/** 사장님 캘린더의 날짜별 일정. 그날 휴무는 TempClosure 로 들어간다 */
+export type DayPlanKind = "late_open" | "early_close" | "out";
+export type DayPlan = { id: string; day: string; kind: DayPlanKind; start_time: string | null; end_time: string | null; note: string | null };
+/** 내 정보 (ADR-014) */
+export type MyProfile = { name: string | null; area: string | null; phone: string | null; avatar_url: string | null; registered: boolean; store_ack: boolean };
 
 export type StoreDetail = {
   store: StoreSign;
   /** phone: 공개한 번호만. manage_phone: 관리할 수 있는 사람에게만 */
-  profile: { phone: string | null; intro: string | null; phone_public: boolean; manage_phone: string | null };
+  profile: {
+    phone: string | null;
+    intro: string | null;
+    phone_public: boolean;
+    manage_phone: string | null;
+    /** 가게 번호(선택). 공개한 것만 */
+    store_phone: string | null;
+    store_phone_public: boolean;
+    manage_store_phone: string | null;
+  };
   can_manage: boolean;
   reports: StoreReport[];
   menus: StoreMenu[];
@@ -77,6 +95,7 @@ export type StoreDetail = {
   comment_count: number;
   comments: StoreComment[];
   closures: TempClosure[];
+  plans: DayPlan[];
 };
 
 export type FeedItem = {
@@ -117,11 +136,12 @@ export type OwnerQuestion = {
 
 /** no_store = 코드를 넣지 않은 기기 · needs_store = 코드는 넣었고 가게 등록 전 (ADR-007) */
 export type OwnerHome =
-  | { state: "no_store"; is_admin: boolean }
-  | { state: "needs_store"; is_admin: boolean; code: string | null; phone: string | null }
+  | { state: "no_store"; is_admin: boolean; signed_in?: boolean }
+  | { state: "needs_store"; is_admin: boolean; code: string | null; phone: string | null; profile: MyProfile }
   | {
       state: "owner";
       is_admin: boolean;
+      profile: MyProfile;
       code: string | null;
       store: StoreSign;
       notice: OwnerNotice | null;

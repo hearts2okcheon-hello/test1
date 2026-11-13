@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Osori } from "./Osori";
 
-/** 내 가게 오른쪽 위, 신문을 펼쳐 든 오소리. 누르면 관리자 로그인으로 간다 */
+/** 내 정보 오른쪽 위, 신문을 펼쳐 든 오소리. 누르면 관리자 로그인으로 간다 */
 export function AdminDoor({ href }: { href: string }) {
   return (
     <Link href={href} aria-label="옥천신문 관리자 로그인" className="ok-sticker relative block size-14 overflow-hidden rounded-full border-2 border-line bg-yellow-soft">

@@ -12,7 +12,7 @@ const MESSAGES: Record<string, string> = {
   unavailable: "카카오 로그인이 아직 준비 중이에요. 옥천신문에 알려 주세요.",
 };
 
-/** 사장님은 카카오 계정으로 로그인해 바로 가게를 등록한다 (ADR-009) */
+/** 카카오 계정으로 로그인해 내 정보를 등록하고, 사장님은 이어서 가게를 등록한다 (ADR-009, ADR-014) */
 export function KakaoLogin({ ready, login }: { ready: boolean; login?: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(login ? (MESSAGES[login] ?? MESSAGES.failed) : null);
@@ -21,8 +21,8 @@ export function KakaoLogin({ ready, login }: { ready: boolean; login?: string })
     <section className="flex flex-col items-center gap-4 rounded-[22px] border-2 border-line bg-card px-4 py-6 text-center">
       <Osori mood="proud" size={110} className="ok-bob" />
       <div className="flex flex-col gap-1.5">
-        <h1 className="font-display text-[26px] font-normal">사장님, 반가워요!</h1>
-        <p className="text-lg leading-relaxed text-muted">카카오로 로그인하면 바로 우리 가게를 등록할 수 있어요. 한 번 로그인하면 이 휴대폰에서 계속 쓸 수 있어요.</p>
+        <h1 className="font-display text-[26px] font-normal">반가워요!</h1>
+        <p className="text-lg leading-relaxed text-muted">카카오로 로그인하면 내 정보를 등록하고, 사장님은 우리 가게도 등록할 수 있어요. 한 번 로그인하면 이 휴대폰에서 계속 쓸 수 있어요.</p>
       </div>
       <button
         type="button"

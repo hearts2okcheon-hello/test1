@@ -12,7 +12,6 @@ import { PHOTO_CATEGORIES, STORE_CATEGORIES } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
 import type { PhotoCategory, RegularHours, StoreMenu, StorePhoto, Weekday } from "@/lib/types";
 import { AddressSearch } from "./AddressSearch";
-import { Osori } from "./Osori";
 import { PhotoPicker } from "./PhotoPicker";
 import { useToast } from "./Toast";
 
@@ -29,6 +28,9 @@ export type StoreEditorValues = {
   name: string;
   phone: string;
   phonePublic: boolean;
+  storePhone: string;
+  storePhonePublic: boolean;
+  logoUrl: string | null;
   category: string | null;
   neighborhood: string | null;
   intro: string | null;
@@ -66,6 +68,8 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
   const [name, setName] = useState(initial.name);
   const [phone, setPhone] = useState(formatPhone(initial.phone));
   const [phonePublic, setPhonePublic] = useState(initial.phonePublic);
+  const [storePhone, setStorePhone] = useState(formatPhone(initial.storePhone));
+  const [storePhonePublic, setStorePhonePublic] = useState(initial.storePhonePublic);
   const [category, setCategory] = useState(initial.category ?? "");
   const [customCategory, setCustomCategory] = useState(false);
   const [neighborhood, setNeighborhood] = useState(initial.neighborhood ?? "");
@@ -80,6 +84,9 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
     initial.photos.map((p) => ({ key: p.id, category: p.category, url: p.url, file: null, preview: p.url })),
   );
   const [galleryTab, setGalleryTab] = useState<PhotoCategory>("store");
+  const [logoUrl, setLogoUrl] = useState(initial.logoUrl);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const keyRef = useRef(0);
   const nextKey = () => `new-${keyRef.current++}`;
 
@@ -102,6 +109,7 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
   async function submit() {
     if (!name.trim()) return show("가게 이름을 써 주세요.", "think");
     if (phone.replace(/\D/g, "").length < 9) return show("전화번호를 다시 확인해 주세요.", "think");
+    if (storePhone.trim() && storePhone.replace(/\D/g, "").length < 9) return show("가게 번호를 다시 확인해 주세요. 없으면 비워 두세요.", "think");
     if (!DAYS.some(([d]) => days[d].open)) return show("영업하는 요일을 하루 이상 넣어 주세요.", "think");
     if (menus.some((m) => !m.name.trim())) return show("메뉴 이름을 써 주세요. 필요 없는 칸은 지워 주세요.", "think");
 
@@ -112,6 +120,8 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
       p_name: name.trim(),
       p_phone: phone,
       p_phone_public: phonePublic,
+      p_store_phone: storePhone.trim() || null,
+      p_store_phone_public: storePhonePublic,
       p_regular_hours: hours,
       p_category: category || null,
       p_neighborhood: neighborhood.trim() || null,
@@ -151,13 +161,19 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
       const { error: mediaError } = await supabase.rpc("save_store_media", { p_store_id: targetId, p_menus: savedMenus, p_photos: savedPhotos });
       if (mediaError) throw mediaError;
 
+      const savedLogo = logoFile ? await uploadStoreImage(supabase, targetId, logoFile) : logoUrl;
+      if (savedLogo !== initial.logoUrl) {
+        const { error: logoError } = await supabase.rpc("set_store_logo", { p_store_id: targetId, p_url: savedLogo });
+        if (logoError) throw logoError;
+      }
+
       if (registering && firstPost.trim()) {
         const { error } = await supabase.rpc("save_store_post", { p_store_id: targetId, p_body: firstPost.trim() });
         if (error) throw error;
       }
 
       show(registering ? "가게를 등록했어요! 이제 마을방송에 나와요." : "가게 정보를 고쳤어요.", "proud");
-      pushWithLoading(router, registering ? "/owner" : `/stores/${targetId}`);
+      pushWithLoading(router, registering ? "/owner/store" : `/stores/${targetId}`);
       router.refresh();
     } catch (e) {
       show(errorMessage(e), "think");
@@ -179,7 +195,7 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
       }}
     >
       {registering ? (
-        <Link href="/" className="flex min-h-12 w-fit items-center gap-1.5 rounded-2xl border-2 border-line bg-card px-3.5 text-base font-bold">
+        <Link href="/owner" className="flex min-h-12 w-fit items-center gap-1.5 rounded-2xl border-2 border-line bg-card px-3.5 text-base font-bold">
           <span aria-hidden>‹</span> 뒤로
         </Link>
       ) : (
@@ -189,7 +205,6 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
       )}
 
       <header className="flex items-center gap-2.5">
-        <Osori mood={registering ? "proud" : "work"} size={76} />
         <div className="flex flex-1 flex-col gap-0.5">
           <h1 className="font-display text-[26px] leading-tight font-normal">{registering ? "우리 가게 등록하기" : "가게 정보 고치기"}</h1>
           <p className="text-base text-muted">{registering ? "카카오 계정으로 들어왔어요." : "언제든 다시 고칠 수 있어요."}</p>
@@ -197,6 +212,47 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
       </header>
 
       <Section n={nextNo()} title="가게 이름 · 카테고리 · 동네 태그">
+        <div className="flex items-center gap-3">
+          <label className="flex size-[84px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-line-strong bg-cream text-center font-display text-3xl">
+            {logoPreview ?? logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={(logoPreview ?? logoUrl)!} alt="가게 프로필 사진" className="size-full object-cover" />
+            ) : (
+              <span aria-hidden>{name.trim().charAt(0) || "+"}</span>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              aria-label="가게 프로필 사진 고르기"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) {
+                  setLogoFile(f);
+                  setLogoPreview(URL.createObjectURL(f));
+                }
+                e.target.value = "";
+              }}
+            />
+          </label>
+          <span className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className="text-lg font-bold">가게 프로필 사진 <span className="font-sans text-sm font-normal text-muted">(선택)</span></span>
+            <span className="text-sm leading-normal text-muted">동그라미를 눌러 고르세요. 가게 이름 앞 동그라미에 보여요. 안 올리면 가게 이름 첫 글자가 보여요.</span>
+            {(logoPreview || logoUrl) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLogoFile(null);
+                  setLogoPreview(null);
+                  setLogoUrl(null);
+                }}
+                className="min-h-11 w-fit rounded-xl px-1 text-base font-bold text-[#A4423F]"
+              >
+                사진 빼기
+              </button>
+            )}
+          </span>
+        </div>
         <Field label="가게 이름" required>
           <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder="예: 대박 맛집 카페" className={INPUT} />
         </Field>
@@ -223,7 +279,7 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
         <Field label="동네 태그">
           <input value={neighborhood} maxLength={30} onChange={(e) => setNeighborhood(e.target.value)} placeholder="예: 구읍 사랑방" className={INPUT} />
         </Field>
-        <Field label="전화번호" required hint="옥천신문이 연락할 때 써요.">
+        <Field label="전화번호" required hint="사장님 휴대폰 번호예요. 옥천신문이 확인 연락할 때 써요.">
           <input type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="010-0000-0000" className={INPUT} />
         </Field>
         <label className="flex min-h-14 items-center gap-3 rounded-2xl border-2 border-line bg-white px-3.5 py-2">
@@ -233,6 +289,18 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
             <span className="text-sm leading-normal text-muted">켜면 손님이 전화하기 버튼으로 전화할 수 있어요. 언제든 고칠 수 있어요.</span>
           </span>
         </label>
+        <Field label="가게 번호 (선택)" hint="가게 전화가 따로 있으면 적어 주세요. 없으면 비워 두세요.">
+          <input type="tel" inputMode="tel" value={storePhone} onChange={(e) => setStorePhone(formatPhone(e.target.value))} placeholder="043-000-0000" className={INPUT} />
+        </Field>
+        {storePhone.trim() !== "" && (
+          <label className="flex min-h-14 items-center gap-3 rounded-2xl border-2 border-line bg-white px-3.5 py-2">
+            <input type="checkbox" checked={storePhonePublic} onChange={(e) => setStorePhonePublic(e.target.checked)} className="size-6 shrink-0" />
+            <span className="flex flex-col">
+              <span className="text-lg font-bold">가게 페이지에 가게 번호 공개</span>
+              <span className="text-sm leading-normal text-muted">켜면 손님이 가게 번호로 전화할 수 있어요.</span>
+            </span>
+          </label>
+        )}
       </Section>
 
       {registering && (
@@ -318,6 +386,7 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
       </Section>
 
       <Section n={nextNo()} title="사진 갤러리" optional>
+        <p className="text-base text-muted">대표 메뉴나 가게 분위기 사진을 올려 주세요. 앞에서부터 3장이 가게 목록의 가게 이름 아래에 보여요. (없으면 메뉴 사진이 보여요)</p>
         <div role="tablist" aria-label="사진 종류" className="flex gap-1.5">
           {PHOTO_CATEGORIES.map((c) => (
             <button

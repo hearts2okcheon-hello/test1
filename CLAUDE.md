@@ -58,6 +58,7 @@ Next.js 15 (App Router) · TypeScript · Tailwind CSS · Supabase (Postgres + Au
 - `askDelete` 확인 창 없이 삭제하는 것 (왼쪽 예, 오른쪽 아니오)
 - 동네 이야기 작성자를 사유 기록(`admin_reveal_community_author`) 없이 보여 주는 것
 - 댓글 작성자 id(`author_id`)를 화면·API 응답에 노출하는 것
+- 내 정보(이름·사는 곳·전화번호)를 본인·관리자 밖의 화면·API 응답에 노출하는 것, 비공개 가게 번호(`store_phone_public = false`)를 노출하는 것 (ADR-014)
 - `.env*`·Supabase service role key를 커밋하거나 클라이언트 코드에서 쓰는 것
 
 ## 자주 쓰는 패턴

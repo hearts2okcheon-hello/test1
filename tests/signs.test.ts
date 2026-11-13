@@ -15,8 +15,8 @@ describe("팻말 문구", () => {
     expect(SIGN_STYLES.none.title).not.toContain("영업");
   });
 
-  it("공지 버튼 5종", () => {
-    expect(NOTICE_KINDS.map((k) => SIGN_STYLES[k].button)).toEqual(["영업 중이에요", "오늘 쉬어요", "늦게 열어요", "재료 소진", "일찍 닫아요"]);
+  it("공지 버튼 6종 (외출 중 포함)", () => {
+    expect(NOTICE_KINDS.map((k) => SIGN_STYLES[k].button)).toEqual(["영업 중이에요", "오늘 쉬어요", "늦게 열어요", "재료 소진", "일찍 닫아요", "외출 중"]);
   });
 
   it("시각이 있으면 덧붙인다 (T-SIGN-09)", () => {

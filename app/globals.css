@@ -22,6 +22,10 @@
   --color-coral: #D9706F;
   --color-coral-soft: #FBE3E1;
 
+  /* 캘린더에서 "일정 있는 날" (휴무는 coral, 평소는 ink) */
+  --color-blue: #2F6DB5;
+  --color-blue-soft: #E3EEFA;
+
   --color-memo: #FFF3C8;
 
   --font-display: var(--font-jua), "Noto Sans KR", system-ui, sans-serif;

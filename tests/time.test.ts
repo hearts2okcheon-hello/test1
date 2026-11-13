@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clockOf, seoulClock, seoulWeekday, timeAgo, todayHours, todayOpenAt } from "@/lib/time";
+import { clockOf, dateOf, seoulClock, seoulWeekday, timeAgo, todayHours, todayOpenAt } from "@/lib/time";
 import type { RegularHours } from "@/lib/types";
 
 // 2026-11-02 은 월요일. 테스트는 TZ=UTC 로 돌아서 서울 변환을 확인한다 (vitest.config.ts)
@@ -10,11 +10,20 @@ const HOURS: RegularHours = { mon: [["08:00", "19:00"]], sun: null };
 
 describe("timeAgo (T-BADGE-03)", () => {
   const now = new Date("2026-11-02T12:00:00+09:00");
-  it("방금 · 분 · 시간 · 시각", () => {
+  it("방금 · 분(59분까지) · 시간(24시간까지) · 그 뒤는 날짜", () => {
     expect(timeAgo("2026-11-02T11:59:40+09:00", now)).toBe("방금");
     expect(timeAgo("2026-11-02T11:48:00+09:00", now)).toBe("12분 전");
     expect(timeAgo("2026-11-02T09:00:00+09:00", now)).toBe("3시간 전");
-    expect(timeAgo("2026-11-02T05:02:00+09:00", now)).toBe("오전 5:02");
+    expect(timeAgo("2026-11-02T11:59:00+09:00", now)).toBe("1분 전");
+    expect(timeAgo("2026-11-02T11:01:00+09:00", now)).toBe("59분 전");
+    expect(timeAgo("2026-11-02T11:00:00+09:00", now)).toBe("1시간 전");
+    expect(timeAgo("2026-11-02T05:02:00+09:00", now)).toBe("6시간 전");
+    expect(timeAgo("2026-11-01T12:00:00+09:00", now)).toBe("24시간 전");
+    expect(timeAgo("2026-11-01T11:59:00+09:00", now)).toBe("11월 1일");
+    expect(timeAgo("2025-12-31T23:30:00+09:00", now)).toBe("2025년 12월 31일");
+  });
+  it("dateOf 는 서울 날짜", () => {
+    expect(dateOf("2026-11-01T15:30:00Z", now)).toBe("11월 2일");
   });
   it("clockOf 는 서울 시각", () => {
     expect(clockOf("2026-11-01T23:02:00Z")).toBe("오전 8:02");

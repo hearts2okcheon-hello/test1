@@ -92,7 +92,7 @@
 ```sql
 -- 역할
 create type user_role as enum ('owner', 'admin');
-create type notice_kind as enum ('open', 'closed_today', 'late_open', 'sold_out', 'early_close');
+create type notice_kind as enum ('open', 'closed_today', 'late_open', 'sold_out', 'early_close', 'out'); -- out = 외출 중 (ADR-014)
 create type notice_source as enum ('owner', 'okcheon');
 create type report_kind as enum ('seen_closed', 'seen_open', 'seen_sold_out', 'seen_long_line');
 create type report_status as enum ('pending', 'confirmed', 'rejected', 'expired');
@@ -184,6 +184,14 @@ create table events (                -- 시범 지표 측정용
 ### 4.0 가게 페이지 표 (ADR-007, `20261107000000_store_profile.sql`)
 
 `stores`에 `neighborhood`·`phone`(공개)·`intro` 추가. `owner_codes`(phone·code·store_id 각각 unique), `owner_code_members`, `store_menus`, `store_photos`(store/food/daily), `store_posts`(news/notice, 소프트 삭제), `post_likes`, `store_comments`(소프트 삭제), `temp_closures`(취소는 `canceled_at`). 버킷 `store-media`.
+
+### 4.0-1 내 정보·가게 번호·캘린더 (ADR-014, `20261113010000_my_info_calendar.sql`)
+
+- `profiles`: `display_name`(이름)·`area`(사는 곳)·`phone`·`avatar_url`·`registered_at`·`store_notice_ack_at`. 쓰기는 `save_my_profile`, `ack_store_notice`. 본인과 관리자만 읽는다.
+- `stores.store_phone`(가게 번호, 선택)·`store_phone_public`. 표 직접 읽기 권한이 없고 `get_store_detail`의 `profile.store_phone`(공개한 것)·`manage_store_phone`(관리자·사장님)으로만 준다.
+- `store_day_plans(store_id, day, kind, start_time, end_time, note)`: kind 는 `late_open`·`early_close`·`out`, 가게·날짜·종류마다 하나. 쓰기는 `set_day_plan`(오늘~한 달, `closed`는 하루짜리 `temp_closures`로 넣는다)·`clear_day_plan`. 읽기는 `get_store_detail`의 `plans`.
+- `okc_schedule_status`는 외출 중 공지와 오늘의 일정(늦게 열기·일찍 닫기·외출)을 반영한다.
+- `stores.logo_url`(가게 프로필 사진, 쓰기는 `set_store_logo`). `get_store_signs`가 `logo_url`과 `card_photos`(갤러리 사진 먼저, 그다음 메뉴 사진, 4장까지)를 함께 준다 (`20261113030000_store_logo_card_photos.sql`).
 
 ### 4.1 파생 뷰
 - `current_sign(store_id)` — §3.3 규칙으로 가게의 현재 팻말 1행을 계산하는 DB 함수. 규칙은 이 함수에만 구현한다. `get_store_signs()`, `get_store_detail()`, `get_owner_home()`, `get_today_feed()`는 이 함수를 호출해서 쓰고, 화면은 이 RPC들의 결과만 읽는다. **규칙을 화면 코드나 다른 RPC에 중복 구현하지 않는다.**

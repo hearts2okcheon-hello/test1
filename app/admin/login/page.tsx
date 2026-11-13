@@ -17,7 +17,7 @@ export default function AdminLoginPage() {
   return (
     <main className="flex flex-1 flex-col gap-5 px-6 pt-4 pb-10">
       <Link href="/owner" className="flex min-h-12 w-fit items-center gap-1.5 rounded-2xl border-2 border-line bg-card px-3.5 text-base font-bold">
-        <span aria-hidden>‹</span> 내 가게로 돌아가기
+        <span aria-hidden>‹</span> 내 정보로 돌아가기
       </Link>
       <div className="flex flex-1 flex-col items-center justify-center gap-5">
         <Osori mood="work" size={120} />

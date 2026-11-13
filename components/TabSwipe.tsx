@@ -15,7 +15,7 @@ function blocksSwipe(el: Element | null): boolean {
   return false;
 }
 
-/** 홈 · 소통광장 · 내 가게를 좌우로 밀어 바꾼다 */
+/** 홈 · 소통광장 · 내 정보를 좌우로 밀어 바꾼다 */
 export function TabSwipe() {
   const pathname = usePathname();
   const router = useRouter();

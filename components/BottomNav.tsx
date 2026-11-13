@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/", label: "홈", match: (p: string) => p === "/" || p.startsWith("/stores"), paths: ["M4 11l8-7 8 7v9H4z", "M10 20v-5h4v5"] },
   { href: "/news", label: "소통광장", match: (p: string) => p.startsWith("/news"), paths: ["M4 5h13v14H6a2 2 0 0 1-2-2z", "M17 9h3v8a2 2 0 0 1-2 2", "M8 9h5", "M8 13h5"] },
-  { href: "/owner", label: "내 가게", match: (p: string) => p.startsWith("/owner"), paths: ["M3 7h18l-1.5 4h-15z", "M5 11v9h14v-9", "M10 20v-5h4v5"] },
+  { href: "/owner", label: "내 정보", match: (p: string) => p.startsWith("/owner"), paths: ["M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M4.5 20a7.5 7.5 0 0 1 15 0"] },
 ];
 
 export function BottomNav() {

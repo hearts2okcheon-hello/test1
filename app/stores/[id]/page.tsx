@@ -3,13 +3,13 @@ import { notFound } from "next/navigation";
 import { BackButton } from "@/components/BackButton";
 import { FavoriteStar } from "@/components/FavoriteStar";
 import { Gallery } from "@/components/Gallery";
+import { HoursPanel, ScheduleButton } from "@/components/HoursPanel";
 import { KakaoMap } from "@/components/KakaoMap";
 import { PageView } from "@/components/PageView";
 import { ScheduleBadge } from "@/components/ScheduleBadge";
 import { SignBoard } from "@/components/SignBoard";
 import { StoreSocial } from "@/components/StoreSocial";
-import { formatPhone, formatWon, summarizeHours } from "@/lib/hours";
-import { formatRange } from "@/lib/signs";
+import { formatPhone, formatWon } from "@/lib/hours";
 import { createClient } from "@/lib/supabase/server";
 import type { StoreDetail } from "@/lib/types";
 import { StoreClient } from "./StoreClient";
@@ -34,7 +34,12 @@ export default async function StorePage({
   if (!data) notFound();
   const detail = data as StoreDetail;
   const { store, profile, menus, photos, closures } = detail;
-  const hours = summarizeHours(store.regular_hours);
+  const plans = detail.plans ?? [];
+  // 공개한 번호만 온다. 가게 번호가 있으면 그것을 먼저
+  const phones = [
+    { label: "가게", number: profile.store_phone },
+    { label: "사장님", number: profile.phone },
+  ].filter((p): p is { label: string; number: string } => !!p.number);
   const tags = [store.category, store.neighborhood].filter(Boolean).join(" · ");
   const editQuery = `?store=${store.store_id}`;
 
@@ -47,6 +52,7 @@ export default async function StorePage({
           <h1 className="truncate font-display text-[26px] leading-tight font-normal">{store.name}</h1>
           {tags && <span className="truncate text-[13px] text-muted">{tags}</span>}
         </div>
+        <ScheduleButton marked={closures.length > 0 || plans.length > 0} />
         <FavoriteStar storeId={store.store_id} storeName={store.name} size={30} />
         {detail.can_manage && (
           <Link href={`/owner/edit${editQuery}`} className="flex min-h-11 shrink-0 items-center rounded-2xl border-2 border-line bg-card px-3 text-sm font-bold">
@@ -56,12 +62,13 @@ export default async function StorePage({
       </header>
 
       <main className="flex flex-1 flex-col gap-3.5 px-[18px] pt-1 pb-4">
-        {profile.phone && (
-          <a href={`tel:${profile.phone}`} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-line bg-card text-lg font-bold">
+        {phones.map((p) => (
+          <a key={p.label} href={`tel:${p.number}`} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-line bg-card text-lg font-bold">
             <PhoneIcon />
-            {formatPhone(profile.phone)}
+            {phones.length > 1 && <span className="text-base font-normal text-muted">{p.label}</span>}
+            {formatPhone(p.number)}
           </a>
-        )}
+        ))}
 
         <SignBoard store={store} />
 
@@ -96,7 +103,7 @@ export default async function StorePage({
         )}
 
         {/* 5. 위치 & 바로 연결 */}
-        {(store.address || profile.phone) && (
+        {(store.address || phones.length > 0) && (
           <section aria-labelledby="place-title" className="flex flex-col gap-2.5 rounded-[22px] border-2 border-line bg-card px-3.5 py-3.5">
             <h2 id="place-title" className="font-display text-[21px] font-normal">위치 & 바로 연결</h2>
             {store.address && (
@@ -105,8 +112,8 @@ export default async function StorePage({
                 <p className="text-center text-base font-bold">{store.address}</p>
               </>
             )}
-            {profile.phone && (
-              <a href={`tel:${profile.phone}`} className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-ink font-display text-xl text-white">
+            {phones[0] && (
+              <a href={`tel:${phones[0].number}`} className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-ink font-display text-xl text-white">
                 전화하기
               </a>
             )}
@@ -117,21 +124,7 @@ export default async function StorePage({
         <section aria-labelledby="hours-title" className="flex flex-col gap-2 rounded-[22px] border-2 border-line bg-card px-3.5 py-3.5">
           <h2 id="hours-title" className="font-display text-[21px] font-normal">운영 날짜 & 영업시간</h2>
           <ScheduleBadge status={store.schedule_status} basis={store.schedule_basis} large />
-          {hours.length === 0 && <p className="text-sm text-muted">영업시간 정보가 아직 없어요.</p>}
-          {hours.map((h) => (
-            <p key={h.days} className={`text-base ${h.closed ? "font-bold text-[#A4423F]" : ""}`}>
-              {h.days} {h.text}
-            </p>
-          ))}
-          {closures.map((c) => (
-            <p key={c.id} className="flex items-start gap-1.5 text-base font-bold text-[#A4423F]">
-              <span aria-hidden className="mt-1.5 size-3 shrink-0 rounded-full" style={{ background: "#EF4444" }} />
-              <span>
-                임시휴무 {formatRange(c.start_date, c.end_date)}
-                {c.reason && <span className="block font-normal text-muted">{c.reason}</span>}
-              </span>
-            </p>
-          ))}
+          <HoursPanel hours={store.regular_hours} closures={closures} plans={plans} />
         </section>
 
         {/* 7. 사진 갤러리 */}

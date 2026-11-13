@@ -5,17 +5,35 @@ import type { OwnerHome } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-/** 코드를 넣은 뒤 처음 한 번 가게를 등록한다 (ADR-007) */
+/** 가게 등록 (ADR-009, ADR-014). 내 정보를 등록하고 연락 안내를 확인한 사람만 들어온다 */
 export default async function RegisterPage() {
   const supabase = await createClient();
   const { data } = await supabase.rpc("get_owner_home");
   const home = (data ?? { state: "no_store", is_admin: false }) as OwnerHome;
   if (home.state !== "needs_store") redirect("/owner");
+  if (!home.profile.registered) redirect("/owner/profile");
+  if (!home.profile.store_ack) redirect("/owner");
 
   return (
     <main className="flex flex-1 flex-col px-[18px] pt-4">
       <StoreEditor
-        initial={{ storeId: null, name: "", phone: home.phone ?? "", phonePublic: false, category: null, neighborhood: null, intro: null, address: null, hours: null, menus: [], photos: [] }}
+        initial={{
+          storeId: null,
+          name: "",
+          // 내 정보에 적은 번호를 먼저 채워 둔다
+          phone: home.phone ?? home.profile.phone ?? "",
+          phonePublic: false,
+          storePhone: "",
+          storePhonePublic: false,
+          logoUrl: null,
+          category: null,
+          neighborhood: null,
+          intro: null,
+          address: null,
+          hours: null,
+          menus: [],
+          photos: [],
+        }}
       />
     </main>
   );

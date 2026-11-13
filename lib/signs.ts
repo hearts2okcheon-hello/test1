@@ -34,6 +34,7 @@ export const SIGN_STYLES: Record<SignKind, SignStyle> = {
   late_open: { chip: "늦게 열어요", title: "조금 늦게 열어요", button: "늦게 열어요", ...TONE_WARN, mood: "move", moodAlt: "가게로 가는 오소리" },
   sold_out: { chip: "재료 소진", title: "재료가 다 떨어졌어요", button: "재료 소진", ...TONE_WARN, mood: "surprise", moodAlt: "놀란 오소리" },
   early_close: { chip: "일찍 닫아요", title: "오늘은 일찍 닫아요", button: "일찍 닫아요", ...TONE_WARN, mood: "smile", moodAlt: "웃는 오소리" },
+  out: { chip: "외출 중", title: "잠깐 외출 중이에요", button: "외출 중", ...TONE_WARN, mood: "move", moodAlt: "나가는 오소리" },
   temp_closed: { chip: "임시휴무", title: "임시휴무 중이에요", button: "", ...TONE_HOLIDAY, mood: "rest", moodAlt: "쉬고 있는 오소리" },
   checking: { chip: "확인 중", title: "사장님께 확인 중이에요", button: "", ...TONE_WARN, mood: "curious", moodAlt: "궁금한 오소리" },
   none: { chip: "소식 없음", title: "아직 오늘 소식이 없어요", button: "", ...TONE_CLOSED, mood: "basic", moodAlt: "오소리" },
@@ -63,10 +64,10 @@ export const PHOTO_CATEGORIES: { id: PhotoCategory; label: string }[] = [
 export const STORE_CATEGORIES = CATEGORIES.map((c) => c.name);
 
 /** 사장님 공지 버튼 순서 */
-export const NOTICE_KINDS: NoticeKind[] = ["open", "closed_today", "late_open", "sold_out", "early_close"];
+export const NOTICE_KINDS: NoticeKind[] = ["open", "closed_today", "late_open", "sold_out", "early_close", "out"];
 
 /** 시각을 함께 고를 수 있는 공지 */
-export const TIMED_KINDS: NoticeKind[] = ["late_open", "early_close"];
+export const TIMED_KINDS: NoticeKind[] = ["late_open", "early_close", "out"];
 
 export const SOURCE_STYLES: Record<Source, { label: string; fg: string; bg: string }> = {
   owner: { label: "사장님", fg: "#4E6E44", bg: "#E6F0DF" },
@@ -113,6 +114,7 @@ export function signTitle(sign: SignKind, atTime: string | null): string {
   if (!atTime) return base;
   if (sign === "late_open") return `${formatClock(atTime)}에 열어요`;
   if (sign === "early_close") return `${formatClock(atTime)}에 닫아요`;
+  if (sign === "out") return `${formatClock(atTime)}에 돌아와요`;
   return base;
 }
 
@@ -122,13 +124,14 @@ export function signChip(sign: SignKind, atTime: string | null): string {
   if (!atTime) return base;
   if (sign === "late_open") return `${formatClock(atTime).replace(/^(오전|오후) /, "")} 오픈`;
   if (sign === "early_close") return `${formatClock(atTime).replace(/^(오전|오후) /, "")} 마감`;
+  if (sign === "out") return `${formatClock(atTime).replace(/^(오전|오후) /, "")}까지 외출`;
   return base;
 }
 
 /** 마을방송 한 줄: 쪽지가 있으면 쪽지, 없으면 공지 문구 */
 export function castLine(kind: NoticeKind, atTime: string | null, memo: string | null): string {
   if (memo) return memo;
-  if (atTime && (kind === "late_open" || kind === "early_close")) return signTitle(kind, atTime);
+  if (atTime && TIMED_KINDS.includes(kind)) return signTitle(kind, atTime);
   return SIGN_STYLES[kind].button;
 }
 

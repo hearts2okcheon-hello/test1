@@ -7,7 +7,6 @@ import { MEMO_CHIPS, MEMO_MAX, NOTICE_KINDS, PROXY_MEMO_CHIPS, SIGN_STYLES, TIME
 import { createClient } from "@/lib/supabase/client";
 import { seoulClock } from "@/lib/time";
 import type { NoticeKind, OwnerNotice } from "@/lib/types";
-import { Osori } from "./Osori";
 import { useToast } from "./Toast";
 
 /** 다음 정각/30분부터 n개 */
@@ -100,11 +99,11 @@ export function NoticeButtons({ storeId, current, proxy = false }: { storeId: st
                 disabled={busy}
                 aria-pressed={on}
                 onClick={() => post(k)}
-                className="flex min-h-[92px] flex-col items-center justify-center gap-0.5 rounded-[20px] border-2 px-2 pt-1.5 pb-2"
+                className="flex min-h-[68px] items-center justify-center gap-2 rounded-[20px] border-2 px-2"
                 style={{ background: on ? s.bg : "#FFFDF8", borderColor: on ? s.fg : "#E8DCC8" }}
               >
-                <Osori mood={s.mood} size={48} />
-                <span className="text-base font-bold">{s.button}</span>
+                <span aria-hidden className="size-3.5 shrink-0 rounded-full" style={{ background: s.dot }} />
+                <span className="text-lg font-bold">{s.button}</span>
               </button>
             );
           })}
@@ -114,7 +113,7 @@ export function NoticeButtons({ storeId, current, proxy = false }: { storeId: st
       {askTime && (
         <section className="flex flex-col gap-2 rounded-[22px] border-2 border-yellow-line bg-cream px-4 py-3.5">
           <span className="font-display text-lg">
-            {askTime === "late_open" ? "몇 시에 여세요?" : "몇 시에 닫으세요?"}{" "}
+            {askTime === "late_open" ? "몇 시에 여세요?" : askTime === "out" ? "몇 시에 돌아오세요?" : "몇 시에 닫으세요?"}{" "}
             <span className="font-sans text-[13px] text-muted">(몰라도 괜찮아요)</span>
           </span>
           <div className="flex flex-wrap gap-2">
