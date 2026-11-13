@@ -110,6 +110,23 @@ a:active {
 }
 
 /* 홈·소식·가게 목록은 PC 에서 넓게 쓴다 */
+/* 탭을 옆으로 밀 때 화면이 밖으로 나가도 가로 스크롤이 생기지 않게 */
+.ok-shell {
+  overflow-x: clip;
+}
+
+/* 밀어서 넘긴 새 탭 화면이 반대쪽에서 들어온다 (components/TabSwipe.tsx) */
+@keyframes ok-slide-in-right {
+  from { transform: translateX(60%); opacity: 0.4; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes ok-slide-in-left {
+  from { transform: translateX(-60%); opacity: 0.4; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.ok-slide-in-right { animation: ok-slide-in-right 220ms ease-out; }
+.ok-slide-in-left { animation: ok-slide-in-left 220ms ease-out; }
+
 .ok-shell:has(.ok-wide) {
   max-width: 1040px;
 }
