@@ -24,8 +24,28 @@ const KINDS: { id: Kind; label: string }[] = [
 ];
 const TIME_INPUT = "min-h-14 w-full min-w-0 rounded-2xl border-2 border-line bg-white px-3 text-lg";
 
-/** 오늘부터 한 달: 날짜를 누르고 그날 휴무·늦게 열기·일찍 닫기·외출을 넣는다. 휴무 빨강 · 일정 파랑 · 평소 검정 */
-export function OwnerCalendar({ storeId, storeName, hours, closures, plans }: { storeId: string; storeName: string; hours: RegularHours | null; closures: TempClosure[]; plans: DayPlan[] }) {
+/**
+ * 오늘부터 한 달 달력. 휴무 빨강 · 일정 파랑 · 평소 검정. 날짜를 누르면 그날 일정이 보인다.
+ * editable(사장님·관리자)이면 그날 휴무·늦게 열기·일찍 닫기·외출을 넣고 지운다.
+ * embedded 는 가게 화면의 달력 창 안에 넣을 때 (머리말을 뺀다)
+ */
+export function OwnerCalendar({
+  storeId,
+  storeName,
+  hours,
+  closures,
+  plans,
+  editable = true,
+  embedded = false,
+}: {
+  storeId: string;
+  storeName: string;
+  hours: RegularHours | null;
+  closures: TempClosure[];
+  plans: DayPlan[];
+  editable?: boolean;
+  embedded?: boolean;
+}) {
   const router = useRouter();
   const { node, show } = useToast();
   const today = seoulToday();
@@ -98,14 +118,19 @@ export function OwnerCalendar({ storeId, storeName, hours, closures, plans }: { 
 
   return (
     <>
-      <Link href="/owner/store" className="flex min-h-12 w-fit items-center gap-1.5 rounded-2xl border-2 border-line bg-card px-3.5 text-base font-bold">
-        <span aria-hidden>‹</span> 뒤로
-      </Link>
-      <header className="flex flex-col gap-0.5">
-        <span className="text-base text-muted">{storeName}</span>
-        <h1 className="font-display text-[26px] leading-tight font-normal">캘린더에 일정 넣기</h1>
-        <p className="text-lg text-muted">날짜를 누르고 그날 일정을 골라 주세요. 오늘부터 한 달 뒤까지 넣을 수 있어요.</p>
-      </header>
+      {!embedded && (
+        <>
+          <Link href="/owner/store" className="flex min-h-12 w-fit items-center gap-1.5 rounded-2xl border-2 border-line bg-card px-3.5 text-base font-bold">
+            <span aria-hidden>‹</span> 뒤로
+          </Link>
+          <header className="flex flex-col gap-0.5">
+            <span className="text-base text-muted">{storeName}</span>
+            <h1 className="font-display text-[26px] leading-tight font-normal">캘린더에 일정 넣기</h1>
+            <p className="text-lg text-muted">날짜를 누르고 그날 일정을 골라 주세요. 오늘부터 한 달 뒤까지 넣을 수 있어요.</p>
+          </header>
+        </>
+      )}
+      {embedded && <p className="text-base text-muted">{editable ? "날짜를 누르면 그날 일정을 넣거나 고칠 수 있어요." : "날짜를 누르면 그날 일정을 볼 수 있어요."}</p>}
 
       <p className="flex flex-wrap gap-x-4 gap-y-1 text-base font-bold" aria-label="색 설명">
         <span className={TONE_TEXT.closed}>● 휴무</span>
@@ -154,7 +179,14 @@ export function OwnerCalendar({ storeId, storeName, hours, closures, plans }: { 
           {line.note && <p className="text-base text-muted">{line.note}</p>}
         </div>
 
-        {closure ? (
+        {!editable ? (
+          dayPlans.map((p) => (
+            <p key={p.id} className="rounded-2xl border-2 border-line bg-white px-3 py-2 text-lg font-bold text-blue">
+              {planText(p)}
+              {p.note && <span className="block text-base font-normal text-muted">{p.note}</span>}
+            </p>
+          ))
+        ) : closure ? (
           <button type="button" disabled={busy} onClick={() => cancelClosure(closure)} className="min-h-16 rounded-[20px] border-2 border-line bg-white text-lg font-bold text-[#A4423F] disabled:opacity-60">
             {closure.start_date === closure.end_date ? "이날 휴무 취소하기" : `${formatRange(closure.start_date, closure.end_date)} 휴무 취소하기`}
           </button>

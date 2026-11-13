@@ -72,7 +72,7 @@ export type TempClosure = { id: string; start_date: string; end_date: string; re
 export type DayPlanKind = "late_open" | "early_close" | "out";
 export type DayPlan = { id: string; day: string; kind: DayPlanKind; start_time: string | null; end_time: string | null; note: string | null };
 /** 내 정보 (ADR-014) */
-export type MyProfile = { name: string | null; area: string | null; phone: string | null; avatar_url: string | null; registered: boolean; store_ack: boolean };
+export type MyProfile = { name: string | null; nickname: string | null; area: string | null; phone: string | null; avatar_url: string | null; registered: boolean; store_ack: boolean };
 
 export type StoreDetail = {
   store: StoreSign;
@@ -158,6 +158,9 @@ export type QueueItem = {
   reason: "conflict" | "no_answer";
   notice_kind: NoticeKind | null;
 };
+
+/** 관리자 이용자 정보의 주민 한 줄 */
+export type ResidentItem = { user_id: string; name: string; nickname: string | null; area: string; phone: string; registered_at: string; store_name: string | null };
 
 export type StoreInfoItem = { store_id: string; name: string; phone: string | null; category: string | null; created_at: string };
 

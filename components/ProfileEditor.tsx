@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
 import { formatPhone } from "@/lib/hours";
 import { uploadAvatar } from "@/lib/images";
@@ -16,11 +17,12 @@ import { useToast } from "./Toast";
 const INPUT = "min-h-14 w-full min-w-0 rounded-2xl border-2 border-line bg-white px-3.5 text-lg";
 
 /** 내 정보 등록·고치기: 프로필 사진(선택) · 이름 · 사는 곳 · 전화번호 */
-export function ProfileEditor({ userId, initial }: { userId: string; initial: MyProfile }) {
+export function ProfileEditor({ userId, initial, hasStore = false }: { userId: string; initial: MyProfile; hasStore?: boolean }) {
   const router = useRouter();
   const { node, show } = useToast();
   const registered = initial.registered;
   const [name, setName] = useState(initial.name ?? "");
+  const [nickname, setNickname] = useState(initial.nickname ?? "");
   const startsCustom = !!initial.area && !AREAS.includes(initial.area);
   const [area, setArea] = useState(initial.area ?? "");
   const [custom, setCustom] = useState(startsCustom);
@@ -38,9 +40,29 @@ export function ProfileEditor({ userId, initial }: { userId: string; initial: My
     try {
       const supabase = createClient();
       const url = file ? await uploadAvatar(supabase, userId, file) : avatarUrl;
-      const { error } = await supabase.rpc("save_my_profile", { p_name: name.trim(), p_area: area.trim(), p_phone: phone, p_avatar_url: url });
+      const { error } = await supabase.rpc("save_my_profile", { p_name: name.trim(), p_area: area.trim(), p_phone: phone, p_avatar_url: url, p_nickname: nickname.trim() || null });
       if (error) throw error;
       show(registered ? "내 정보를 고쳤어요." : "내 정보를 등록했어요!", "proud");
+      pushWithLoading(router, "/owner");
+      router.refresh();
+    } catch (e) {
+      show(errorMessage(e), "think");
+      setBusy(false);
+    }
+  }
+
+  async function removeAccount() {
+    const ok = await askDelete({
+      title: "정말로 삭제하시겠습니까?",
+      detail: `되돌리기 어렵습니다.\n내 정보와 즐겨찾기가 지워져요.${hasStore ? "\n등록한 가게(소식·메뉴·사진·댓글)도 함께 지워져요." : ""}`,
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.rpc("delete_my_account");
+      if (error) throw error;
+      await supabase.auth.signOut();
       pushWithLoading(router, "/owner");
       router.refresh();
     } catch (e) {
@@ -112,6 +134,14 @@ export function ProfileEditor({ userId, initial }: { userId: string; initial: My
           <input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder="예: 김옥천" autoComplete="name" className={INPUT} />
         </label>
 
+        <label className="flex flex-col gap-1.5">
+          <span className="text-lg font-bold">
+            닉네임 <span className="ml-1 text-sm font-normal text-muted">(선택)</span>
+          </span>
+          <input value={nickname} maxLength={20} onChange={(e) => setNickname(e.target.value)} placeholder="예: 붕어빵 좋아하는 이웃" className={INPUT} />
+          <span className="text-sm leading-normal text-muted">비워 두면 &ldquo;익명의 오소리 123&rdquo;처럼 자동으로 지어 드려요.</span>
+        </label>
+
         <div className="flex flex-col gap-1.5">
           <span className="text-lg font-bold">
             사는 곳 <span className="ml-1 text-sm text-[#A4423F]">필수</span>
@@ -159,6 +189,18 @@ export function ProfileEditor({ userId, initial }: { userId: string; initial: My
           <span className="text-sm leading-normal text-muted">다른 이웃에게는 보이지 않아요. 옥천신문이 연락할 때만 써요.</span>
         </label>
       </section>
+
+      {registered && (
+        <section className="flex flex-col gap-2 rounded-[22px] border-2 border-line bg-card px-3.5 py-4">
+          <h2 className="font-display text-[20px] font-normal">계정 삭제</h2>
+          <p className="text-base leading-relaxed text-muted">
+            내 정보와 즐겨찾기가 지워져요.{hasStore ? " 등록한 가게도 함께 지워져요." : ""} 지운 뒤에도 카카오로 다시 로그인하면 새로 만들 수 있어요.
+          </p>
+          <button type="button" disabled={busy} onClick={removeAccount} className="min-h-14 w-fit rounded-2xl border-2 border-line bg-white px-4 text-lg font-bold text-[#A4423F] disabled:opacity-60">
+            계정 삭제하기
+          </button>
+        </section>
+      )}
 
       <div className="sticky bottom-0 -mx-[18px] bg-paper px-[18px] pt-2 pb-[max(14px,env(safe-area-inset-bottom))]">
         <button type="submit" disabled={busy} className="min-h-16 w-full rounded-[22px] border-2 border-sage-deep bg-sage font-display text-[21px] text-white disabled:opacity-60">

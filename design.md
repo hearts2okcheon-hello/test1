@@ -191,6 +191,7 @@ create table events (                -- 시범 지표 측정용
 - `stores.store_phone`(가게 번호, 선택)·`store_phone_public`. 표 직접 읽기 권한이 없고 `get_store_detail`의 `profile.store_phone`(공개한 것)·`manage_store_phone`(관리자·사장님)으로만 준다.
 - `store_day_plans(store_id, day, kind, start_time, end_time, note)`: kind 는 `late_open`·`early_close`·`out`, 가게·날짜·종류마다 하나. 쓰기는 `set_day_plan`(오늘~한 달, `closed`는 하루짜리 `temp_closures`로 넣는다)·`clear_day_plan`. 읽기는 `get_store_detail`의 `plans`.
 - `okc_schedule_status`는 외출 중 공지와 오늘의 일정(늦게 열기·일찍 닫기·외출)을 반영한다.
+- `profiles.nickname`(선택, 비우면 "익명의 오소리 NNN"). 관리자용 `admin_list_residents`·`admin_update_resident`, 본인용 `delete_my_account` (`20261113040000_nickname_residents_account.sql`).
 - `stores.logo_url`(가게 프로필 사진, 쓰기는 `set_store_logo`). `get_store_signs`가 `logo_url`과 `card_photos`(갤러리 사진 먼저, 그다음 메뉴 사진, 4장까지)를 함께 준다 (`20261113030000_store_logo_card_photos.sql`).
 
 ### 4.1 파생 뷰

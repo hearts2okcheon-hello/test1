@@ -16,6 +16,7 @@ const MESSAGES: Record<string, string> = {
   INVALID_CODE: "코드가 맞지 않아요. 글자와 숫자를 다시 확인해 주세요.",
   TOO_MANY_ATTEMPTS: "여러 번 틀렸어요. 10분 뒤에 다시 넣어 주세요.",
   INVALID_MY_NAME: "이름을 써 주세요. (20자까지)",
+  INVALID_NICKNAME: "닉네임은 20자까지 쓸 수 있어요.",
   INVALID_AREA: "사는 곳을 골라 주세요.",
   DAY_CLOSED: "이날은 휴무로 잡혀 있어요. 휴무를 먼저 취소해 주세요.",
   INVALID_NAME: "가게 이름을 써 주세요.",

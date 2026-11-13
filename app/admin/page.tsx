@@ -3,15 +3,15 @@ import { redirect } from "next/navigation";
 import { Osori } from "@/components/Osori";
 import { SignOutButton } from "@/components/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
-import type { AdminContent, CommunityAdminPost, Metrics, QueueItem, StoreInfoItem, StoreSign } from "@/lib/types";
+import type { AdminContent, CommunityAdminPost, Metrics, QueueItem, ResidentItem, StoreInfoItem, StoreSign } from "@/lib/types";
 import { QueueList, StoreForm, StoreManager } from "./AdminPanels";
 import { ContentPanel } from "./ContentPanel";
-import { StoreInfoPanel } from "./StoreInfoPanel";
+import { UserInfoPanel } from "./UserInfoPanel";
 
 export const dynamic = "force-dynamic";
 
 const TABS = [
-  { id: "info", label: "가게 정보" },
+  { id: "info", label: "이용자 정보" },
   { id: "content", label: "게시물" },
   { id: "queue", label: "엇갈림·무응답" },
   { id: "proxy", label: "대리 등록" },
@@ -80,8 +80,8 @@ async function QueueTab() {
 
 async function InfoTab() {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("admin_list_store_info");
-  return <StoreInfoPanel items={(data ?? []) as StoreInfoItem[]} />;
+  const [{ data }, { data: residents }] = await Promise.all([supabase.rpc("admin_list_store_info"), supabase.rpc("admin_list_residents")]);
+  return <UserInfoPanel stores={(data ?? []) as StoreInfoItem[]} residents={(residents ?? []) as ResidentItem[]} />;
 }
 
 async function StoresTab() {

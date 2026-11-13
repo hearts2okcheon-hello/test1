@@ -43,7 +43,7 @@ export function ConfirmDeleteHost() {
     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-ink/40 px-5">
       <div role="alertdialog" aria-modal="true" aria-labelledby="ok-delete-title" className="ok-pop flex w-full max-w-[380px] flex-col items-center gap-3 rounded-[22px] border-2 border-line bg-card px-4 py-5 text-center">
         <Osori mood="surprise" size={72} />
-        <h2 id="ok-delete-title" className="font-display text-[24px] font-normal">삭제하시겠습니까?</h2>
+        <h2 id="ok-delete-title" className="font-display text-[24px] font-normal">{req.title ?? "삭제하시겠습니까?"}</h2>
         {req.detail && <p className="text-base leading-relaxed whitespace-pre-line text-muted">{req.detail}</p>}
         {req.password && (
           <label className="flex w-full flex-col gap-1.5 text-left">

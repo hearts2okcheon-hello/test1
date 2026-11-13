@@ -14,7 +14,7 @@ export default async function ProfilePage() {
 
   return (
     <main className="flex flex-1 flex-col px-[18px] pt-4">
-      <ProfileEditor userId={auth.user.id} initial={home.profile} />
+      <ProfileEditor userId={auth.user.id} initial={home.profile} hasStore={home.state === "owner"} />
     </main>
   );
 }

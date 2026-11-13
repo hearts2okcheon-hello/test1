@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { BackButton } from "@/components/BackButton";
 import { FavoriteStar } from "@/components/FavoriteStar";
 import { Gallery } from "@/components/Gallery";
-import { HoursPanel, ScheduleButton } from "@/components/HoursPanel";
+import { HoursPanel } from "@/components/HoursPanel";
+import { StoreCalendarButton } from "@/components/StoreCalendarButton";
 import { KakaoMap } from "@/components/KakaoMap";
 import { PageView } from "@/components/PageView";
 import { ScheduleBadge } from "@/components/ScheduleBadge";
@@ -52,7 +53,7 @@ export default async function StorePage({
           <h1 className="truncate font-display text-[26px] leading-tight font-normal">{store.name}</h1>
           {tags && <span className="truncate text-[13px] text-muted">{tags}</span>}
         </div>
-        <ScheduleButton marked={closures.length > 0 || plans.length > 0} />
+        <StoreCalendarButton storeId={store.store_id} storeName={store.name} hours={store.regular_hours} closures={closures} plans={plans} canManage={detail.can_manage} />
         <FavoriteStar storeId={store.store_id} storeName={store.name} size={30} />
         {detail.can_manage && (
           <Link href={`/owner/edit${editQuery}`} className="flex min-h-11 shrink-0 items-center rounded-2xl border-2 border-line bg-card px-3 text-sm font-bold">

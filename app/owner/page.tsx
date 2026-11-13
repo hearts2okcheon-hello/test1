@@ -68,6 +68,7 @@ export default async function MyInfoPage({ searchParams }: { searchParams: Promi
             {profile.registered ? (
               <>
                 <span className="truncate font-display text-[23px] leading-tight">{profile.name}</span>
+                {profile.nickname && <span className="truncate text-base font-bold text-sage-deep">{profile.nickname}</span>}
                 <span className="truncate text-base text-muted">{profile.area}</span>
                 {profile.phone && <span className="text-base text-muted">{formatPhone(profile.phone)}</span>}
               </>
