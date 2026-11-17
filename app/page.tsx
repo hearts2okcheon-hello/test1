@@ -3,11 +3,12 @@ import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { InstallButton } from "@/components/InstallButton";
+import { LiveRefresh } from "@/components/LiveRefresh";
 import { PageView } from "@/components/PageView";
 import { TimeAgo } from "@/components/TimeAgo";
 import { WriteFab } from "@/components/WriteFab";
 import { CATEGORIES, categoryOf } from "@/lib/categories";
-import { feedLine, latestPerStore } from "@/lib/signs";
+import { feedLine } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/server";
 import type { FeedItem, StoreSign } from "@/lib/types";
 import { HomeFavorites } from "./HomeFavorites";
@@ -15,8 +16,7 @@ import { HomeSearch } from "./HomeSearch";
 
 export const dynamic = "force-dynamic";
 
-const BROADCAST_CARDS = 8;
-const CARD = "ok-sticker w-[78%] max-w-[320px] shrink-0 snap-start scroll-ml-5 rounded-[24px] border-2 border-line bg-card px-4 py-3";
+const LIVE_ROWS = 5;
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -30,7 +30,8 @@ export default async function HomePage() {
   const feed = (feedRes.data ?? []) as FeedItem[];
   const stores = (signsRes.data ?? []) as StoreSign[];
   const menus = Object.fromEntries(((indexRes.data ?? []) as { store_id: string; menus: string[] }[]).map((r) => [r.store_id, r.menus]));
-  const broadcasts = latestPerStore(feed.filter((f) => f.is_current)).slice(0, BROADCAST_CARDS);
+  // 실시간 소식: 올라온 순서대로 (가게마다 하나로 줄이지 않는다)
+  const live = feed.filter((f) => f.is_current).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, LIVE_ROWS);
   const isOpen = (s: StoreSign) => s.schedule_status === "open";
   const openTotal = stores.filter(isOpen).length;
 
@@ -46,33 +47,37 @@ export default async function HomePage() {
         </header>
 
         <HomeSearch stores={stores} menus={menus}>
-          {/* 오늘의 마을방송: 옆으로 넘겨 본다 */}
-          <section aria-label="오늘의 마을방송" className="-mx-5">
-            <div className="ok-scroll-x flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pt-1 pb-2">
-              {broadcasts.length === 0 ? (
-                <div className={`${CARD} flex items-center gap-2.5`}>
-                  <p className="font-display text-[17px] leading-snug">아직 오늘 방송이 없어요. 사장님들 소식을 기다리는 중!</p>
-                </div>
-              ) : (
-                broadcasts.map((f) => (
-                  <Link key={`${f.item_type}-${f.item_id}`} href={`/stores/${f.store_id}`} className={`${CARD} flex min-h-[112px] items-center gap-2.5`}>
-                    <span className="flex min-w-0 flex-1 flex-col gap-1">
-                      <span className="truncate font-display text-[18px]">{f.store_name}</span>
-                      <span className="line-clamp-2 text-[15px] leading-snug">{feedLine(f)}</span>
-                      <span className="text-[13px] text-muted">
-                        {f.source === "owner" ? "사장님" : "옥천신문"} · <TimeAgo iso={f.created_at} />
+          {/* 실시간 마을방송: 방금 올라온 소식이 위에서부터 쌓인다 */}
+          <section aria-labelledby="live-title" className="flex flex-col gap-2.5">
+            <h2 id="live-title" className="flex items-center gap-2 font-display text-[19px] font-normal">
+              <span aria-hidden className="size-2.5 rounded-full bg-coral" />
+              실시간 마을방송
+            </h2>
+            {live.length === 0 ? (
+              <p className="rounded-[20px] border-2 border-dashed border-line px-4 py-3.5 text-[15px] text-muted">아직 오늘 방송이 없어요. 사장님들 소식을 기다리는 중!</p>
+            ) : (
+              <ul className="ok-sticker flex flex-col rounded-[22px] border-2 border-line bg-card px-4">
+                {live.map((f, i) => (
+                  <li key={`${f.item_type}-${f.item_id}`} className={i > 0 ? "border-t-2 border-line" : ""}>
+                    <Link href={f.item_type === "post" ? `/stores/${f.store_id}/posts/${f.item_id}` : `/stores/${f.store_id}`} className="flex flex-col gap-0.5 py-3">
+                      <span className="flex items-baseline justify-between gap-2">
+                        <span className="truncate font-display text-base">{f.store_name}</span>
+                        <span className="shrink-0 text-xs text-muted">
+                          {f.source === "owner" ? "사장님" : "옥천신문"} · <TimeAgo iso={f.created_at} />
+                        </span>
                       </span>
-                    </span>
-                  </Link>
-                ))
-              )}
-            </div>
+                      <span className="line-clamp-2 text-[15px] leading-snug">{feedLine(f)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           <HomeFavorites stores={stores} initialIds={favoriteIds} />
 
           <div className="flex items-baseline justify-between">
-            <h2 className="font-display text-[22px] font-normal">무엇을 찾아요?</h2>
+            <h2 className="font-display text-[19px] font-normal">무엇을 찾아요?</h2>
             <span className="text-sm text-muted">
               지금 문 연 가게 <b className="text-[#2F6E3B]">{openTotal}곳</b>
             </span>
@@ -95,6 +100,7 @@ export default async function HomePage() {
       <WriteFab />
       <BottomNav />
       <PageView />
+      <LiveRefresh />
     </>
   );
 }

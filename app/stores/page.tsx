@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
+import { CategorySwipe } from "@/components/CategorySwipe";
 import { PageView } from "@/components/PageView";
 import { WriteFab } from "@/components/WriteFab";
 import { categoryById, categoryOf } from "@/lib/categories";
@@ -29,10 +30,13 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
           </Link>
           <h1 className="font-display text-[26px] font-normal">{category?.name ?? "전체 가게"}</h1>
         </header>
+        {category && <CategorySwipe current={category.id} />}
         {error ? (
           <p className="rounded-[22px] border-2 border-dashed border-line px-4 py-3 text-sm text-muted">가게 소식을 불러오지 못했어요. 잠시 뒤 새로고침 해 주세요.</p>
         ) : (
-          <StoreList stores={stores} />
+          <div id="store-list" className="flex flex-col gap-4">
+            <StoreList key={category?.id ?? "all"} stores={stores} />
+          </div>
         )}
       </main>
       <WriteFab />

@@ -12,10 +12,10 @@ export function SignBoard({ store }: { store: StoreSign }) {
     <>
       <section className="flex flex-col items-center">
         <div
-          className="flex w-full flex-col items-center gap-1 rounded-[26px] border-2 px-4 pt-4 pb-4 text-center"
+          className="flex w-full flex-col items-center gap-1.5 rounded-[26px] border-2 px-5 py-5 text-center"
           style={{ background: s.bg, borderColor: s.border, borderStyle: store.sign === "checking" ? "dashed" : "solid" }}
         >
-          <span className="font-display text-[34px] leading-tight" style={{ color: s.fg }}>
+          <span className="font-display text-[26px] leading-tight" style={{ color: s.fg }}>
             {signTitle(store.sign, store.at_time)}
           </span>
           {store.sign === "checking" && store.report_kind && (
@@ -39,7 +39,7 @@ export function SignBoard({ store }: { store: StoreSign }) {
           <span className="text-[13px] text-muted">
             {store.source === "okcheon" ? "옥천신문 쪽지" : "사장님 쪽지"} · <TimeAgo iso={store.signed_at} />
           </span>
-          <span className="font-display text-xl leading-snug">{store.memo}</span>
+          <span className="font-display text-lg leading-snug">{store.memo}</span>
         </section>
       )}
     </>

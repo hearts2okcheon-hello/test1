@@ -63,7 +63,7 @@ export function StoreClient({ detail, reported }: { detail: StoreDetail; reporte
       )}
 
       <section className="flex flex-col gap-2.5">
-        <h2 className="font-display text-xl font-normal">오늘 이웃들의 제보</h2>
+        <h2 className="font-display text-[19px] font-normal">오늘 이웃들의 제보</h2>
         {reports.length === 0 ? (
           <div className="flex items-center gap-2.5 rounded-[18px] border-2 border-dashed border-line px-3.5 py-2.5 text-sm text-muted">
             <Osori mood="think" size={40} />
@@ -104,11 +104,11 @@ export function StoreClient({ detail, reported }: { detail: StoreDetail; reporte
         )}
       </section>
 
-      <div className="sticky bottom-0 z-20 -mx-[18px] mt-auto bg-paper px-[18px] pt-2.5 pb-[max(18px,env(safe-area-inset-bottom))]">
+      <div className="sticky bottom-0 z-20 -mx-5 mt-auto bg-paper px-5 pt-2.5 pb-[max(18px,env(safe-area-inset-bottom))]">
         <button
           type="button"
           onClick={() => setSheet(true)}
-          className="min-h-[58px] w-full rounded-[22px] border-2 border-sage-deep bg-sage font-display text-xl text-white"
+          className="min-h-14 w-full rounded-[22px] border-2 border-sage-deep bg-sage font-display text-lg text-white"
         >
           지나가다 봤어요, 알려주기
         </button>

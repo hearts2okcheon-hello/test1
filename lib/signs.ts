@@ -174,3 +174,10 @@ export function latestPerStore<T extends { store_id: string; created_at: string 
   }
   return [...best.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
+
+/** 사장님 소식 글: 첫 줄은 제목처럼 크게, 나머지는 본문으로 보여 준다 */
+export function postParts(body: string): { title: string; rest: string } {
+  const text = body.trim();
+  const i = text.indexOf("\n");
+  return i < 0 ? { title: text, rest: "" } : { title: text.slice(0, i).trim(), rest: text.slice(i + 1).trim() };
+}

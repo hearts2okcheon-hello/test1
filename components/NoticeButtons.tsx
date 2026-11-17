@@ -2,24 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { nextHalfHour } from "@/lib/clock";
 import { errorMessage } from "@/lib/errors";
 import { MEMO_CHIPS, MEMO_MAX, NOTICE_KINDS, PROXY_MEMO_CHIPS, SIGN_STYLES, TIMED_KINDS, formatClock } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
 import { seoulClock } from "@/lib/time";
 import type { NoticeKind, OwnerNotice } from "@/lib/types";
+import { TimeWheel } from "./TimeWheel";
 import { useToast } from "./Toast";
-
-/** 다음 정각/30분부터 n개 */
-function upcomingTimes(n = 8): string[] {
-  const [h, m] = seoulClock().split(":").map(Number);
-  let mins = Math.ceil((h * 60 + m + 1) / 30) * 30;
-  const out: string[] = [];
-  while (out.length < n && mins <= 23 * 60 + 30) {
-    out.push(`${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`);
-    mins += 30;
-  }
-  return out;
-}
 
 /**
  * 원탭 공지 (MVP ①). 누르면 바로 방송, 5분 안에 되돌리기.
@@ -31,6 +21,7 @@ export function NoticeButtons({ storeId, current, proxy = false }: { storeId: st
   const [busy, setBusy] = useState(false);
   const [askTime, setAskTime] = useState<NoticeKind | null>(null);
   const [memo, setMemo] = useState("");
+  const [time, setTime] = useState(() => nextHalfHour(seoulClock()));
 
   async function post(kind: NoticeKind, atTime: string | null = null) {
     setBusy(true);
@@ -116,18 +107,19 @@ export function NoticeButtons({ storeId, current, proxy = false }: { storeId: st
             {askTime === "late_open" ? "몇 시에 여세요?" : askTime === "out" ? "몇 시에 돌아오세요?" : "몇 시에 닫으세요?"}{" "}
             <span className="font-sans text-[13px] text-muted">(몰라도 괜찮아요)</span>
           </span>
-          <div className="flex flex-wrap gap-2">
-            {upcomingTimes().map((t) => (
-              <button
-                key={t}
-                type="button"
-                disabled={busy}
-                onClick={() => post(askTime, t)}
-                className="min-h-11 rounded-[22px] border-2 border-line bg-card px-3.5 text-sm font-bold"
-              >
-                {formatClock(t)}
-              </button>
-            ))}
+          <TimeWheel value={time} onChange={setTime} label="시간 고르기" />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => post(askTime, time)}
+              className="min-h-16 flex-1 rounded-[22px] border-2 border-sage-deep bg-sage font-display text-xl text-white disabled:opacity-60"
+            >
+              {formatClock(time)}로 알리기
+            </button>
+            <button type="button" onClick={() => setAskTime(null)} className="min-h-16 shrink-0 rounded-[22px] border-2 border-line bg-card px-4 text-lg font-bold">
+              몰라요
+            </button>
           </div>
         </section>
       )}

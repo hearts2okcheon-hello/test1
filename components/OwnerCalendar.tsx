@@ -10,6 +10,7 @@ import { closureOn, dayLabel, dayLine, dayTone, lastPlanDay, planText, type DayT
 import { MEMO_MAX, formatRange } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
 import type { DayPlan, RegularHours, TempClosure } from "@/lib/types";
+import { TimeWheel } from "./TimeWheel";
 import { useToast } from "./Toast";
 
 const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
@@ -224,16 +225,16 @@ export function OwnerCalendar({
             {kind && (
               <>
                 {(kind === "late_open" || kind === "out") && (
-                  <label className="flex flex-col gap-1.5">
+                  <div className="flex flex-col gap-1.5">
                     <span className="text-lg font-bold">{kind === "out" ? "몇 시에 나가세요?" : "몇 시에 여세요?"}</span>
-                    <input type="time" value={from} onChange={(e) => setFrom(e.target.value)} className={TIME_INPUT} />
-                  </label>
+                    <TimeWheel value={from} onChange={setFrom} label="시작 시간" />
+                  </div>
                 )}
                 {(kind === "early_close" || kind === "out") && (
-                  <label className="flex flex-col gap-1.5">
+                  <div className="flex flex-col gap-1.5">
                     <span className="text-lg font-bold">{kind === "out" ? "몇 시에 돌아오세요?" : "몇 시에 닫으세요?"}</span>
-                    <input type="time" value={to} onChange={(e) => setTo(e.target.value)} className={TIME_INPUT} />
-                  </label>
+                    <TimeWheel value={to} onChange={setTo} label="끝 시간" />
+                  </div>
                 )}
                 <label className="flex flex-col gap-1.5">
                   <span className="text-lg font-bold">

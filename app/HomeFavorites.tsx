@@ -22,7 +22,7 @@ export function HomeFavorites({ stores, initialIds }: { stores: StoreSign[]; ini
 
   return (
     <section aria-labelledby="fav-title" className="flex flex-col gap-2.5">
-      <h2 id="fav-title" className="flex items-center gap-1.5 font-display text-[22px] font-normal">
+      <h2 id="fav-title" className="flex items-center gap-1.5 font-display text-[19px] font-normal">
         <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden fill="#F5C96A" stroke="#D9A43A" strokeWidth="2" strokeLinejoin="round">
           <path d="M12 3.2l2.7 5.5 6 .9-4.35 4.25 1 6L12 17l-5.35 2.85 1-6L3.3 9.6l6-.9z" />
         </svg>

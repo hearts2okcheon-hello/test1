@@ -37,3 +37,10 @@ export function categoryOf(category: string | null | undefined): CategoryId {
 export function categoryById(id: string | undefined) {
   return CATEGORIES.find((c) => c.id === id);
 }
+
+/** 가게 목록을 옆으로 밀 때 갈 카테고리. 왼쪽으로 밀면(dx < 0) 다음 것, 끝에서는 null */
+export function neighborCategory(id: string | undefined, dx: number): CategoryId | null {
+  const i = CATEGORIES.findIndex((c) => c.id === id);
+  if (i < 0 || dx === 0) return null;
+  return CATEGORIES[i + (dx < 0 ? 1 : -1)]?.id ?? null;
+}
