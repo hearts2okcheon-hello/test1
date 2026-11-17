@@ -15,6 +15,10 @@ self.addEventListener("push", (event) => {
     data = { body: event.data ? event.data.text() : "" };
   }
   const title = data.title || "옥!소리";
+  // 앱 아이콘에 안 읽은 알림 수를 띄운다 (못 쓰는 기기는 건너뛴다)
+  if (data.badge > 0 && self.navigator && self.navigator.setAppBadge) {
+    event.waitUntil(self.navigator.setAppBadge(data.badge).catch(() => {}));
+  }
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || "",
@@ -22,7 +26,7 @@ self.addEventListener("push", (event) => {
       badge: "/icons/badge-96.png",
       tag: data.tag || undefined,
       renotify: !!data.tag,
-      data: { url: data.url || "/" },
+      data: { url: data.url || "/", id: data.id || null },
       lang: "ko",
     }),
   );
@@ -31,7 +35,11 @@ self.addEventListener("push", (event) => {
 // 알림을 누르면 열려 있는 옥!소리 창으로 가고, 없으면 새로 연다
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = new URL((event.notification.data && event.notification.data.url) || "/", self.location.origin).href;
+  const info = event.notification.data || {};
+  const target = new URL(info.url || "/", self.location.origin);
+  // 어떤 알림을 눌렀는지 알려 주면, 앱이 그 알림을 읽음으로 바꾼다
+  if (info.id) target.searchParams.set("alert", String(info.id));
+  const url = target.href;
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
       for (const c of list) {

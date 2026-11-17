@@ -6,6 +6,7 @@ import { InAppGate } from "@/components/InAppGate";
 import { NavLoading } from "@/components/NavLoading";
 import { OwnerAlertHost } from "@/components/OwnerAlertHost";
 import { PwaSetup } from "@/components/PwaSetup";
+import { BadgeSync } from "@/components/BadgeSync";
 import { TabSwipe } from "@/components/TabSwipe";
 import { TouchRipple } from "@/components/TouchRipple";
 import "./globals.css";
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <TouchRipple />
         <TabSwipe />
         <PwaSetup />
+        <BadgeSync />
       </body>
     </html>
   );

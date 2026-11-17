@@ -5,7 +5,7 @@ import { requireSupabaseEnv } from "@/lib/supabase/env";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Row = { endpoint: string; p256dh: string; auth: string; title: string; body: string; url: string; tag: string | null };
+type Row = { endpoint: string; p256dh: string; auth: string; title: string; body: string; url: string; tag: string | null; alert_id: number | null; badge: number | null };
 
 /**
  * DB(push_outbox)에 쌓인 알림을 휴대폰으로 보낸다.
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
         try {
           await webpush.sendNotification(
             { endpoint: r.endpoint, keys: { p256dh: r.p256dh, auth: r.auth } },
-            JSON.stringify({ title: r.title, body: r.body, url: r.url, tag: r.tag }),
+            JSON.stringify({ title: r.title, body: r.body, url: r.url, tag: r.tag, id: r.alert_id, badge: r.badge }),
             { TTL: 6 * 3600, urgency: "high" },
           );
           sent++;

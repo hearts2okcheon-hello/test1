@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { AppAlertCard } from "@/components/AppAlertCard";
 import { FavoriteStar } from "@/components/FavoriteStar";
 import { StoreLogo } from "@/components/StoreCard";
 import { ScheduleBadge } from "@/components/ScheduleBadge";
@@ -50,7 +49,6 @@ export function HomeFavorites({ stores, initialIds }: { stores: StoreSign[]; ini
           ))}
         </div>
       )}
-      {list.length > 0 && <AppAlertCard who="resident" />}
     </section>
   );
 }
