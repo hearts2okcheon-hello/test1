@@ -30,7 +30,7 @@ export default async function MyInfoPage({ searchParams }: { searchParams: Promi
       <>
         <main className="flex flex-1 flex-col gap-4 px-[18px] pt-4 pb-5">
           <div className="flex items-center justify-between gap-2">
-            <h1 className="font-display text-[26px] font-normal">내 공간</h1>
+            <h1 className="font-display text-[23px] font-normal">내 공간</h1>
             <AdminDoor href={adminHref} />
           </div>
           <KakaoLogin ready={kakaoEnv() !== null} login={login} />
@@ -52,24 +52,24 @@ export default async function MyInfoPage({ searchParams }: { searchParams: Promi
     <>
       <main className="flex flex-1 flex-col gap-4 px-[18px] pt-4 pb-5">
         <div className="flex items-center gap-2">
-          <h1 className="flex-1 font-display text-[26px] font-normal">내 공간</h1>
+          <h1 className="flex-1 font-display text-[23px] font-normal">내 공간</h1>
           <AdminDoor href={adminHref} />
         </div>
 
         {/* 내 프로필 */}
         <section className="flex items-center gap-3.5 rounded-[22px] border-2 border-line bg-card px-4 py-4">
-          <Avatar url={profile.avatar_url} size={76} />
+          <Avatar url={profile.avatar_url} size={68} />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             {profile.registered ? (
               <>
-                <span className="truncate font-display text-[23px] leading-tight">{profile.name}</span>
-                {profile.nickname && <span className="truncate text-base font-bold text-sage-deep">{profile.nickname}</span>}
-                <span className="truncate text-base text-muted">
+                <span className="truncate font-display text-[20px] leading-tight">{profile.name}</span>
+                {profile.nickname && <span className="truncate text-[15px] font-bold text-sage-deep">{profile.nickname}</span>}
+                <span className="truncate text-sm text-muted">
                   {[profile.area, profile.phone ? formatPhone(profile.phone) : null].filter(Boolean).join(" · ")}
                 </span>
               </>
             ) : (
-              <span className="font-display text-xl leading-snug">내 정보를 등록해 주세요</span>
+              <span className="font-display text-lg leading-snug">내 정보를 등록해 주세요</span>
             )}
           </div>
         </section>
@@ -117,14 +117,14 @@ const ICONS = {
 function MenuRow({ href, icon, title, desc, line = false }: { href: string; icon: keyof typeof ICONS; title: string; desc: string; line?: boolean }) {
   return (
     <Link href={href} className={`flex min-h-16 items-center gap-3 ${line ? "border-t-2 border-line" : ""}`}>
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0">
         {ICONS[icon].map((d) => <path key={d} d={d} />)}
       </svg>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="text-lg font-bold">{title}</span>
-        <span className="truncate text-sm text-muted">{desc}</span>
+        <span className="text-base font-bold">{title}</span>
+        <span className="truncate text-[13px] text-muted">{desc}</span>
       </span>
-      <span aria-hidden className="text-2xl text-muted">›</span>
+      <span aria-hidden className="text-xl text-muted">›</span>
     </Link>
   );
 }

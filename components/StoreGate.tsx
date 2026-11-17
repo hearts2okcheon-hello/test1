@@ -41,16 +41,16 @@ export function StoreGate({ storeName, acked, canRegister }: { storeName: string
   return (
     <>
       <button type="button" onClick={go} className="flex min-h-16 w-full items-center gap-3 text-left active:!transform-none">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0">
           <path d="M3 7h18l-1.5 4h-15z" />
           <path d="M5 11v9h14v-9" />
           <path d="M10 20v-5h4v5" />
         </svg>
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-lg font-bold">{storeName ? "내 가게" : "가게 등록하기"}</span>
-          <span className="truncate text-sm text-muted">{storeName ?? "사장님이면 우리 가게를 등록해요"}</span>
+          <span className="text-base font-bold">{storeName ? "내 가게" : "가게 등록하기"}</span>
+          <span className="truncate text-[13px] text-muted">{storeName ?? "사장님이면 우리 가게를 등록해요"}</span>
         </span>
-        <span aria-hidden className="text-2xl text-muted">›</span>
+        <span aria-hidden className="text-xl text-muted">›</span>
       </button>
 
       {open && (
