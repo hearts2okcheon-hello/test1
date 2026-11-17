@@ -282,25 +282,11 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
         <Field label="전화번호" required hint="사장님 휴대폰 번호예요. 옥천신문이 확인 연락할 때 써요.">
           <input type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="010-0000-0000" className={INPUT} />
         </Field>
-        <label className="flex min-h-14 items-center gap-3 rounded-2xl border-2 border-line bg-white px-3.5 py-2">
-          <input type="checkbox" checked={phonePublic} onChange={(e) => setPhonePublic(e.target.checked)} className="size-6 shrink-0" />
-          <span className="flex flex-col">
-            <span className="text-lg font-bold">가게 페이지에 전화번호 공개</span>
-            <span className="text-sm leading-normal text-muted">켜면 손님이 전화하기 버튼으로 전화할 수 있어요. 언제든 고칠 수 있어요.</span>
-          </span>
-        </label>
+        <PublicSwitch label="사장님 전화번호" on={phonePublic} onChange={setPhonePublic} />
         <Field label="가게 번호 (선택)" hint="가게 전화가 따로 있으면 적어 주세요. 없으면 비워 두세요.">
           <input type="tel" inputMode="tel" value={storePhone} onChange={(e) => setStorePhone(formatPhone(e.target.value))} placeholder="043-000-0000" className={INPUT} />
         </Field>
-        {storePhone.trim() !== "" && (
-          <label className="flex min-h-14 items-center gap-3 rounded-2xl border-2 border-line bg-white px-3.5 py-2">
-            <input type="checkbox" checked={storePhonePublic} onChange={(e) => setStorePhonePublic(e.target.checked)} className="size-6 shrink-0" />
-            <span className="flex flex-col">
-              <span className="text-lg font-bold">가게 페이지에 가게 번호 공개</span>
-              <span className="text-sm leading-normal text-muted">켜면 손님이 가게 번호로 전화할 수 있어요.</span>
-            </span>
-          </label>
-        )}
+        {storePhone.trim() !== "" && <PublicSwitch label="가게 번호" on={storePhonePublic} onChange={setStorePhonePublic} />}
       </Section>
 
       {registering && (
@@ -482,5 +468,25 @@ function AddButton({ onClick, children }: { onClick: () => void; children: React
     <button type="button" onClick={onClick} className="min-h-14 rounded-2xl border-2 border-dashed border-line-strong bg-cream text-lg font-bold">
       + {children}
     </button>
+  );
+}
+
+/** 번호를 가게 페이지에 보일지 고르는 두 칸 버튼 */
+function PublicSwitch({ label, on, onChange }: { label: string; on: boolean; onChange: (v: boolean) => void }) {
+  const cell = (active: boolean) => `min-h-14 rounded-2xl border-2 text-lg font-bold ${active ? "border-sage-deep bg-sage-soft text-sage-deep" : "border-transparent text-muted"}`;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div role="group" aria-label={`${label} 공개 여부`} className="grid grid-cols-2 gap-1.5 rounded-[20px] bg-[#EFE9DF] p-1.5">
+        <button type="button" aria-pressed={on} onClick={() => onChange(true)} className={cell(on)}>
+          공개
+        </button>
+        <button type="button" aria-pressed={!on} onClick={() => onChange(false)} className={cell(!on)}>
+          비공개
+        </button>
+      </div>
+      <span className="text-base leading-normal text-muted">
+        {on ? `${label}가 가게 페이지에 보이고, 손님이 눌러서 전화할 수 있어요.` : `${label}는 손님에게 보이지 않아요. 옥천신문 확인 연락에만 써요.`}
+      </span>
+    </div>
   );
 }

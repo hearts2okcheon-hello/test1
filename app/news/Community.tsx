@@ -23,12 +23,13 @@ export function CommunityComposer({ signedIn }: { signedIn: boolean }) {
     if (error) return show(errorMessage(error), "think");
     setBody("");
     show("동네 이야기를 올렸어요!", "proud");
+    router.replace("/news");
     router.refresh();
   }
 
   if (!signedIn) {
     return (
-      <a href="/auth/kakao?next=/news" className="flex min-h-14 items-center justify-center gap-2 rounded-[22px] bg-[#FEE500] text-lg font-bold text-black/85">
+      <a href="/auth/kakao?next=/write/story" className="flex min-h-14 items-center justify-center gap-2 rounded-[22px] bg-[#FEE500] text-lg font-bold text-black/85">
         카카오로 로그인하고 글쓰기
       </a>
     );
@@ -43,7 +44,7 @@ export function CommunityComposer({ signedIn }: { signedIn: boolean }) {
       }}
     >
       <label htmlFor="community-body" className="sr-only">동네 이야기</label>
-      <textarea id="community-body" value={body} maxLength={BODY_MAX} rows={3} onChange={(e) => setBody(e.target.value)} placeholder="우리 동네 이야기를 나눠 보세요" className="w-full rounded-2xl border-2 border-line bg-white p-3 text-base leading-relaxed" />
+      <textarea id="community-body" value={body} maxLength={BODY_MAX} rows={7} autoFocus onChange={(e) => setBody(e.target.value)} placeholder="우리 동네 이야기를 나눠 보세요" className="w-full rounded-2xl border-2 border-line bg-white p-3 text-base leading-relaxed" />
       <p className="text-xs leading-normal text-muted">화면에는 익명으로 보여요. 문제가 있는 글은 옥천신문이 작성 계정을 확인할 수 있어요.</p>
       <button type="submit" disabled={busy || !body.trim()} className="min-h-12 rounded-2xl border-2 border-sage-deep bg-sage font-display text-lg text-white disabled:opacity-50">
         {busy ? "올리는 중…" : "올리기"}

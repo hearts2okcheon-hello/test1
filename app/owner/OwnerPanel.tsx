@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppAlertCard } from "@/components/AppAlertCard";
 import { NoticeButtons } from "@/components/NoticeButtons";
 import { TimeAgo } from "@/components/TimeAgo";
@@ -14,7 +14,7 @@ import { dayLine, lastPlanDay, specialDays } from "@/lib/plans";
 import { SIGN_STYLES, formatRange, signChip, signTitle } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
 import { seoulClock, todayOpenAt } from "@/lib/time";
-import type { DayPlan, NoticeKind, OwnerHome, StorePost, TempClosure } from "@/lib/types";
+import type { DayPlan, OwnerHome, StorePost, TempClosure } from "@/lib/types";
 
 type Home = Extract<OwnerHome, { state: "owner" }>;
 
@@ -23,13 +23,18 @@ export function OwnerPanel({ home, posts, closures, plans }: { home: Home; posts
   const router = useRouter();
   const { node, show } = useToast();
   const [busy, setBusy] = useState(false);
-  const s = SIGN_STYLES[store.sign];
+  // 영업 중 · 오늘 휴무는 누르는 즉시 화면을 바꾸고, 저장은 뒤에서 차례로 한다
+  const [picked, setPicked] = useState<"open" | "closed_today" | null>(null);
+  const saving = useRef<Promise<unknown>>(Promise.resolve());
+  useEffect(() => setPicked(null), [store.sign, store.signed_at]);
+  const sign = picked ?? store.sign;
+  const s = SIGN_STYLES[sign];
   const today = seoulToday();
 
   // 평소 여는 시간이 지났는데 오늘 소식이 없으면 먼저 묻는다
   const openAt = todayOpenAt(store.regular_hours);
-  const askOpen = store.sign !== "temp_closed" && !notice && questions.length === 0 && openAt !== null && seoulClock() >= openAt;
-  const unknown = store.sign === "none" || store.sign === "checking";
+  const askOpen = !picked && store.sign !== "temp_closed" && !notice && questions.length === 0 && openAt !== null && seoulClock() >= openAt;
+  const unknown = sign === "none" || sign === "checking";
   const todayPlan = dayLine(today, store.regular_hours, closures, plans);
   const upcoming = specialDays(today, lastPlanDay(today), store.regular_hours, closures, plans).filter((d) => d.day !== today).slice(0, 3);
 
@@ -49,8 +54,19 @@ export function OwnerPanel({ home, posts, closures, plans }: { home: Home; posts
     }
   }
 
-  const quick = (kind: NoticeKind) =>
-    run(() => createClient().rpc("post_notice", { p_store_id: store.store_id, p_kind: kind }), "마을방송 했어요!");
+  function quick(kind: "open" | "closed_today") {
+    if (sign === kind) return;
+    setPicked(kind);
+    show("마을방송 했어요!", "proud");
+    saving.current = saving.current.then(async () => {
+      const { error } = await createClient().rpc("post_notice", { p_store_id: store.store_id, p_kind: kind });
+      if (error) {
+        setPicked(null);
+        show(errorMessage(error), "think");
+      }
+      router.refresh();
+    });
+  }
 
   function cancelClosure(c: TempClosure) {
     if (!window.confirm(`${formatRange(c.start_date, c.end_date)} 임시휴무를 취소할까요?`)) return;
@@ -87,16 +103,16 @@ export function OwnerPanel({ home, posts, closures, plans }: { home: Home; posts
             className="shrink-0 rounded-full px-3 py-1 text-base font-bold"
             style={unknown ? { background: SIGN_STYLES.late_open.bg, color: SIGN_STYLES.late_open.fg } : { background: s.bg, color: s.fg }}
           >
-            {unknown ? "상태 미확인" : signChip(store.sign, store.at_time)}
+            {unknown ? "상태 미확인" : signChip(sign, picked ? null : store.at_time)}
           </span>
         </div>
         {askOpen && <p className="text-lg leading-snug text-muted">평소 영업시간이 지났어요. 오늘 영업하시나요?</p>}
         <div role="group" aria-label="오늘 영업 상태 고르기" className="grid grid-cols-2 gap-1.5 rounded-[20px] bg-[#EFE9DF] p-1.5">
-          <StatusButton kind="open" label="영업 중" on={store.sign === "open"} busy={busy} onClick={() => quick("open")} />
-          <StatusButton kind="closed_today" label="오늘 휴무" on={store.sign === "closed_today" || store.sign === "temp_closed"} busy={busy} onClick={() => quick("closed_today")} />
+          <StatusButton kind="open" label="영업 중" on={sign === "open"} onClick={() => quick("open")} />
+          <StatusButton kind="closed_today" label="오늘 휴무" on={sign === "closed_today" || sign === "temp_closed"} onClick={() => quick("closed_today")} />
         </div>
-        {!unknown && store.sign !== "open" && store.sign !== "closed_today" && (
-          <p className="text-base text-muted">지금 손님에게 보이는 팻말: <b className="text-ink">{signTitle(store.sign, store.at_time)}</b></p>
+        {!unknown && sign !== "open" && sign !== "closed_today" && (
+          <p className="text-base text-muted">지금 손님에게 보이는 팻말: <b className="text-ink">{signTitle(sign, store.at_time)}</b></p>
         )}
         {todayPlan.tone === "plan" && <p className="text-base font-bold text-blue">오늘 일정: {todayPlan.text}</p>}
       </section>
@@ -177,15 +193,14 @@ export function OwnerPanel({ home, posts, closures, plans }: { home: Home; posts
 }
 
 /** 영업 중은 초록 동그라미, 오늘 휴무는 빨간 동그라미 */
-function StatusButton({ kind, label, on, busy, onClick }: { kind: "open" | "closed_today"; label: string; on: boolean; busy: boolean; onClick: () => void }) {
+function StatusButton({ kind, label, on, onClick }: { kind: "open" | "closed_today"; label: string; on: boolean; onClick: () => void }) {
   const s = SIGN_STYLES[kind];
   return (
     <button
       type="button"
-      disabled={busy}
       aria-pressed={on}
       onClick={onClick}
-      className="flex min-h-[68px] items-center justify-center gap-2 rounded-2xl border-2 font-display text-[22px] disabled:opacity-60"
+      className="flex min-h-[68px] items-center justify-center gap-2 rounded-2xl border-2 font-display text-[22px] transition-colors duration-100"
       style={on ? { background: s.bg, borderColor: s.border, color: s.fg } : { background: "transparent", borderColor: "transparent" }}
     >
       <span aria-hidden className="size-4 shrink-0 rounded-full" style={{ background: s.dot }} />

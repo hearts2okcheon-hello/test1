@@ -6,9 +6,8 @@ import { InstallButton } from "@/components/InstallButton";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { PageView } from "@/components/PageView";
 import { TimeAgo } from "@/components/TimeAgo";
-import { WriteFab } from "@/components/WriteFab";
 import { CATEGORIES, categoryOf } from "@/lib/categories";
-import { feedLine } from "@/lib/signs";
+import { feedLine, latestPerStore } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/server";
 import type { FeedItem, StoreSign } from "@/lib/types";
 import { HomeFavorites } from "./HomeFavorites";
@@ -30,8 +29,8 @@ export default async function HomePage() {
   const feed = (feedRes.data ?? []) as FeedItem[];
   const stores = (signsRes.data ?? []) as StoreSign[];
   const menus = Object.fromEntries(((indexRes.data ?? []) as { store_id: string; menus: string[] }[]).map((r) => [r.store_id, r.menus]));
-  // 실시간 소식: 올라온 순서대로 (가게마다 하나로 줄이지 않는다)
-  const live = feed.filter((f) => f.is_current).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, LIVE_ROWS);
+  // 실시간 소식: 가게마다 가장 새 소식 하나씩, 새로 올라온 순서로
+  const live = latestPerStore(feed.filter((f) => f.is_current)).slice(0, LIVE_ROWS);
   const isOpen = (s: StoreSign) => s.schedule_status === "open";
   const openTotal = stores.filter(isOpen).length;
 
@@ -97,7 +96,6 @@ export default async function HomePage() {
         </HomeSearch>
       </main>
 
-      <WriteFab />
       <BottomNav />
       <PageView />
       <LiveRefresh />

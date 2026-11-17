@@ -5,7 +5,6 @@ import { WriteFab } from "@/components/WriteFab";
 import { getTopNews } from "@/lib/okinews";
 import { createClient } from "@/lib/supabase/server";
 import type { FeedItem } from "@/lib/types";
-import { CommunityComposer } from "./Community";
 import { NewsCards, type NewsStat } from "./NewsCards";
 import { NewsList, type CommunityPost, type TodayReport } from "./NewsList";
 
@@ -42,7 +41,6 @@ export default async function PlazaPage() {
 
         <section aria-labelledby="community-title" className="flex flex-col gap-3 pt-1">
           <h2 id="community-title" className="font-display text-[22px] font-normal">동네 이야기</h2>
-          <CommunityComposer signedIn={signedIn} />
           <NewsList
             feed={(feed.data ?? []) as FeedItem[]}
             reports={(reports.data ?? []) as TodayReport[]}

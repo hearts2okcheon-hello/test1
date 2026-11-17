@@ -40,7 +40,10 @@ export default async function StorePage({
   const phones = [
     { label: "가게", number: profile.store_phone },
     { label: "사장님", number: profile.phone },
-  ].filter((p): p is { label: string; number: string } => !!p.number);
+  ]
+    .filter((p): p is { label: string; number: string } => !!p.number)
+    // 두 번호가 같으면 한 번만 보여 준다
+    .filter((p, i, all) => all.findIndex((q) => q.number.replace(/\D/g, "") === p.number.replace(/\D/g, "")) === i);
   const tags = [store.category, store.neighborhood].filter(Boolean).join(" · ");
   const editQuery = `?store=${store.store_id}`;
 
@@ -63,13 +66,17 @@ export default async function StorePage({
       </header>
 
       <main className="flex flex-1 flex-col gap-[18px] px-5 pt-1 pb-4">
-        {phones.map((p) => (
-          <a key={p.label} href={`tel:${p.number}`} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-line bg-card text-base font-bold">
-            <PhoneIcon />
-            {phones.length > 1 && <span className="text-sm font-normal text-muted">{p.label}</span>}
-            {formatPhone(p.number)}
-          </a>
-        ))}
+        {phones.length > 0 && (
+          <section aria-label="전화번호" className="flex flex-col rounded-2xl border-2 border-line bg-card px-4">
+            {phones.map((p, i) => (
+              <a key={p.label} href={`tel:${p.number}`} className={`flex min-h-12 items-center justify-center gap-2 text-base font-bold ${i > 0 ? "border-t-2 border-line" : ""}`}>
+                <PhoneIcon />
+                {phones.length > 1 && <span className="text-sm font-normal text-muted">{p.label}</span>}
+                {formatPhone(p.number)}
+              </a>
+            ))}
+          </section>
+        )}
 
         <SignBoard store={store} />
 
