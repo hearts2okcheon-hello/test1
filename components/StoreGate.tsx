@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "./Toast";
 
 /**
- * 프로필 옆 가게 표시. 가게가 있으면 내 가게로, 없으면 가게 등록으로 간다.
+ * 내 공간 메뉴의 가게 줄. 가게가 있으면 내 가게로, 없으면 가게 등록으로 간다.
  * 처음 등록하러 갈 때는 연락 안내를 보여 주고 "확인했습니다"를 받는다 (한 번 확인하면 다시 띄우지 않는다)
  */
 export function StoreGate({ storeName, acked, canRegister }: { storeName: string | null; acked: boolean; canRegister: boolean }) {
@@ -40,18 +40,17 @@ export function StoreGate({ storeName, acked, canRegister }: { storeName: string
 
   return (
     <>
-      <button
-        type="button"
-        onClick={go}
-        aria-label={storeName ? `내 가게 ${storeName} 열기` : "가게 등록하기"}
-        className="ok-sticker flex min-h-[84px] w-[84px] shrink-0 flex-col items-center justify-center gap-1 rounded-[20px] border-2 border-sage-deep bg-sage-soft px-1.5 text-sage-deep"
-      >
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <button type="button" onClick={go} className="flex min-h-16 w-full items-center gap-3 text-left active:!transform-none">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0">
           <path d="M3 7h18l-1.5 4h-15z" />
           <path d="M5 11v9h14v-9" />
           <path d="M10 20v-5h4v5" />
         </svg>
-        <span className="line-clamp-2 text-center font-display text-[15px] leading-tight break-keep">{storeName ? "내 가게" : "가게 등록"}</span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-lg font-bold">{storeName ? "내 가게" : "가게 등록하기"}</span>
+          <span className="truncate text-sm text-muted">{storeName ?? "사장님이면 우리 가게를 등록해요"}</span>
+        </span>
+        <span aria-hidden className="text-2xl text-muted">›</span>
       </button>
 
       {open && (

@@ -81,7 +81,7 @@ export function OwnerPanel({ home, posts, closures, plans }: { home: Home; posts
   return (
     <>
       <header className="flex items-center gap-2.5">
-        <Link href="/owner" aria-label="내 정보로 돌아가기" className="flex size-[46px] shrink-0 items-center justify-center rounded-full border-2 border-line bg-card">
+        <Link href="/owner" aria-label="내 공간으로 돌아가기" className="flex size-[46px] shrink-0 items-center justify-center rounded-full border-2 border-line bg-card">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M15 5l-7 7 7 7" />
           </svg>
