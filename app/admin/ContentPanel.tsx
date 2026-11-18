@@ -7,8 +7,9 @@ import { TimeAgo } from "@/components/TimeAgo";
 import { useToast } from "@/components/Toast";
 import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
+import { formatPhone } from "@/lib/hours";
 import { createClient } from "@/lib/supabase/client";
-import type { AdminContent, CommunityAdminPost } from "@/lib/types";
+import type { AdminContent, AuthorInfo, CommunityAdminPost } from "@/lib/types";
 
 /** 옥천신문: 소식·댓글 살펴보고 문제 있는 글 지우기 */
 export function ContentPanel({ content, community }: { content: AdminContent; community: CommunityAdminPost[] }) {
@@ -17,7 +18,7 @@ export function ContentPanel({ content, community }: { content: AdminContent; co
   const [busy, setBusy] = useState(false);
   const [revealing, setRevealing] = useState<string | null>(null);
   const [reason, setReason] = useState("");
-  const [revealed, setRevealed] = useState<Record<string, { nickname: string | null; account: string; post_count: number }>>({});
+  const [revealed, setRevealed] = useState<Record<string, AuthorInfo>>({});
 
   async function removeCommunity(id: string) {
     if (!(await askDelete({ detail: "이 글은 되돌릴 수 없어요." }))) return;
@@ -34,7 +35,7 @@ export function ContentPanel({ content, community }: { content: AdminContent; co
     const { data, error } = await createClient().rpc("admin_reveal_community_author", { p_post_id: id, p_reason: reason });
     setBusy(false);
     if (error) return show(errorMessage(error), "think");
-    setRevealed((cur) => ({ ...cur, [id]: data as { nickname: string | null; account: string; post_count: number } }));
+    setRevealed((cur) => ({ ...cur, [id]: data as AuthorInfo }));
     setRevealing(null);
     setReason("");
   }
@@ -61,9 +62,21 @@ export function ContentPanel({ content, community }: { content: AdminContent; co
             <span className="text-xs text-muted"><b>{p.anon_name}</b> · <TimeAgo iso={p.created_at} /></span>
             <p className="text-[15px] leading-normal break-words whitespace-pre-wrap">{p.body}</p>
             {revealed[p.id] && (
-              <p className="rounded-xl bg-yellow-soft px-3 py-2 text-sm">
-                카카오 닉네임 <b>{revealed[p.id].nickname ?? "없음"}</b> · 계정 {revealed[p.id].account} · 지금까지 쓴 글 {revealed[p.id].post_count}개
-              </p>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 rounded-xl bg-yellow-soft px-3 py-2 text-sm">
+                <dt className="text-muted">카카오 닉네임</dt>
+                <dd className="font-bold break-all">{revealed[p.id].nickname ?? "없음"}</dd>
+                <dt className="text-muted">옥!소리 이름</dt>
+                <dd className="font-bold break-all">
+                  {revealed[p.id].name ?? "등록 안 함"}
+                  {revealed[p.id].oksori_nickname ? ` (${revealed[p.id].oksori_nickname})` : ""}
+                </dd>
+                <dt className="text-muted">계정</dt>
+                <dd className="break-all">{revealed[p.id].email ?? `이메일 없음 · ${revealed[p.id].account}`}</dd>
+                <dt className="text-muted">전화번호</dt>
+                <dd>{revealed[p.id].phone ? formatPhone(revealed[p.id].phone!) : "등록 안 함"}</dd>
+                <dt className="text-muted">쓴 글</dt>
+                <dd>{revealed[p.id].post_count}개</dd>
+              </dl>
             )}
             {revealing === p.id && (
               <form

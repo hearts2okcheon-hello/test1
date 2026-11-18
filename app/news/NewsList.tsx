@@ -2,19 +2,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { CommentIcon, LikeButton } from "@/components/StoreSocial";
 import { SignChip } from "@/components/SignChip";
 import { TimeAgo } from "@/components/TimeAgo";
 import { useToast } from "@/components/Toast";
 import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
-import { feedLine, REPORT_STYLES, type Mood } from "@/lib/signs";
-import { createClient } from "@/lib/supabase/client";
+import { feedLine, REPORT_STYLES } from "@/lib/signs";
+import { createClient, ensureSession } from "@/lib/supabase/client";
 import type { FeedItem, NoticeKind, ReportKind } from "@/lib/types";
 
 export type TodayReport = { report_id: string; store_id: string; store_name: string; kind: ReportKind; status: "pending" | "confirmed"; resolved_source: "owner" | "okcheon" | null; created_at: string };
 export type CommunityComment = { id: string; anon_name: string; body: string; created_at: string; is_mine: boolean };
-export type CommunityPost = { id: string; anon_name: string; body: string; created_at: string; is_mine: boolean; comment_count: number; comments: CommunityComment[] };
+export type CommunityPost = { id: string; anon_name: string; body: string; created_at: string; is_mine: boolean; comment_count: number; comments: CommunityComment[]; like_count: number; liked_by_me: boolean };
 
 type Kind = "community" | "owner" | "neighbor";
 type Filter = "all" | Kind;
@@ -46,10 +47,11 @@ function feedChip(f: FeedItem) {
 
 type Row = { key: string; kind: Kind; at: string; storeId: string | null; title: string; chip: React.ReactNode; body: string; source: string | null; image: string | null; dim: boolean; post: CommunityPost | null };
 
-export function NewsList({ feed, reports, posts, isAdmin, signedIn }: { feed: FeedItem[]; reports: TodayReport[]; posts: CommunityPost[]; isAdmin: boolean; signedIn: boolean }) {
+export function NewsList({ feed, reports, posts, isAdmin }: { feed: FeedItem[]; reports: TodayReport[]; posts: CommunityPost[]; isAdmin: boolean }) {
   const router = useRouter();
   const { node, show } = useToast();
   const [filter, setFilter] = useState<Filter>("all");
+  const { likeOf, toggleLike } = useCommunityLikes(posts, show);
 
   async function removePost(id: string) {
     if (!(await askDelete({ detail: "이 글이 사라져요." }))) return;
@@ -106,12 +108,30 @@ export function NewsList({ feed, reports, posts, isAdmin, signedIn }: { feed: Fe
               {r.source && <span className="text-[12px] text-muted">{r.source}</span>}
             </>
           );
-          return r.post ? (
-            <article key={r.key} className={CARD}>
-              {head}
-              <CommentBox post={r.post} signedIn={signedIn} isAdmin={isAdmin} onDeletePost={r.post.is_mine || isAdmin ? () => removePost(r.post!.id) : null} show={show} />
-            </article>
-          ) : (
+          if (r.post) {
+            const post = r.post;
+            const like = likeOf(post);
+            const href = `/news/${post.id}`;
+            return (
+              <article key={r.key} className={CARD}>
+                {/* 글을 누르면 전체 화면에서 댓글과 함께 본다 */}
+                <Link href={href} className="flex flex-col gap-2.5">{head}</Link>
+                <div className="flex items-center gap-5 border-t-2 border-line pt-1">
+                  <LikeButton on={like.on} count={like.count} onClick={() => toggleLike(post)} />
+                  <Link href={href} className="flex min-h-11 items-center gap-1.5 text-[15px] font-bold">
+                    <CommentIcon />
+                    댓글 {post.comment_count}
+                  </Link>
+                  {(post.is_mine || isAdmin) && (
+                    <button type="button" onClick={() => removePost(post.id)} className="ml-auto min-h-11 px-2 text-sm font-bold text-danger">
+                      지우기
+                    </button>
+                  )}
+                </div>
+              </article>
+            );
+          }
+          return (
             <Link key={r.key} href={`/stores/${r.storeId}`} className={`${CARD} ${r.dim ? "opacity-60" : ""}`}>{head}</Link>
           );
         })}
@@ -122,90 +142,29 @@ export function NewsList({ feed, reports, posts, isAdmin, signedIn }: { feed: Fe
   );
 }
 
-/** 동네 이야기 댓글: 접어 두었다가 누르면 펼친다. 카카오 로그인한 사람만 쓰고, 화면에는 익명으로 보인다 */
-function CommentBox({
-  post, signedIn, isAdmin, onDeletePost, show,
-}: {
-  post: CommunityPost; signedIn: boolean; isAdmin: boolean; onDeletePost: (() => void) | null; show: (msg: string, mood?: Mood) => void;
-}) {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
+/** 동네 이야기 공감: 누르는 즉시 화면에 반영하고, 저장은 뒤에서 차례로 한다 */
+export function useCommunityLikes(posts: CommunityPost[], show: (msg: string, mood?: "think") => void) {
+  const [likes, setLikes] = useState<Record<string, { on: boolean; count: number }>>({});
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  useEffect(() => setLikes({}), [posts]);
 
-  async function send() {
-    if (!text.trim()) return;
-    setBusy(true);
-    const { error } = await createClient().rpc("post_community_comment", { p_post_id: post.id, p_body: text.trim() });
-    setBusy(false);
-    if (error) return show(errorMessage(error), "think");
-    setText("");
-    router.refresh();
+  const likeOf = (p: CommunityPost) => likes[p.id] ?? { on: p.liked_by_me, count: p.like_count };
+
+  function toggleLike(p: CommunityPost) {
+    const cur = likeOf(p);
+    const next = { on: !cur.on, count: Math.max(0, cur.count + (cur.on ? -1 : 1)) };
+    setLikes((m) => ({ ...m, [p.id]: next }));
+    queue.current = queue.current.then(async () => {
+      try {
+        const supabase = createClient();
+        await ensureSession(supabase);
+        const { error } = await supabase.rpc("toggle_community_like", { p_post_id: p.id, p_on: next.on });
+        if (error) throw error;
+      } catch (e) {
+        setLikes((m) => ({ ...m, [p.id]: cur }));
+        show(errorMessage(e), "think");
+      }
+    });
   }
-
-  async function removeComment(id: string) {
-    if (!(await askDelete({ detail: "이 댓글이 사라져요." }))) return;
-    const { error } = await createClient().rpc("delete_community_comment", { p_comment_id: id });
-    if (error) return show(errorMessage(error), "think");
-    router.refresh();
-  }
-
-  return (
-    <div className="flex flex-col gap-2 border-t-2 border-line pt-1">
-      <span className="flex items-center justify-between gap-2">
-        <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="flex min-h-11 items-center gap-1.5 text-[15px] font-bold">
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round">
-            <path d="M4 5.5h16v11H10l-4.5 3.5V16.5H4z" />
-          </svg>
-          댓글 {post.comment_count}
-        </button>
-        {onDeletePost && (
-          <button type="button" onClick={onDeletePost} className="min-h-11 px-2 text-sm font-bold text-danger">
-            지우기
-          </button>
-        )}
-      </span>
-      {open && (
-        <>
-          {post.comments.length > 0 && (
-            <ul className="flex flex-col gap-1.5">
-              {post.comments.map((c) => (
-                <li key={c.id} className="flex flex-col gap-0.5 rounded-2xl bg-cream px-3 py-2">
-                  <span className="flex items-center gap-2 text-[13px]">
-                    <b className={c.anon_name === "글쓴이" ? "text-sage-deep" : "text-muted"}>{c.anon_name}</b>
-                    <span className="text-muted"><TimeAgo iso={c.created_at} /></span>
-                    {(c.is_mine || isAdmin) && (
-                      <button type="button" onClick={() => removeComment(c.id)} className="-my-2 -mr-1.5 ml-auto flex min-h-11 items-center px-1.5 text-[13px] font-bold text-danger underline">
-                        지우기
-                      </button>
-                    )}
-                  </span>
-                  <span className="text-[16px] leading-normal break-words whitespace-pre-wrap">{c.body}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {signedIn ? (
-            <form
-              className="flex gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                send();
-              }}
-            >
-              <label className="sr-only" htmlFor={`cc-${post.id}`}>댓글</label>
-              <input id={`cc-${post.id}`} value={text} maxLength={200} onChange={(e) => setText(e.target.value)} placeholder="익명으로 댓글 달기" className="min-h-12 min-w-0 flex-1 rounded-2xl border-2 border-line bg-white px-3 text-base" />
-              <button type="submit" disabled={busy || !text.trim()} className="min-h-12 shrink-0 rounded-2xl border-2 border-yellow-deep bg-yellow px-4 font-bold disabled:opacity-50">
-                남기기
-              </button>
-            </form>
-          ) : (
-            <a href="/auth/kakao?next=/news" className="flex min-h-12 items-center justify-center rounded-2xl bg-[#FEE500] text-base font-bold text-black/85">
-              카카오로 로그인하고 댓글 달기
-            </a>
-          )}
-        </>
-      )}
-    </div>
-  );
+  return { likeOf, toggleLike };
 }

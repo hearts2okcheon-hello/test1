@@ -162,7 +162,9 @@ export type QueueItem = {
 /** 관리자 이용자 정보의 주민 한 줄 */
 export type ResidentItem = { user_id: string; name: string; nickname: string | null; area: string; phone: string; registered_at: string; store_name: string | null };
 
-export type StoreInfoItem = { store_id: string; name: string; phone: string | null; category: string | null; created_at: string };
+export type StoreInfoItem = { store_id: string; name: string; phone: string | null; category: string | null; created_at: string; address: string | null; owner_name: string | null; owner_area: string | null };
+/** 관리자가 사유를 남기고 확인한 작성 계정 */
+export type AuthorInfo = { nickname: string | null; email: string | null; account: string; name: string | null; oksori_nickname: string | null; phone: string | null; post_count: number };
 
 export type CommunityAdminPost = { id: string; anon_name: string; body: string; created_at: string };
 

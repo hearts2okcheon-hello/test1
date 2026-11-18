@@ -47,22 +47,30 @@ export function StoreInfoPanel({ items }: { items: StoreInfoItem[] }) {
   }
 
   const needle = q.replace(/[\s-]/g, "");
-  const filtered = items.filter((s) => !needle || s.name.replace(/\s/g, "").includes(needle) || (s.phone ?? "").includes(needle));
+  const filtered = items.filter((s) => !needle || s.name.replace(/\s/g, "").includes(needle) || (s.phone ?? "").includes(needle) || (s.owner_name ?? "").replace(/\s/g, "").includes(needle));
 
   return (
     <section className="flex flex-col gap-2">
       <h2 className="font-display text-[22px] font-normal">등록된 가게 {items.length}곳</h2>
       {items.length > 0 && (
-        <input aria-label="목록에서 찾기" value={q} onChange={(e) => setQ(e.target.value)} placeholder="가게 이름·전화번호로 찾기" className="min-h-12 rounded-2xl border-2 border-line bg-white px-3 text-base" />
+        <input aria-label="목록에서 찾기" value={q} onChange={(e) => setQ(e.target.value)} placeholder="가게 이름·전화번호·주민 이름으로 찾기" className="min-h-12 rounded-2xl border-2 border-line bg-white px-3 text-base" />
       )}
       {items.length === 0 && <p className="rounded-[20px] border-2 border-dashed border-line px-4 py-3 text-sm text-muted">아직 등록된 가게가 없어요.</p>}
       {filtered.map((s) => (
         <div key={s.store_id} className="flex flex-col gap-2 rounded-[20px] border-2 border-line bg-card px-3.5 py-3">
           <div className="flex items-center gap-2">
-            <p className="min-w-0 flex-1 text-base break-words text-muted">
-              <b className="font-bold text-ink">{s.name}</b>
-              {s.phone ? `, ${formatPhone(s.phone)}` : ", 전화번호 없음"}
-            </p>
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <p className="text-base break-words text-muted">
+                <b className="font-bold text-ink">{s.name}</b>
+                {s.phone ? `, ${formatPhone(s.phone)}` : ", 전화번호 없음"}
+              </p>
+              {/* 가게를 등록한 주민과 주소 */}
+              <p className="text-sm break-words text-muted">
+                주민 <b className="text-ink">{s.owner_name ?? "등록 정보 없음"}</b>
+                {s.owner_area ? ` (${s.owner_area})` : ""}
+              </p>
+              <p className="text-sm break-words text-muted">주소 {s.address ?? "없음"}</p>
+            </div>
             <button
               type="button"
               disabled={busy}

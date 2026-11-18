@@ -46,7 +46,6 @@ export default async function PlazaPage() {
             reports={(reports.data ?? []) as TodayReport[]}
             posts={(posts.data ?? []) as CommunityPost[]}
             isAdmin={!!admin.data && signedIn}
-            signedIn={signedIn}
           />
         </section>
       </main>
