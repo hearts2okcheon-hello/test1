@@ -111,7 +111,7 @@ export function ClosureWizard({ storeId, storeName }: { storeId: string; storeNa
         </div>
         <div className="grid grid-cols-7 gap-y-1 text-center">
           {WEEK.map((w, i) => (
-            <span key={w} className={`py-1 text-base font-bold ${i === 0 ? "text-[#A4423F]" : "text-muted"}`}>
+            <span key={w} className={`py-1 text-base font-bold ${i === 0 ? "text-danger" : "text-muted"}`}>
               {w}
             </span>
           ))}
@@ -145,7 +145,7 @@ export function ClosureWizard({ storeId, storeName }: { storeId: string; storeNa
           type="button"
           disabled={!range.start}
           onClick={() => setStep(2)}
-          className="min-h-16 flex-1 rounded-[22px] border-2 border-sage-deep bg-sage font-display text-xl text-white disabled:border-line disabled:bg-[#EFE9DF] disabled:text-muted"
+          className="min-h-16 flex-1 rounded-[22px] border-2 border-sage-deep bg-sage font-display text-xl text-white disabled:border-line disabled:bg-sand disabled:text-muted"
         >
           {range.start ? "다음으로" : "날짜를 골라 주세요"}
         </button>

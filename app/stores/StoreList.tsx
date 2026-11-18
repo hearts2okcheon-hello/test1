@@ -15,7 +15,7 @@ export function StoreList({ stores }: { stores: StoreSign[] }) {
     <>
       <div className="flex items-center justify-between gap-2.5">
         <span className="text-sm text-muted">
-          영업중 <b className="text-[#2F6E3B]">{open.length}</b>곳 · 전체 {stores.length}곳
+          영업중 <b className="text-open">{open.length}</b>곳 · 전체 {stores.length}곳
         </span>
         <button
           type="button"

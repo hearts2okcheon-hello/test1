@@ -63,7 +63,7 @@ export default function AdminLoginPage() {
             로그인
           </button>
         </form>
-        {error && <p role="alert" className="text-sm font-bold text-[#A4423F]">{error}</p>}
+        {error && <p role="alert" className="text-sm font-bold text-danger">{error}</p>}
       </div>
     </main>
   );

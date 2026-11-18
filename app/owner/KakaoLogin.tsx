@@ -41,7 +41,7 @@ export function KakaoLogin({ ready, login }: { ready: boolean; login?: string })
         </svg>
         {busy ? "카카오로 가는 중…" : "카카오로 시작하기"}
       </button>
-      {error && <p role="alert" className="text-base font-bold text-[#A4423F]">{error}</p>}
+      {error && <p role="alert" className="text-base font-bold text-danger">{error}</p>}
       <p className="text-base text-muted">앱이 어려우시면 옥천신문에 전화 주세요. 대신 등록해 드려요.</p>
     </section>
   );

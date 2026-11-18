@@ -33,3 +33,16 @@ export function swipeLock(dx: number, dy: number): boolean | null {
 export function dragOffset(pathname: string, dx: number): number {
   return neighborTab(pathname, dx) ? dx : dx * 0.2;
 }
+
+/** 미리 받아 둔 탭 화면을 이만큼은 새것으로 본다 (그 안에는 들어가서 다시 받지 않는다) */
+export const WARM_FRESH_MS = 25_000;
+
+/** 지금 탭이 아닌 나머지 탭들 (미리 받아 둘 대상) */
+export function otherTabs(pathname: string): string[] {
+  return TAB_ORDER.includes(pathname as (typeof TAB_ORDER)[number]) ? TAB_ORDER.filter((t) => t !== pathname) : [];
+}
+
+/** 받아 둔 지 얼마 안 됐으면 true. 받은 적이 없으면(0, undefined) false */
+export function isWarm(warmedAt: number | undefined, now: number): boolean {
+  return !!warmedAt && now - warmedAt < WARM_FRESH_MS;
+}

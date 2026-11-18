@@ -136,13 +136,13 @@ export function CommentInput({ id, value, onChange, busy, placeholder, onSubmit 
 
 export function CommentRow({ body, at, canDelete, busy, onDelete }: { body: string; at: string; canDelete: boolean; busy: boolean; onDelete: () => void }) {
   return (
-    <li className="flex items-start gap-2 rounded-2xl bg-cream px-3 py-2">
+    <li className="flex items-center gap-2 rounded-2xl bg-cream px-3 py-2">
       <span className="min-w-0 flex-1 text-[15px] leading-normal whitespace-pre-wrap">{body}</span>
       <span className="shrink-0 text-xs text-muted">
         <TimeAgo iso={at} />
       </span>
       {canDelete && (
-        <button type="button" disabled={busy} onClick={onDelete} className="shrink-0 text-xs font-bold text-[#A4423F] underline">
+        <button type="button" disabled={busy} onClick={onDelete} className="-my-2 -mr-1.5 flex min-h-11 shrink-0 items-center px-1.5 text-[13px] font-bold text-danger underline">
           지우기
         </button>
       )}

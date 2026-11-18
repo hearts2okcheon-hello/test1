@@ -114,7 +114,7 @@ export function ReportAlert({
                   type="button"
                   aria-pressed={choice === false}
                   onClick={() => setChoice(false)}
-                  className={`min-h-16 flex-1 rounded-[18px] border-2 text-lg font-bold ${choice === false ? "border-[#A4423F] bg-coral text-white" : "border-line bg-white"}`}
+                  className={`min-h-16 flex-1 rounded-[18px] border-2 text-lg font-bold ${choice === false ? "border-danger bg-coral text-white" : "border-line bg-white"}`}
                 >
                   오늘 쉬어요
                 </button>

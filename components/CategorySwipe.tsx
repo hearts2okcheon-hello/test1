@@ -23,7 +23,7 @@ export function CategorySwipe({ current }: { current: string }) {
     const from = enterFrom;
     enterFrom = null;
     const list = document.getElementById("store-list");
-    if (!from || !list) return;
+    if (!from || !list || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const cls = from === "right" ? "ok-slide-in-right" : "ok-slide-in-left";
     list.classList.add(cls);
     const done = () => list.classList.remove(cls);

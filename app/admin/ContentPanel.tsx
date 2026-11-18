@@ -91,7 +91,7 @@ export function ContentPanel({ content, community }: { content: AdminContent; co
                   작성자 확인
                 </button>
               )}
-              <button type="button" disabled={busy} onClick={() => removeCommunity(p.id)} className="min-h-10 rounded-xl border-2 border-line bg-white px-3 text-sm font-bold text-[#A4423F]">지우기</button>
+              <button type="button" disabled={busy} onClick={() => removeCommunity(p.id)} className="min-h-10 rounded-xl border-2 border-line bg-white px-3 text-sm font-bold text-danger">지우기</button>
             </div>
           </article>
         ))}
@@ -128,7 +128,7 @@ function Row({ store, storeId, at, body, image, tag, busy, onDelete }: { store: 
           {tag ? ` · ${tag}` : ""} · <TimeAgo iso={at} />
         </span>
         <p className="text-[15px] leading-normal whitespace-pre-wrap">{body}</p>
-        <button type="button" disabled={busy} onClick={onDelete} className="min-h-10 self-start rounded-xl border-2 border-line bg-white px-3 text-sm font-bold text-[#A4423F]">
+        <button type="button" disabled={busy} onClick={onDelete} className="min-h-10 self-start rounded-xl border-2 border-line bg-white px-3 text-sm font-bold text-danger">
           지우기
         </button>
       </div>

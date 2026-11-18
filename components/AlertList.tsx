@@ -70,7 +70,7 @@ export function AlertList({ alerts }: { alerts: AlertItem[] }) {
       {/* 알림 켜기 · 끄기 */}
       {state !== null && (
         <section className={`flex items-center gap-3 rounded-[22px] border-[2.5px] bg-card px-4 py-3.5 ${on ? "border-sage" : "border-coral"}`}>
-          <span className={`flex size-11 shrink-0 items-center justify-center rounded-full ${on ? "bg-sage-soft text-sage-deep" : "bg-coral-soft text-[#A4423F]"}`}>
+          <span className={`flex size-11 shrink-0 items-center justify-center rounded-full ${on ? "bg-sage-soft text-sage-deep" : "bg-coral-soft text-danger"}`}>
             <Bell off={!on} />
           </span>
           <span className="flex min-w-0 flex-1 flex-col">

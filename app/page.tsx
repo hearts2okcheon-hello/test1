@@ -78,7 +78,7 @@ export default async function HomePage() {
           <div className="flex items-baseline justify-between">
             <h2 className="font-display text-[19px] font-normal">무엇을 찾아요?</h2>
             <span className="text-sm text-muted">
-              지금 문 연 가게 <b className="text-[#2F6E3B]">{openTotal}곳</b>
+              지금 문 연 가게 <b className="text-open">{openTotal}곳</b>
             </span>
           </div>
 
@@ -89,7 +89,7 @@ export default async function HomePage() {
                   <CategoryIcon id={c.id} />
                 </span>
                 <span className="font-display text-[15px] whitespace-nowrap">{c.name}</span>
-                <span className="text-[11px] font-bold text-[#2F6E3B]">영업중 {stores.filter((s) => categoryOf(s.category) === c.id && isOpen(s)).length}</span>
+                <span className="text-[11px] font-bold text-open">영업중 {stores.filter((s) => categoryOf(s.category) === c.id && isOpen(s)).length}</span>
               </Link>
             ))}
           </div>

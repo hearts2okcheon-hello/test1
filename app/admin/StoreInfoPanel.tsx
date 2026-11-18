@@ -74,7 +74,7 @@ export function StoreInfoPanel({ items }: { items: StoreInfoItem[] }) {
             >
               번호 수정
             </button>
-            <button type="button" disabled={busy} onClick={() => remove(s)} className="min-h-11 shrink-0 rounded-2xl border-2 border-line bg-white px-2.5 text-sm font-bold text-[#A4423F]">
+            <button type="button" disabled={busy} onClick={() => remove(s)} className="min-h-11 shrink-0 rounded-2xl border-2 border-line bg-white px-2.5 text-sm font-bold text-danger">
               지우기
             </button>
           </div>

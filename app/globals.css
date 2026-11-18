@@ -21,6 +21,13 @@
 
   --color-coral: #D9706F;
   --color-coral-soft: #FBE3E1;
+  /* 지우기·취소·경고 글씨 (coral 보다 진해서 작은 글씨도 읽힌다) */
+  --color-danger: #A4423F;
+  /* "영업중 N곳" 같은 초록 숫자 */
+  --color-open: #2F6E3B;
+  /* 두 칸 고르기 버튼의 바탕, 그 위 흐린 글씨 */
+  --color-sand: #EFE9DF;
+  --color-sand-ink: #6B5D52;
 
   /* 캘린더에서 "일정 있는 날" (휴무는 coral, 평소는 ink) */
   --color-blue: #2F6DB5;
@@ -192,7 +199,7 @@ a:active {
 .ok-walk { animation: ok-walk 0.6s ease-in-out infinite; transform-origin: 50% 90%; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ok-bob, .ok-pop, .ok-walk, .ok-gauge, .ok-ring { animation: none; }
+  .ok-bob, .ok-pop, .ok-walk, .ok-gauge, .ok-ring, .ok-slide-in-left, .ok-slide-in-right { animation: none; }
   .ok-gauge { width: 70%; }
   .ok-ripple { animation-name: ok-ripple-still; }
 }

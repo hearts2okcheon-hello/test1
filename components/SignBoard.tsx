@@ -23,7 +23,7 @@ export function SignBoard({ store }: { store: StoreSign }) {
               이웃이 &ldquo;{REPORT_STYLES[store.report_kind].label}&rdquo;라고 알려줬어요
             </span>
           )}
-          {hours && <span className="text-sm text-[#6B5D52]">{hours}</span>}
+          {hours && <span className="text-sm text-sand-ink">{hours}</span>}
           {store.signed_at && store.source && (
             <span className="mt-1.5 rounded-xl bg-card px-3 py-1 text-[13px]">
               <SourceLine source={store.source} at={store.signed_at} verb={store.source === "neighbor" ? "제보" : "알림"} />

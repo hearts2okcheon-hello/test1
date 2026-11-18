@@ -16,7 +16,7 @@ const ICONS = {
   report: ["M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z", "M12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"],
 } as const;
 
-const ITEM = "flex items-center justify-end gap-2.5 transition-all duration-200 ease-out";
+const ITEM = "flex items-center justify-end gap-2.5 transition-all duration-200 ease-out motion-reduce:!transform-none motion-reduce:transition-none";
 const LABEL = "rounded-full border-2 border-line bg-card px-3.5 py-1.5 font-display text-base shadow-[0_3px_0_var(--color-line)]";
 const ROUND = "flex size-12 items-center justify-center rounded-full border-2 border-line bg-card shadow-[0_3px_0_var(--color-line)]";
 
@@ -67,7 +67,7 @@ export function WriteFab() {
         aria-label="쓰기 닫기"
         tabIndex={open ? 0 : -1}
         onClick={() => setOpen(false)}
-        className={`fixed inset-0 z-30 bg-ink/25 transition-opacity duration-200 active:!transform-none active:!filter-none ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        className={`fixed inset-0 z-30 bg-ink/25 transition-opacity duration-200 motion-reduce:transition-none active:!transform-none active:!filter-none ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
       />
 
       <div data-no-swipe className="fixed right-5 bottom-[calc(96px+env(safe-area-inset-bottom))] z-30 flex flex-col items-end gap-3">
@@ -104,7 +104,7 @@ export function WriteFab() {
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden
-            className={`transition-transform duration-200 ${open ? "rotate-[-20deg] scale-110" : ""}`}
+            className={`transition-transform duration-200 motion-reduce:transition-none ${open ? "rotate-[-20deg] scale-110" : ""}`}
           >
             <path d="M4 20h4L19 9l-4-4L4 16z" />
             <path d="M13.5 6.5l4 4" />

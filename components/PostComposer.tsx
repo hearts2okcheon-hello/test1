@@ -110,7 +110,7 @@ export function PostComposer({ storeId, storeName, post }: { storeId: string; st
                 setFile(null);
                 setPreview(null);
               }}
-              className="min-h-11 text-base font-bold text-[#A4423F]"
+              className="min-h-11 text-base font-bold text-danger"
             >
               사진 빼기
             </button>

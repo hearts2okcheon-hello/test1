@@ -246,7 +246,7 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
                   setLogoPreview(null);
                   setLogoUrl(null);
                 }}
-                className="min-h-11 w-fit rounded-xl px-1 text-base font-bold text-[#A4423F]"
+                className="min-h-11 w-fit rounded-xl px-1 text-base font-bold text-danger"
               >
                 사진 빼기
               </button>
@@ -320,7 +320,7 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
                 onClick={async () => {
                   if (await askDelete({ detail: m.name.trim() ? `메뉴 "${m.name.trim()}"` : "이 메뉴 칸" })) setMenus((cur) => cur.filter((x) => x.key !== m.key));
                 }}
-                className="min-h-11 self-end rounded-xl px-2 text-base font-bold text-[#A4423F]"
+                className="min-h-11 self-end rounded-xl px-2 text-base font-bold text-danger"
               >
                 이 메뉴 지우기
               </button>
@@ -443,7 +443,7 @@ function Section({ n, title, optional, required, children }: { n: number; title:
       <h2 className="font-display text-[21px] leading-snug font-normal">
         {n}. {title}
         {optional && <span className="ml-1.5 font-sans text-sm text-muted">(선택)</span>}
-        {required && <span className="ml-1.5 font-sans text-sm font-bold text-[#A4423F]">(필수)</span>}
+        {required && <span className="ml-1.5 font-sans text-sm font-bold text-danger">(필수)</span>}
       </h2>
       {children}
     </section>
@@ -455,7 +455,7 @@ function Field({ label, required, hint, children }: { label: string; required?: 
     <label className="flex flex-col gap-1.5">
       <span className="text-lg font-bold">
         {label}
-        {required && <span className="ml-1 text-sm text-[#A4423F]">필수</span>}
+        {required && <span className="ml-1 text-sm text-danger">필수</span>}
       </span>
       {children}
       {hint && <span className="text-sm leading-normal text-muted">{hint}</span>}
@@ -476,7 +476,7 @@ function PublicSwitch({ label, on, onChange }: { label: string; on: boolean; onC
   const cell = (active: boolean) => `min-h-14 rounded-2xl border-2 text-lg font-bold ${active ? "border-sage-deep bg-sage-soft text-sage-deep" : "border-transparent text-muted"}`;
   return (
     <div className="flex flex-col gap-1.5">
-      <div role="group" aria-label={`${label} 공개 여부`} className="grid grid-cols-2 gap-1.5 rounded-[20px] bg-[#EFE9DF] p-1.5">
+      <div role="group" aria-label={`${label} 공개 여부`} className="grid grid-cols-2 gap-1.5 rounded-[20px] bg-sand p-1.5">
         <button type="button" aria-pressed={on} onClick={() => onChange(true)} className={cell(on)}>
           공개
         </button>

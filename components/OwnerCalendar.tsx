@@ -107,8 +107,8 @@ export function OwnerCalendar({
     );
   }
 
-  function cancelClosure(c: TempClosure) {
-    if (!window.confirm(`${formatRange(c.start_date, c.end_date)} 휴무를 취소할까요?`)) return;
+  async function cancelClosure(c: TempClosure) {
+    if (!(await askDelete({ title: "휴무를 취소할까요?", detail: `${formatRange(c.start_date, c.end_date)} 휴무가 사라져요.` }))) return;
     run(() => createClient().rpc("cancel_temp_closure", { p_closure_id: c.id }), "휴무를 취소했어요.");
   }
 
@@ -188,7 +188,7 @@ export function OwnerCalendar({
             </p>
           ))
         ) : closure ? (
-          <button type="button" disabled={busy} onClick={() => cancelClosure(closure)} className="min-h-16 rounded-[20px] border-2 border-line bg-white text-lg font-bold text-[#A4423F] disabled:opacity-60">
+          <button type="button" disabled={busy} onClick={() => cancelClosure(closure)} className="min-h-16 rounded-[20px] border-2 border-line bg-white text-lg font-bold text-danger disabled:opacity-60">
             {closure.start_date === closure.end_date ? "이날 휴무 취소하기" : `${formatRange(closure.start_date, closure.end_date)} 휴무 취소하기`}
           </button>
         ) : (
@@ -199,7 +199,7 @@ export function OwnerCalendar({
                   <span className="text-lg font-bold text-blue">{planText(p)}</span>
                   {p.note && <span className="text-base text-muted">{p.note}</span>}
                 </span>
-                <button type="button" disabled={busy} onClick={() => removePlan(p)} className="min-h-12 shrink-0 rounded-2xl border-2 border-line bg-card px-3.5 text-base font-bold text-[#A4423F]">
+                <button type="button" disabled={busy} onClick={() => removePlan(p)} className="min-h-12 shrink-0 rounded-2xl border-2 border-line bg-card px-3.5 text-base font-bold text-danger">
                   지우기
                 </button>
               </div>

@@ -85,7 +85,7 @@ export function AppAlertCard({ who }: { who: keyof typeof TEXT }) {
         </div>
       )}
       {state === "denied" && (
-        <p className="text-[15px] leading-relaxed text-[#A4423F]">
+        <p className="text-[15px] leading-relaxed text-danger">
           알림이 막혀 있어요. 휴대폰 <b>설정 → 알림</b>에서 옥!소리(또는 크롬)를 허용한 뒤 다시 들어와 주세요.
         </p>
       )}

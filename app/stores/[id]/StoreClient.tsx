@@ -82,7 +82,7 @@ export function StoreClient({ detail, reported }: { detail: StoreDetail; reporte
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="rounded-[10px] bg-[#EFE9DF] px-2 py-0.5 text-xs font-bold text-[#6B5D52]">이웃 제보</span>
+                <span className="rounded-[10px] bg-sand px-2 py-0.5 text-xs font-bold text-sand-ink">이웃 제보</span>
                 <ReportOutcome r={r} />
               </div>
               {r.status === "pending" &&
@@ -130,7 +130,7 @@ export function StoreClient({ detail, reported }: { detail: StoreDetail; reporte
 function ReportOutcome({ r }: { r: StoreReport }) {
   const who = r.resolved_source === "okcheon" ? "옥천신문이" : "사장님이";
   if (r.status === "confirmed") return <span className="text-[13px] font-bold text-[#4E6E44]">{who} 맞다고 했어요</span>;
-  if (r.status === "rejected") return <span className="text-[13px] font-bold text-[#A4423F]">{who} 아니라고 했어요</span>;
+  if (r.status === "rejected") return <span className="text-[13px] font-bold text-danger">{who} 아니라고 했어요</span>;
   if (r.status === "expired") return <span className="text-[13px] text-muted">시간이 지나 끝난 제보</span>;
   if (r.kind === "seen_long_line") return <span className="text-[13px] text-muted">1시간 동안 보여요</span>;
   return <span className="text-[13px] font-bold text-[#715212]">확인 중</span>;

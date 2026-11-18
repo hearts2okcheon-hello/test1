@@ -40,7 +40,7 @@ export function AlertButton() {
     <Link
       href="/alerts"
       aria-label={`${on ? "알림 켜짐" : "알림 꺼짐"}. 받은 알림 보기${count > 0 ? `, 안 읽은 알림 ${count}개` : ""}`}
-      className={`relative flex size-12 shrink-0 items-center justify-center rounded-full border-[2.5px] bg-card ${on ? "border-sage text-sage-deep" : "border-coral text-[#A4423F]"}`}
+      className={`relative flex size-12 shrink-0 items-center justify-center rounded-full border-[2.5px] bg-card ${on ? "border-sage text-sage-deep" : "border-coral text-danger"}`}
     >
       <Bell off={!on} />
       {count > 0 && (

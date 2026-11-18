@@ -105,13 +105,13 @@ export function ReportSheet({
           })}
         </div>
 
-        {error && <p className="text-sm font-bold text-[#A4423F]">{error}</p>}
+        {error && <p className="text-sm font-bold text-danger">{error}</p>}
 
         <button
           type="button"
           onClick={submit}
           disabled={!choice || busy}
-          className={`min-h-14 rounded-[22px] border-2 font-display text-xl ${choice && !busy ? "border-sage-deep bg-sage text-white" : "border-line bg-[#EFE9DF] text-muted"}`}
+          className={`min-h-14 rounded-[22px] border-2 font-display text-xl ${choice && !busy ? "border-sage-deep bg-sage text-white" : "border-line bg-sand text-muted"}`}
         >
           {busy ? "알리는 중…" : "이웃에게 알려주기"}
         </button>

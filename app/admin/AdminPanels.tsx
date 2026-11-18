@@ -116,7 +116,7 @@ export function StoreManager({ stores, notices }: { stores: StoreSign[]; notices
             <Link href={`/stores/${store.store_id}`} className="flex min-h-12 flex-1 items-center justify-center rounded-2xl border-2 border-line bg-white text-sm font-bold">
               가게 페이지 보기
             </Link>
-            <button type="button" disabled={busy} onClick={remove} className="min-h-12 flex-1 rounded-2xl border-2 border-line bg-white text-sm font-bold text-[#A4423F]">
+            <button type="button" disabled={busy} onClick={remove} className="min-h-12 flex-1 rounded-2xl border-2 border-line bg-white text-sm font-bold text-danger">
               이 가게 지우기
             </button>
           </div>

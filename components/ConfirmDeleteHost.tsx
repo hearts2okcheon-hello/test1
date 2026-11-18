@@ -64,7 +64,7 @@ export function ConfirmDeleteHost() {
             type="button"
             disabled={!ready}
             onClick={() => close({ password })}
-            className="min-h-16 flex-1 rounded-[22px] border-2 border-[#A4423F] bg-[#A4423F] font-display text-xl text-white disabled:border-line disabled:bg-[#EFE9DF] disabled:text-muted"
+            className="min-h-16 flex-1 rounded-[22px] border-2 border-danger bg-danger font-display text-xl text-white disabled:border-line disabled:bg-sand disabled:text-muted"
           >
             예
           </button>

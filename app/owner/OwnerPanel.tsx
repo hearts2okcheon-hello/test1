@@ -68,8 +68,8 @@ export function OwnerPanel({ home, posts, closures, plans }: { home: Home; posts
     });
   }
 
-  function cancelClosure(c: TempClosure) {
-    if (!window.confirm(`${formatRange(c.start_date, c.end_date)} 임시휴무를 취소할까요?`)) return;
+  async function cancelClosure(c: TempClosure) {
+    if (!(await askDelete({ title: "임시휴무를 취소할까요?", detail: `${formatRange(c.start_date, c.end_date)} 임시휴무가 사라져요.` }))) return;
     run(() => createClient().rpc("cancel_temp_closure", { p_closure_id: c.id }), "임시휴무를 취소했어요.");
   }
 
@@ -107,7 +107,7 @@ export function OwnerPanel({ home, posts, closures, plans }: { home: Home; posts
           </span>
         </div>
         {askOpen && <p className="text-lg leading-snug text-muted">평소 영업시간이 지났어요. 오늘 영업하시나요?</p>}
-        <div role="group" aria-label="오늘 영업 상태 고르기" className="grid grid-cols-2 gap-1.5 rounded-[20px] bg-[#EFE9DF] p-1.5">
+        <div role="group" aria-label="오늘 영업 상태 고르기" className="grid grid-cols-2 gap-1.5 rounded-[20px] bg-sand p-1.5">
           <StatusButton kind="open" label="영업 중" on={sign === "open"} onClick={() => quick("open")} />
           <StatusButton kind="closed_today" label="오늘 휴무" on={sign === "closed_today" || sign === "temp_closed"} onClick={() => quick("closed_today")} />
         </div>
@@ -130,7 +130,7 @@ export function OwnerPanel({ home, posts, closures, plans }: { home: Home; posts
         <section className="flex flex-col gap-1.5 rounded-[20px] border-2 border-line bg-card px-3.5 py-3">
           <h2 className="font-display text-[20px] font-normal">다가오는 일정</h2>
           {upcoming.map((d) => (
-            <p key={d.day} className={`text-lg font-bold ${d.tone === "closed" ? "text-[#A4423F]" : "text-blue"}`}>
+            <p key={d.day} className={`text-lg font-bold ${d.tone === "closed" ? "text-danger" : "text-blue"}`}>
               {d.label} {d.text}
             </p>
           ))}
@@ -147,7 +147,7 @@ export function OwnerPanel({ home, posts, closures, plans }: { home: Home; posts
                 <span className="text-lg font-bold">{formatRange(c.start_date, c.end_date)}</span>
                 {c.reason && <span className="text-base text-muted">{c.reason}</span>}
               </span>
-              <button type="button" disabled={busy} onClick={() => cancelClosure(c)} className="min-h-12 shrink-0 rounded-2xl border-2 border-line bg-white px-3.5 text-base font-bold text-[#A4423F]">
+              <button type="button" disabled={busy} onClick={() => cancelClosure(c)} className="min-h-12 shrink-0 rounded-2xl border-2 border-line bg-white px-3.5 text-base font-bold text-danger">
                 취소
               </button>
             </div>
@@ -179,7 +179,7 @@ export function OwnerPanel({ home, posts, closures, plans }: { home: Home; posts
                 <Link href={`/owner/news?id=${p.id}`} className="flex min-h-12 items-center rounded-2xl border-2 border-line bg-white px-3.5 text-base font-bold">
                   고치기
                 </Link>
-                <button type="button" disabled={busy} onClick={() => deletePost(p)} className="min-h-12 rounded-2xl border-2 border-line bg-white px-3.5 text-base font-bold text-[#A4423F]">
+                <button type="button" disabled={busy} onClick={() => deletePost(p)} className="min-h-12 rounded-2xl border-2 border-line bg-white px-3.5 text-base font-bold text-danger">
                   지우기
                 </button>
               </div>

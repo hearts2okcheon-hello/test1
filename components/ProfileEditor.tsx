@@ -129,7 +129,7 @@ export function ProfileEditor({ userId, initial, hasStore = false }: { userId: s
       <section className="flex flex-col gap-3 rounded-[22px] border-2 border-line bg-card px-3.5 py-4">
         <label className="flex flex-col gap-1.5">
           <span className="text-lg font-bold">
-            이름 <span className="ml-1 text-sm text-[#A4423F]">필수</span>
+            이름 <span className="ml-1 text-sm text-danger">필수</span>
           </span>
           <input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} placeholder="예: 김옥천" autoComplete="name" className={INPUT} />
         </label>
@@ -144,7 +144,7 @@ export function ProfileEditor({ userId, initial, hasStore = false }: { userId: s
 
         <div className="flex flex-col gap-1.5">
           <span className="text-lg font-bold">
-            사는 곳 <span className="ml-1 text-sm text-[#A4423F]">필수</span>
+            사는 곳 <span className="ml-1 text-sm text-danger">필수</span>
           </span>
           <div role="radiogroup" aria-label="사는 곳" className="grid grid-cols-3 gap-2">
             {AREAS.map((a) => {
@@ -183,7 +183,7 @@ export function ProfileEditor({ userId, initial, hasStore = false }: { userId: s
 
         <label className="flex flex-col gap-1.5">
           <span className="text-lg font-bold">
-            전화번호 <span className="ml-1 text-sm text-[#A4423F]">필수</span>
+            전화번호 <span className="ml-1 text-sm text-danger">필수</span>
           </span>
           <input type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="010-0000-0000" autoComplete="tel" className={INPUT} />
           <span className="text-sm leading-normal text-muted">다른 이웃에게는 보이지 않아요. 옥천신문이 연락할 때만 써요.</span>
@@ -196,7 +196,7 @@ export function ProfileEditor({ userId, initial, hasStore = false }: { userId: s
           <p className="text-base leading-relaxed text-muted">
             내 정보와 즐겨찾기가 지워져요.{hasStore ? " 등록한 가게도 함께 지워져요." : ""} 지운 뒤에도 카카오로 다시 로그인하면 새로 만들 수 있어요.
           </p>
-          <button type="button" disabled={busy} onClick={removeAccount} className="min-h-14 w-fit rounded-2xl border-2 border-line bg-white px-4 text-lg font-bold text-[#A4423F] disabled:opacity-60">
+          <button type="button" disabled={busy} onClick={removeAccount} className="min-h-14 w-fit rounded-2xl border-2 border-line bg-white px-4 text-lg font-bold text-danger disabled:opacity-60">
             계정 삭제하기
           </button>
         </section>

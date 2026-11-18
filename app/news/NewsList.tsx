@@ -160,7 +160,7 @@ function CommentBox({
           댓글 {post.comment_count}
         </button>
         {onDeletePost && (
-          <button type="button" onClick={onDeletePost} className="min-h-11 px-2 text-sm font-bold text-[#A4423F]">
+          <button type="button" onClick={onDeletePost} className="min-h-11 px-2 text-sm font-bold text-danger">
             지우기
           </button>
         )}
@@ -175,7 +175,7 @@ function CommentBox({
                     <b className={c.anon_name === "글쓴이" ? "text-sage-deep" : "text-muted"}>{c.anon_name}</b>
                     <span className="text-muted"><TimeAgo iso={c.created_at} /></span>
                     {(c.is_mine || isAdmin) && (
-                      <button type="button" onClick={() => removeComment(c.id)} className="ml-auto min-h-8 px-1 text-xs font-bold text-[#A4423F] underline">
+                      <button type="button" onClick={() => removeComment(c.id)} className="-my-2 -mr-1.5 ml-auto flex min-h-11 items-center px-1.5 text-[13px] font-bold text-danger underline">
                         지우기
                       </button>
                     )}

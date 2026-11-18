@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { NAV_START, isInternalNav } from "@/lib/nav";
 import { LoadingGauge } from "./LoadingGauge";
 
-const SHOW_AFTER_MS = 120; // 바로 넘어가는 화면에서는 깜빡이지 않게
+const SHOW_AFTER_MS = 500; // 금방 넘어가는 화면에서는 로딩 창을 띄우지 않는다
 const MIN_VISIBLE_MS = 600;
 const GIVE_UP_MS = 10000; // 이동이 실패해도 화면이 막히지 않게
 

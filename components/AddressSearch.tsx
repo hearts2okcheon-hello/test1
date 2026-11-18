@@ -81,7 +81,7 @@ export function AddressSearch({ onPick }: { onPick: (address: string) => void })
       >
         카카오에서 주소 찾기
       </button>
-      {failed && <p role="alert" className="text-base font-bold text-[#A4423F]">주소 찾기를 열지 못했어요. 위 칸에 직접 적어 주세요.</p>}
+      {failed && <p role="alert" className="text-base font-bold text-danger">주소 찾기를 열지 못했어요. 위 칸에 직접 적어 주세요.</p>}
       {open && (
         <div role="dialog" aria-modal="true" aria-label="카카오에서 주소 찾기" className="fixed inset-0 z-[120] mx-auto flex max-w-[480px] flex-col bg-paper">
           <div className="flex items-center gap-2 border-b-2 border-line px-[18px] py-2">
