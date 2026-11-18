@@ -1,15 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
-import { CategoryIcon } from "@/components/CategoryIcon";
 import { InstallButton } from "@/components/InstallButton";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { PageView } from "@/components/PageView";
 import { TimeAgo } from "@/components/TimeAgo";
-import { CATEGORIES, categoryOf } from "@/lib/categories";
 import { feedLine, latestPerStore } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/server";
 import type { FeedItem, StoreSign } from "@/lib/types";
+import { HomeCategories } from "./HomeCategories";
 import { HomeFavorites } from "./HomeFavorites";
 import { HomeSearch } from "./HomeSearch";
 
@@ -31,8 +30,6 @@ export default async function HomePage() {
   const menus = Object.fromEntries(((indexRes.data ?? []) as { store_id: string; menus: string[] }[]).map((r) => [r.store_id, r.menus]));
   // 실시간 소식: 가게마다 가장 새 소식 하나씩, 새로 올라온 순서로
   const live = latestPerStore(feed.filter((f) => f.is_current)).slice(0, LIVE_ROWS);
-  const isOpen = (s: StoreSign) => s.schedule_status === "open";
-  const openTotal = stores.filter(isOpen).length;
 
   return (
     <>
@@ -75,24 +72,7 @@ export default async function HomePage() {
 
           <HomeFavorites stores={stores} initialIds={favoriteIds} />
 
-          <div className="flex items-baseline justify-between">
-            <h2 className="font-display text-[19px] font-normal">무엇을 찾아요?</h2>
-            <span className="text-sm text-muted">
-              지금 문 연 가게 <b className="text-open">{openTotal}곳</b>
-            </span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-x-2.5 gap-y-3 min-[560px]:grid-cols-[repeat(auto-fill,minmax(100px,1fr))]">
-            {CATEGORIES.map((c) => (
-              <Link key={c.id} href={`/stores?cat=${c.id}`} className="ok-sticker flex flex-col items-center gap-1.5 rounded-[22px] border-2 border-line bg-card px-0.5 pt-3 pb-2.5">
-                <span className="flex size-[60px] items-center justify-center rounded-full border-2 border-white" style={{ background: c.bg, boxShadow: `0 0 0 2px ${c.bg}` }}>
-                  <CategoryIcon id={c.id} />
-                </span>
-                <span className="font-display text-[15px] whitespace-nowrap">{c.name}</span>
-                <span className="text-[11px] font-bold text-open">영업중 {stores.filter((s) => categoryOf(s.category) === c.id && isOpen(s)).length}</span>
-              </Link>
-            ))}
-          </div>
+          <HomeCategories stores={stores} />
         </HomeSearch>
       </main>
 

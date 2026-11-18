@@ -56,6 +56,17 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* 글자를 고를 때와 입력 커서도 옥!소리 색으로 */
+::selection {
+  background: var(--color-yellow-soft);
+  color: var(--color-ink);
+}
+
+input,
+textarea {
+  caret-color: var(--color-sage-deep);
+}
+
 button {
   cursor: pointer;
 }
