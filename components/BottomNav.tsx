@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { TAB_RESELECT } from "@/lib/nav";
 
 const TABS = [
   { href: "/", label: "홈", match: (p: string) => p === "/" || p.startsWith("/stores"), paths: ["M4 11l8-7 8 7v9H4z", "M10 20v-5h4v5"] },
@@ -17,7 +18,15 @@ export function BottomNav() {
         {TABS.map((t) => {
           const on = t.match(path);
           return (
-            <Link key={t.href} href={t.href} prefetch aria-current={on ? "page" : undefined} className={`flex flex-col items-center justify-center gap-[3px] font-display text-sm ${on ? "text-sage-deep" : "text-muted"}`}>
+            <Link
+              key={t.href}
+              href={t.href}
+              prefetch
+              aria-current={on ? "page" : undefined}
+              onClick={() => {
+                if (path === t.href) window.dispatchEvent(new CustomEvent(TAB_RESELECT, { detail: t.href }));
+              }}
+              className={`flex flex-col items-center justify-center gap-[3px] font-display text-sm ${on ? "text-sage-deep" : "text-muted"}`}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 {t.paths.map((d) => <path key={d} d={d} />)}
               </svg>

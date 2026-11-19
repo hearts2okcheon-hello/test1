@@ -78,7 +78,7 @@ export function CommunityView({ post, signedIn, isAdmin }: { post: CommunityPost
         ) : (
           <ul className="flex flex-col gap-2">
             {post.comments.map((c) => (
-              <li key={c.id} className="flex flex-col gap-0.5 rounded-2xl bg-cream px-3 py-2">
+              <li key={c.id} className="flex flex-col gap-0.5 rounded-2xl border-2 border-line bg-card px-3.5 py-2.5">
                 <span className="flex items-center gap-2 text-[13px]">
                   <b className={c.anon_name === "글쓴이" ? "text-sage-deep" : "text-muted"}>{c.anon_name}</b>
                   <span className="text-muted"><TimeAgo iso={c.created_at} /></span>

@@ -1,6 +1,8 @@
 export const NAV_START = "ok:nav-start";
 /** 화면을 새로 받았다 (받아 둔 다른 화면이 지워졌으니 다시 받아 두라는 신호) */
 export const REFRESHED = "ok:refreshed";
+/** 이미 보고 있는 아래 탭을 다시 눌렀다 (홈은 전체 · 맨 위로 돌아간다). detail 은 그 탭의 주소 */
+export const TAB_RESELECT = "ok:tab-reselect";
 
 /** 이 주소로 가면 앱 안에서 다른 화면으로 넘어가는가 (전화·외부 링크, 같은 화면, #이동은 아니다) */
 export function isInternalNav(target: string, current: string): boolean {

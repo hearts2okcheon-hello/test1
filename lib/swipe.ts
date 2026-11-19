@@ -46,3 +46,30 @@ export function otherTabs(pathname: string): string[] {
 export function isWarm(warmedAt: number | undefined, now: number): boolean {
   return !!warmedAt && now - warmedAt < WARM_FRESH_MS;
 }
+
+/**
+ * 탭 화면 안에 자기만의 옆 넘김(홈의 카테고리)이 있으면 여기에 등록한다.
+ * 손가락이 가는 쪽에 넘길 것이 있다고 하면 탭 밀기는 그 손짓을 양보하고, 끝에 닿았을 때만 탭을 넘긴다
+ */
+let innerPager: ((dx: number) => boolean) | null = null;
+
+export function setInnerPager(canGo: ((dx: number) => boolean) | null): void {
+  innerPager = canGo;
+}
+
+export function innerPagerTakes(dx: number): boolean {
+  return innerPager ? innerPager(dx) : false;
+}
+
+const FLICK_SPEED = 0.5; // px/ms
+const FLICK_MIN_DX = 24;
+
+/**
+ * 손을 뗐을 때 다음 화면으로 넘길 것인가. dx 는 민 거리, vx 는 뗄 때의 빠르기(px/ms).
+ * 충분히 밀었거나, 조금 밀었어도 같은 쪽으로 빠르게 튕겼으면 넘긴다
+ */
+export function shouldCommitSwipe(dx: number, vx: number, width: number): boolean {
+  if (width <= 0) return false;
+  if (Math.abs(dx) >= MIN_DX) return true;
+  return Math.abs(dx) >= FLICK_MIN_DX && Math.abs(vx) >= FLICK_SPEED && Math.sign(vx) === Math.sign(dx);
+}

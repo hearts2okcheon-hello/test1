@@ -134,9 +134,10 @@ export function CommentInput({ id, value, onChange, busy, placeholder, onSubmit 
   );
 }
 
-export function CommentRow({ body, at, canDelete, busy, onDelete }: { body: string; at: string; canDelete: boolean; busy: boolean; onDelete: () => void }) {
+/** onPaper: 카드 밖(종이 바탕)에 놓일 때. 바탕과 섞이지 않게 글 본문과 같은 카드색에 테두리를 둔다 */
+export function CommentRow({ body, at, canDelete, busy, onDelete, onPaper = false }: { body: string; at: string; canDelete: boolean; busy: boolean; onDelete: () => void; onPaper?: boolean }) {
   return (
-    <li className="flex items-center gap-2 rounded-2xl bg-cream px-3 py-2">
+    <li className={`flex items-center gap-2 rounded-2xl ${onPaper ? "border-2 border-line bg-card px-3.5 py-2.5" : "bg-cream px-3 py-2"}`}>
       <span className="min-w-0 flex-1 text-[15px] leading-normal whitespace-pre-wrap">{body}</span>
       <span className="shrink-0 text-xs text-muted">
         <TimeAgo iso={at} />

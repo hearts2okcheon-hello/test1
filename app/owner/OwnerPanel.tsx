@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AppAlertCard } from "@/components/AppAlertCard";
+import { GEAR_ICON } from "@/components/MenuParts";
 import { NoticeButtons } from "@/components/NoticeButtons";
 import { TimeAgo } from "@/components/TimeAgo";
 import { useToast } from "@/components/Toast";
@@ -11,7 +12,7 @@ import { seoulToday } from "@/lib/calendar";
 import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
 import { dayLine, lastPlanDay, specialDays } from "@/lib/plans";
-import { SIGN_STYLES, formatRange, signChip, signTitle } from "@/lib/signs";
+import { SIGN_STYLES, signChip, signTitle } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
 import { seoulClock, todayOpenAt } from "@/lib/time";
 import type { DayPlan, OwnerHome, StorePost, TempClosure } from "@/lib/types";
@@ -68,11 +69,6 @@ export function OwnerPanel({ home, posts, closures, plans }: { home: Home; posts
     });
   }
 
-  async function cancelClosure(c: TempClosure) {
-    if (!(await askDelete({ title: "임시휴무를 취소할까요?", detail: `${formatRange(c.start_date, c.end_date)} 임시휴무가 사라져요.` }))) return;
-    run(() => createClient().rpc("cancel_temp_closure", { p_closure_id: c.id }), "임시휴무를 취소했어요.");
-  }
-
   async function deletePost(p: StorePost) {
     if (!(await askDelete({ detail: "이 소식이 사라져요." }))) return;
     run(() => createClient().rpc("delete_store_post", { p_post_id: p.id }), "소식을 지웠어요.");
@@ -121,8 +117,7 @@ export function OwnerPanel({ home, posts, closures, plans }: { home: Home; posts
 
       <nav aria-label="가게 관리" className="flex flex-col gap-2">
         <MenuLink href="/owner/news" icon="pen" title="소식·공지 올리기" desc="오늘 들어온 소식에 바로 떠요" />
-        <MenuLink href="/owner/calendar" icon="calendar" title="캘린더에 일정 넣기" desc="날짜별 휴무·늦게 열기·외출" />
-        <MenuLink href="/owner/closure" icon="moon" title="임시휴무 알리기" desc="여러 날을 한 번에 쉴 때 골라요" />
+        <MenuLink href="/owner/calendar" icon="calendar" title="가게 캘린더" desc="휴무·늦게 열기·일찍 닫기·외출을 날짜로 넣어요" />
         <MenuLink href="/owner/edit" icon="gear" title="가게 정보 고치기" desc="메뉴·사진·영업시간·위치" />
       </nav>
 
@@ -130,28 +125,13 @@ export function OwnerPanel({ home, posts, closures, plans }: { home: Home; posts
         <section className="flex flex-col gap-1.5 rounded-[20px] border-2 border-line bg-card px-3.5 py-3">
           <h2 className="font-display text-[20px] font-normal">다가오는 일정</h2>
           {upcoming.map((d) => (
-            <p key={d.day} className={`text-lg font-bold ${d.tone === "closed" ? "text-danger" : "text-blue"}`}>
+            <p key={d.day} className={`text-lg font-bold ${d.tone === "closed" ? "text-red" : "text-blue"}`}>
               {d.label} {d.text}
             </p>
           ))}
-        </section>
-      )}
-
-      {closures.length > 0 && (
-        <section className="flex flex-col gap-2">
-          <h2 className="font-display text-[22px] font-normal">잡혀 있는 임시휴무</h2>
-          {closures.map((c) => (
-            <div key={c.id} className="flex items-center gap-2 rounded-[20px] border-2 border-line bg-card px-3.5 py-3">
-              <span aria-hidden className="size-3.5 shrink-0 rounded-full" style={{ background: "#EF4444" }} />
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="text-lg font-bold">{formatRange(c.start_date, c.end_date)}</span>
-                {c.reason && <span className="text-base text-muted">{c.reason}</span>}
-              </span>
-              <button type="button" disabled={busy} onClick={() => cancelClosure(c)} className="min-h-12 shrink-0 rounded-2xl border-2 border-line bg-white px-3.5 text-base font-bold text-danger">
-                취소
-              </button>
-            </div>
-          ))}
+          <Link href="/owner/calendar" className="mt-1 flex min-h-12 items-center justify-center rounded-2xl border-2 border-line bg-white text-base font-bold">
+            캘린더에서 보고 고치기
+          </Link>
         </section>
       )}
 
@@ -212,8 +192,7 @@ function StatusButton({ kind, label, on, onClick }: { kind: "open" | "closed_tod
 const ICONS = {
   pen: ["M4 20h4L19 9l-4-4L4 16z", "M13.5 6.5l4 4"],
   calendar: ["M5 6h14v14H5z", "M5 10h14", "M9 3.5v4", "M15 3.5v4"],
-  moon: ["M19 14.5A8 8 0 0 1 9.5 5a7 7 0 1 0 9.5 9.5z"],
-  gear: ["M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z", "M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"],
+  gear: GEAR_ICON,
 } as const;
 
 function MenuLink({ href, icon, title, desc }: { href: string; icon: keyof typeof ICONS; title: string; desc: string }) {

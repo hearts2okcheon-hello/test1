@@ -70,8 +70,8 @@ export function AlertList({ alerts }: { alerts: AlertItem[] }) {
       {/* 알림 켜기 · 끄기 */}
       {state !== null && (
         <section className={`flex items-center gap-3 rounded-[22px] border-[2.5px] bg-card px-4 py-3.5 ${on ? "border-sage" : "border-coral"}`}>
-          <span className={`flex size-11 shrink-0 items-center justify-center rounded-full ${on ? "bg-sage-soft text-sage-deep" : "bg-coral-soft text-danger"}`}>
-            <Bell off={!on} />
+          <span className={`flex size-11 shrink-0 items-center justify-center rounded-full ${on ? "bg-yellow-soft text-olive" : "bg-coral-soft text-danger"}`}>
+            <Bell off={!on} size={26} />
           </span>
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="font-display text-lg leading-snug">{on ? "알림이 켜져 있어요" : state === "denied" ? "알림이 막혀 있어요" : "알림이 꺼져 있어요"}</span>

@@ -5,8 +5,8 @@ import type { DayPlan, RegularHours, TempClosure } from "@/lib/types";
 import { OwnerCalendar } from "./OwnerCalendar";
 
 /**
- * 가게 이름 옆 달력 버튼: 누르면 오늘부터 한 달 달력이 창으로 뜬다.
- * 주민은 날짜를 눌러 그날 일정을 보고, 사장님(canManage)은 같은 달력에서 바로 넣고 고친다
+ * 가게 이름 옆 달력 버튼: 누르면 가게 캘린더가 창으로 뜬다.
+ * 주민은 날짜를 눌러 그날 일정을 보고, 사장님(canManage)은 같은 달력에서 기간을 골라 넣고 고친다 (ADR-015)
  */
 export function StoreCalendarButton({
   storeId,

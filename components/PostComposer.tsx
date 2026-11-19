@@ -81,7 +81,7 @@ export function PostComposer({ storeId, storeName, post }: { storeId: string; st
         <textarea
           value={body}
           maxLength={BODY_MAX}
-          rows={5}
+          rows={7}
           onChange={(e) => setBody(e.target.value)}
           placeholder="예: 오늘 갓 만든 떡볶이 나왔어요!"
           className="w-full rounded-2xl border-2 border-line bg-white p-3.5 text-lg leading-relaxed"
@@ -91,31 +91,31 @@ export function PostComposer({ storeId, storeName, post }: { storeId: string; st
         </span>
       </label>
 
-      <div className="flex items-center gap-3">
+      {/* 사진은 선택. 글이 먼저 보이도록 사진 칸은 작게 둔다 */}
+      <div className="flex items-end gap-3">
         <PhotoPicker
           preview={preview}
           label="소식 사진"
-          size={110}
+          size={88}
+          camera
+          hint="사진 추가"
           onPick={(f) => {
             setFile(f);
             setPreview(URL.createObjectURL(f));
           }}
         />
-        <div className="flex flex-col items-start gap-1">
-          <span className="text-base text-muted">사진은 넣지 않아도 돼요.</span>
-          {preview && (
-            <button
-              type="button"
-              onClick={() => {
-                setFile(null);
-                setPreview(null);
-              }}
-              className="min-h-11 text-base font-bold text-danger"
-            >
-              사진 빼기
-            </button>
-          )}
-        </div>
+        {preview && (
+          <button
+            type="button"
+            onClick={() => {
+              setFile(null);
+              setPreview(null);
+            }}
+            className="min-h-12 rounded-2xl border-2 border-line bg-card px-3.5 text-base font-bold text-danger"
+          >
+            사진 빼기
+          </button>
+        )}
       </div>
 
       <div className="flex gap-2">

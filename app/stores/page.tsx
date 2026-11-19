@@ -10,7 +10,7 @@ import { StoreList } from "./StoreList";
 
 export const dynamic = "force-dynamic";
 
-/** 카테고리 안의 가게들. 홈에서 들어온다 */
+/** 가게 목록. 홈의 "더 보기"에서 들어온다. 카테고리 줄은 홈 탭과 같은 순서(전체 · 카페 · 한식 …) */
 export default async function StoresPage({ searchParams }: { searchParams: Promise<{ cat?: string }> }) {
   const { cat } = await searchParams;
   const category = categoryById(cat);
@@ -30,7 +30,7 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
           </Link>
           <h1 className="font-display text-[26px] font-normal">{category?.name ?? "전체 가게"}</h1>
         </header>
-        {category && <CategorySwipe current={category.id} />}
+        <CategorySwipe current={category?.id ?? "all"} />
         {error ? (
           <p className="rounded-[22px] border-2 border-dashed border-line px-4 py-3 text-sm text-muted">가게 소식을 불러오지 못했어요. 잠시 뒤 새로고침 해 주세요.</p>
         ) : (

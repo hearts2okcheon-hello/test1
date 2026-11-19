@@ -190,6 +190,7 @@ create table events (                -- 시범 지표 측정용
 - `profiles`: `display_name`(이름)·`area`(사는 곳)·`phone`·`avatar_url`·`registered_at`·`store_notice_ack_at`. 쓰기는 `save_my_profile`, `ack_store_notice`. 본인과 관리자만 읽는다.
 - `stores.store_phone`(가게 번호, 선택)·`store_phone_public`. 표 직접 읽기 권한이 없고 `get_store_detail`의 `profile.store_phone`(공개한 것)·`manage_store_phone`(관리자·사장님)으로만 준다.
 - `store_day_plans(store_id, day, kind, start_time, end_time, note)`: kind 는 `late_open`·`early_close`·`out`, 가게·날짜·종류마다 하나. 쓰기는 `set_day_plan`(오늘~한 달, `closed`는 하루짜리 `temp_closures`로 넣는다)·`clear_day_plan`. 읽기는 `get_store_detail`의 `plans`.
+- 가게 캘린더(ADR-015, `20261119000000_schedule_range.sql`): 화면은 `save_schedule`로 기간(시작일~끝나는 날)에 휴무·늦게 열기·일찍 닫기·외출을 넣고 고친다. 휴무는 `temp_closures` 한 줄, 나머지는 날짜마다 `store_day_plans` 한 줄이고 휴무일은 건너뛴다. 묶인 일정은 `clear_day_plans`로 한 번에 지운다. 화면에서는 이어진 날(같은 종류·시각·쪽지)을 하나의 일정으로 묶어 보여 준다(`lib/schedule.ts`).
 - `okc_schedule_status`는 외출 중 공지와 오늘의 일정(늦게 열기·일찍 닫기·외출)을 반영한다.
 - `profiles.nickname`(선택, 비우면 "익명의 오소리 NNN"). 관리자용 `admin_list_residents`·`admin_update_resident`, 본인용 `delete_my_account` (`20261113040000_nickname_residents_account.sql`).
 - `stores.logo_url`(가게 프로필 사진, 쓰기는 `set_store_logo`). `get_store_signs`가 `logo_url`과 `card_photos`(갤러리 사진 먼저, 그다음 메뉴 사진, 4장까지)를 함께 준다 (`20261113030000_store_logo_card_photos.sql`).
@@ -236,12 +237,12 @@ create table events (                -- 시범 지표 측정용
 ### 5.2 화면 목록
 | 경로 | 화면 | 사용자 |
 |---|---|---|
-| `/` | 오늘의 마을방송 — 상단: 오늘 소식 피드(최신순), 하단: 가게 목록 + 팻말, 카테고리 필터 | 주민 |
+| `/` | 오늘의 마을방송 — 검색 아래 카테고리 탭(전체 · 카페 · … 생활·기타, 스크롤하면 위에 붙음). 탭마다 실시간 마을방송(가게당 최신 1개) → 전체만 즐겨찾는 가게 → 가게 목록 + 팻말(상태 돌려 보기, 더 보기). 옆으로 밀면 카테고리가 넘어간다 (ADR-016) | 주민 |
 | `/stores/[id]` | 가게 상세 — 큰 팻말, 출처 배지·시각, 쪽지, 평소 영업시간, 확인 중 제보 + 나도 봤어요, 제보 버튼 4개 | 주민·이웃 |
 | `/owner` | 사장님 홈 — 내 가게 현재 팻말, 공지 버튼 5개, 쪽지 입력, **확인 질문 카드(네/아니요)** 상단 고정 | 사장님 |
 | `/owner` (연결 전) | 사장님 코드 입력(글자 버튼 + 숫자 5자리) | 사장님 |
 | `/owner/register` | 처음 가게 등록 (7구역) | 사장님 |
-| `/owner/edit` · `/owner/news` · `/owner/closure` | 가게 수정 · 소식·공지 쓰기·고치기 · 임시휴무(달력 → 사유) | 사장님 |
+| `/owner/edit` · `/owner/news` · `/owner/calendar` | 가게 수정 · 소식·공지 쓰기·고치기 · 가게 캘린더(날짜 기간 → 유형 → 일정 등록, 등록된 일정 고치기·지우기. ADR-015). 예전 `/owner/closure`는 캘린더로 보낸다 | 사장님 |
 | `/admin` | 옥천신문 — 탭: 사장님 코드 / 게시물 / 엇갈림·무응답 / 대리 등록 / 가게 관리 / 지표 | 관리자 |
 
 ### 5.3 핵심 플로우
@@ -288,6 +289,7 @@ MVP에 푸시 알림은 없다(brd 범위 밖). 그래서:
 | `save_store_post(store, body, kind?, image?, post?)` · `delete_store_post(post)` | 사장님·admin | 소식·공지 쓰기·고치기·지우기 |
 | `toggle_post_like(post, on?)` · `post_store_comment(store, body)` · `delete_store_comment(comment)` | 익명 포함 로그인 | 공감·댓글. 삭제는 쓴 사람·사장님·admin |
 | `set_temp_closure(store, start, end, reason?)` · `cancel_temp_closure(id)` | 사장님·admin | 임시휴무 잡기·취소 |
+| `save_schedule(store, kind, start, end, from?, to?, note?, closure_id?, plan_ids?)` · `clear_day_plans(store, plan_ids)` | 사장님·admin | 가게 캘린더: 기간으로 일정 넣기·고치기(들어간 날 수를 돌려줌) · 묶인 일정 지우기 (ADR-015) |
 | `admin_list_content()` | admin | 소식·댓글 최근 50개 |
 | `admin_upsert_store(store_id?, name, category?, address?, regular_hours?, is_pilot?)` | admin | 가게 등록·수정 (store_id가 없으면 새로 등록) |
 | `admin_get_queue()` | admin | 엇갈림·무응답 제보 |

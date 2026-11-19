@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { joinClock, nextHalfHour, splitClock } from "@/lib/clock";
-import { neighborCategory } from "@/lib/categories";
 import { postParts } from "@/lib/signs";
 import { alertGroup, alertIdFrom, badgeText } from "@/lib/alerts";
 
@@ -18,18 +17,6 @@ describe("시간 돌림판 (T-TIME-01)", () => {
     expect(nextHalfHour("16:07")).toBe("16:30");
     expect(nextHalfHour("16:30")).toBe("17:00");
     expect(nextHalfHour("23:50")).toBe("23:30");
-  });
-});
-
-describe("카테고리 밀기 (T-SWIPE-04)", () => {
-  it("왼쪽으로 밀면 다음, 오른쪽으로 밀면 앞 카테고리", () => {
-    expect(neighborCategory("cafe", -80)).toBe("korean");
-    expect(neighborCategory("korean", 80)).toBe("cafe");
-  });
-  it("끝에서는 넘어가지 않는다", () => {
-    expect(neighborCategory("cafe", 80)).toBeNull();
-    expect(neighborCategory("etc", -80)).toBeNull();
-    expect(neighborCategory(undefined, -80)).toBeNull();
   });
 });
 

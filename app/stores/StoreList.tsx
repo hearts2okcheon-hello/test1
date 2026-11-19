@@ -36,11 +36,11 @@ export function StoreList({ stores }: { stores: StoreSign[] }) {
         <span aria-live="polite" className="text-sm text-muted">
           {status === "all" && !q.trim() ? (
             <>
-              영업중 <b className={open > 0 ? "text-open" : ""}>{open}</b>곳 · 전체 {stores.length}곳
+              영업중 <b className={open > 0 ? "text-open" : ""}>{open}</b>곳 · 모두 {stores.length}곳
             </>
           ) : (
             <>
-              찾은 가게 <b className="text-ink">{shown.length}</b>곳 · 전체 {stores.length}곳
+              찾은 가게 <b className="text-ink">{shown.length}</b>곳 · 모두 {stores.length}곳
             </>
           )}
         </span>

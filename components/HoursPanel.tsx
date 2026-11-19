@@ -5,7 +5,7 @@ import { seoulToday } from "@/lib/calendar";
 import { dayLine, nextDays, weekdayName, type DayTone } from "@/lib/plans";
 import type { DayPlan, RegularHours, TempClosure } from "@/lib/types";
 
-const TONE_TEXT: Record<DayTone, string> = { closed: "font-bold text-[#C8403D]", plan: "font-bold text-blue", normal: "" };
+const TONE_TEXT: Record<DayTone, string> = { closed: "font-bold text-red", plan: "font-bold text-blue", normal: "" };
 
 /**
  * 운영 날짜 & 영업시간: 오늘 하루만 보여 주고, ⌄ 를 누르면 1주일 뒤까지 편다. 한 달 일정은 가게 이름 옆 달력 버튼에서 본다.

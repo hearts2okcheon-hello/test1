@@ -5,19 +5,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { pushWithLoading } from "@/lib/nav";
 import { REFRESHED } from "@/lib/nav";
-import { dragOffset, isWarm, neighborTab, otherTabs, swipeLock, swipeTarget } from "@/lib/swipe";
+import { dragOffset, innerPagerTakes, isWarm, neighborTab, otherTabs, swipeLock, swipeTarget } from "@/lib/swipe";
+import { blocksSwipe } from "@/lib/swipeDom";
 
 const OUT_MS = 170;
-
-/** 옆으로 넘기는 목록·입력칸·창 안에서 민 것은 탭 넘기기가 아니다 */
-function blocksSwipe(el: Element | null): boolean {
-  for (let n = el; n && n !== document.body; n = n.parentElement) {
-    if (n.matches("input, textarea, select, [role=dialog], [data-no-swipe]")) return true;
-    const ox = getComputedStyle(n).overflowX;
-    if ((ox === "auto" || ox === "scroll") && n.scrollWidth > n.clientWidth + 2) return true;
-  }
-  return false;
-}
 
 /** 탭 화면의 내용(아래 탭 줄은 그대로 두고 이것만 민다) */
 function page(): HTMLElement | null {
@@ -35,8 +26,9 @@ const FULL_LIFE = 280_000;
 const RE_WARM_MS = 20_000;
 
 /**
- * 홈 · 소통광장 · 내 정보를 좌우로 밀어 바꾼다.
- * 미는 동안 화면이 손가락을 따라오고, 놓으면 옆으로 빠져나간 뒤 다음 화면이 반대쪽에서 들어온다
+ * 홈 · 소통광장 · 내 공간을 좌우로 밀어 바꾼다.
+ * 미는 동안 화면이 손가락을 따라오고, 놓으면 옆으로 빠져나간 뒤 다음 화면이 반대쪽에서 들어온다.
+ * 홈에서는 옆 밀기가 먼저 카테고리를 넘기고(HomePager), 마지막 카테고리에서 더 밀 때만 여기로 온다
  */
 export function TabSwipe() {
   const pathname = usePathname();
@@ -131,7 +123,15 @@ export function TabSwipe() {
       if (!start || leaving) return;
       const dx = e.touches[0].clientX - start.x;
       const dy = e.touches[0].clientY - start.y;
-      if (locked === null) locked = swipeLock(dx, dy);
+      if (locked === null) {
+        locked = swipeLock(dx, dy);
+        // 홈의 카테고리처럼 화면 안에 넘길 것이 있으면 그쪽에 맡긴다. 끝에 닿았을 때만 탭을 넘긴다
+        if (locked && innerPagerTakes(dx)) {
+          start = null;
+          locked = null;
+          return;
+        }
+      }
       if (!locked || calm) return;
       const el = page();
       if (!el) return;

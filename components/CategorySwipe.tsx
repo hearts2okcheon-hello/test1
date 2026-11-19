@@ -3,23 +3,27 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { CATEGORIES, neighborCategory } from "@/lib/categories";
+import { HOME_TABS, neighborHomeTab, type HomeTabId } from "@/lib/homeTabs";
 import { swipeLock } from "@/lib/swipe";
 
 const MIN_DX = 70;
 // 넘긴 뒤 새 목록이 들어올 방향
 let enterFrom: "left" | "right" | null = null;
 
+const hrefOf = (id: HomeTabId) => (id === "all" ? "/stores" : `/stores?cat=${id}`);
+
 /**
- * 가게 목록 위의 카테고리 줄. 줄에서 눌러 바꾸거나, 화면을 옆으로 밀어 앞뒤 카테고리로 넘긴다
+ * 가게 목록 위의 카테고리 줄 (홈 탭과 같은 순서: 전체 · 카페 · 한식 …).
+ * 줄에서 눌러 바꾸거나, 화면을 옆으로 밀어 앞뒤 카테고리로 넘긴다
  */
-export function CategorySwipe({ current }: { current: string }) {
+export function CategorySwipe({ current }: { current: HomeTabId }) {
   const router = useRouter();
   const row = useRef<HTMLDivElement>(null);
 
   // 지금 카테고리가 줄 가운데에 오게 하고, 밀어서 왔으면 미끄러져 들어온다
   useEffect(() => {
-    row.current?.querySelector<HTMLElement>("[aria-current=page]")?.scrollIntoView({ block: "nearest", inline: "center" });
+    const on = row.current?.querySelector<HTMLElement>("[aria-current=page]");
+    if (row.current && on) row.current.scrollLeft = on.offsetLeft - (row.current.clientWidth - on.offsetWidth) / 2;
     const from = enterFrom;
     enterFrom = null;
     const list = document.getElementById("store-list");
@@ -33,9 +37,9 @@ export function CategorySwipe({ current }: { current: string }) {
 
   // 이웃 카테고리를 미리 받아 둔다
   useEffect(() => {
-    for (const dx of [-1, 1]) {
-      const to = neighborCategory(current, dx);
-      if (to) router.prefetch(`/stores?cat=${to}`);
+    for (const dir of [-1, 1] as const) {
+      const to = neighborHomeTab(current, dir);
+      if (to) router.prefetch(hrefOf(to));
     }
   }, [current, router]);
 
@@ -60,10 +64,10 @@ export function CategorySwipe({ current }: { current: string }) {
       start = null;
       locked = null;
       if (!wasLocked || Math.abs(dx) < MIN_DX) return;
-      const to = neighborCategory(current, dx);
+      const to = neighborHomeTab(current, dx < 0 ? 1 : -1);
       if (!to) return;
       enterFrom = dx < 0 ? "right" : "left";
-      router.replace(`/stores?cat=${to}`, { scroll: false });
+      router.replace(hrefOf(to), { scroll: false });
     }
 
     document.addEventListener("touchstart", onStart, { passive: true });
@@ -78,13 +82,13 @@ export function CategorySwipe({ current }: { current: string }) {
 
   return (
     <nav aria-label="카테고리" className="-mx-5">
-      <div ref={row} data-no-swipe className="ok-scroll-x flex gap-2 overflow-x-auto px-5 pb-1">
-        {CATEGORIES.map((c) => {
+      <div ref={row} data-no-swipe className="ok-scroll-x relative flex gap-2 overflow-x-auto px-5 pb-1">
+        {HOME_TABS.map((c) => {
           const on = c.id === current;
           return (
             <Link
               key={c.id}
-              href={`/stores?cat=${c.id}`}
+              href={hrefOf(c.id)}
               replace
               scroll={false}
               aria-current={on ? "page" : undefined}

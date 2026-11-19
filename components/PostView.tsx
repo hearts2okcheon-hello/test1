@@ -64,7 +64,7 @@ export function PostView({ storeId, post, canManage }: { storeId: string; post: 
         ) : (
           <ul className="flex flex-col gap-2">
             {post.comments.map((c) => (
-              <CommentRow key={c.id} body={c.body} at={c.created_at} canDelete={c.is_mine || canManage} busy={busy} onDelete={() => remove(c.id)} />
+              <CommentRow key={c.id} onPaper body={c.body} at={c.created_at} canDelete={c.is_mine || canManage} busy={busy} onDelete={() => remove(c.id)} />
             ))}
           </ul>
         )}

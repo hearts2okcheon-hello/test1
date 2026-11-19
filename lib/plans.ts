@@ -20,11 +20,17 @@ export function addDays(day: string, n: number): string {
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 }
 
-/** 오늘부터 한 달 뒤 같은 날까지 (DB set_day_plan 과 같은 범위) */
+/** n달 뒤 같은 날. 그 달에 그 날짜가 없으면 말일 (1/31 + 1달 = 2/28) */
+export function addMonthsClamped(day: string, n: number): string {
+  const [y, m, d] = day.split("-").map(Number);
+  const first = new Date(Date.UTC(y, m - 1 + n, 1));
+  const days = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), Math.min(d, days))).toISOString().slice(0, 10);
+}
+
+/** 오늘부터 한 달 뒤 같은 날까지 (DB save_schedule · set_day_plan 과 같은 범위) */
 export function lastPlanDay(today: string): string {
-  const [y, m, d] = today.split("-").map(Number);
-  const days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
-  return new Date(Date.UTC(y, m, Math.min(d, days))).toISOString().slice(0, 10);
+  return addMonthsClamped(today, 1);
 }
 
 /** "2026-11-16" → "11/16 (월)" */

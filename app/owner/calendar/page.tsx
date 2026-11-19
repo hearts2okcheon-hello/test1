@@ -4,7 +4,7 @@ import { manageableStore } from "@/lib/owner";
 
 export const dynamic = "force-dynamic";
 
-/** 사장님 캘린더: 오늘부터 한 달, 날짜별 휴무·늦게 열기·일찍 닫기·외출 (ADR-014) */
+/** 가게 캘린더: 휴무·늦게 열기·일찍 닫기·외출을 기간으로 넣고, 고치고, 지운다 (ADR-015) */
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ store?: string }> }) {
   const { store } = await searchParams;
   const detail = await manageableStore(store);

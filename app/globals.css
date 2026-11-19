@@ -28,6 +28,10 @@
   /* 두 칸 고르기 버튼의 바탕, 그 위 흐린 글씨 */
   --color-sand: #EFE9DF;
   --color-sand-ink: #6B5D52;
+  /* 알림 종의 선 (글자색과 비슷한 톤의 그린-브라운) */
+  --color-olive: #6B6238;
+  /* 달력의 휴무 날짜. 분홍 띠(coral-soft) 위에서도 4.5:1 을 넘는 빨강 */
+  --color-red: #B8332F;
 
   /* 캘린더에서 "일정 있는 날" (휴무는 coral, 평소는 ink) */
   --color-blue: #2F6DB5;
@@ -144,6 +148,18 @@ a:active {
 }
 .ok-slide-in-right { animation: ok-slide-in-right 220ms ease-out; }
 .ok-slide-in-left { animation: ok-slide-in-left 220ms ease-out; }
+
+/* 홈 카테고리 넘김(components/HomePager.tsx): 옆에서 들어오는 화면이 밖으로 삐져나오지 않게 가린다.
+   overflow: clip 을 모르는 오래된 휴대폰에서는 통째로 가린다 */
+.ok-pager {
+  overflow: hidden;
+}
+@supports (overflow: clip) {
+  .ok-pager {
+    overflow: visible;
+    overflow-x: clip;
+  }
+}
 
 .ok-shell:has(.ok-wide) {
   max-width: 1040px;
