@@ -16,7 +16,14 @@ import { useToast } from "./Toast";
 
 const INPUT = "min-h-14 w-full min-w-0 rounded-2xl border-2 border-line bg-white px-3.5 text-lg";
 
-/** 내 정보 등록·고치기: 프로필 사진(선택) · 이름 · 사는 곳 · 전화번호 */
+const CHOICE = "min-h-14 rounded-2xl border-2 text-lg font-bold";
+const CHOICE_ON = "border-sage-deep bg-sage-soft text-sage-deep";
+const CHOICE_OFF = "border-line bg-white";
+
+/**
+ * 내 정보 등록·고치기: 프로필 사진(선택) · 이름 · 사는 곳 · 전화번호 · 가게 등록 여부.
+ * 전화번호 아래에서 "가게를 등록할 것입니까?"를 묻는다 (ADR-019). 이미 가게가 있는 사장님에게는 묻지 않는다
+ */
 export function ProfileEditor({ userId, initial, hasStore = false }: { userId: string; initial: MyProfile; hasStore?: boolean }) {
   const router = useRouter();
   const { node, show } = useToast();
@@ -27,6 +34,7 @@ export function ProfileEditor({ userId, initial, hasStore = false }: { userId: s
   const [area, setArea] = useState(initial.area ?? "");
   const [custom, setCustom] = useState(startsCustom);
   const [phone, setPhone] = useState(formatPhone(initial.phone ?? ""));
+  const [wantsStore, setWantsStore] = useState<boolean | null>(hasStore ? true : (initial.wants_store ?? null));
   const [avatarUrl, setAvatarUrl] = useState(initial.avatar_url);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -36,11 +44,19 @@ export function ProfileEditor({ userId, initial, hasStore = false }: { userId: s
     if (!name.trim()) return show("이름을 써 주세요.", "think");
     if (!area.trim()) return show("사는 곳을 골라 주세요.", "think");
     if (phone.replace(/\D/g, "").length < 9) return show("전화번호를 다시 확인해 주세요.", "think");
+    if (wantsStore === null) return show("가게를 등록할지 골라 주세요.", "think");
     setBusy(true);
     try {
       const supabase = createClient();
       const url = file ? await uploadAvatar(supabase, userId, file) : avatarUrl;
-      const { error } = await supabase.rpc("save_my_profile", { p_name: name.trim(), p_area: area.trim(), p_phone: phone, p_avatar_url: url, p_nickname: nickname.trim() || null });
+      const { error } = await supabase.rpc("save_my_profile", {
+        p_name: name.trim(),
+        p_area: area.trim(),
+        p_phone: phone,
+        p_avatar_url: url,
+        p_nickname: nickname.trim() || null,
+        p_wants_store: wantsStore,
+      });
       if (error) throw error;
       show(registered ? "내 정보를 고쳤어요." : "내 정보를 등록했어요!", "proud");
       pushWithLoading(router, "/owner");
@@ -86,7 +102,7 @@ export function ProfileEditor({ userId, initial, hasStore = false }: { userId: s
 
       <header className="flex flex-col gap-0.5">
         <h1 className="font-display text-[26px] leading-tight font-normal">{registered ? "내 정보 고치기" : "내 정보 등록하기"}</h1>
-        <p className="text-base text-muted">{registered ? "언제든 다시 고칠 수 있어요." : "카카오 계정으로 들어왔어요. 세 가지만 알려 주세요."}</p>
+        <p className="text-base text-muted">{registered ? "언제든 다시 고칠 수 있어요." : "카카오 계정으로 들어왔어요. 아래 내용을 알려 주세요."}</p>
       </header>
 
       <section className="flex flex-col items-center gap-2 rounded-[22px] border-2 border-line bg-card px-3.5 py-4">
@@ -188,6 +204,29 @@ export function ProfileEditor({ userId, initial, hasStore = false }: { userId: s
           <input type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="010-0000-0000" autoComplete="tel" className={INPUT} />
           <span className="text-sm leading-normal text-muted">다른 이웃에게는 보이지 않아요. 옥천신문이 연락할 때만 써요.</span>
         </label>
+
+        {!hasStore && (
+          <div className="flex flex-col gap-1.5">
+            <span id="wants-store-label" className="text-lg font-bold">
+              가게를 등록할 것입니까? <span className="ml-1 text-sm text-danger">필수</span>
+            </span>
+            <div role="radiogroup" aria-labelledby="wants-store-label" className="grid grid-cols-2 gap-2">
+              <button type="button" role="radio" aria-checked={wantsStore === true} onClick={() => setWantsStore(true)} className={`${CHOICE} ${wantsStore === true ? CHOICE_ON : CHOICE_OFF}`}>
+                예
+              </button>
+              <button type="button" role="radio" aria-checked={wantsStore === false} onClick={() => setWantsStore(false)} className={`${CHOICE} ${wantsStore === false ? CHOICE_ON : CHOICE_OFF}`}>
+                아니요
+              </button>
+            </div>
+            <span aria-live="polite" className="text-sm leading-normal text-muted">
+              {wantsStore === true
+                ? "내 공간에 가게 등록하기가 보이고, 소통광장 쓰기에 사장님 소식이 나와요."
+                : wantsStore === false
+                  ? "가게 메뉴는 보이지 않아요. 나중에 내 정보에서 다시 고를 수 있어요."
+                  : "가게 사장님이면 예를 골라 주세요. 나중에 내 정보에서 다시 고를 수 있어요."}
+            </span>
+          </div>
+        )}
       </section>
 
       {registered && (

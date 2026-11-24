@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { StoreArticleSection } from "@/components/ArticleRows";
 import { BackButton } from "@/components/BackButton";
 import { FavoriteStar } from "@/components/FavoriteStar";
 import { Gallery } from "@/components/Gallery";
@@ -12,7 +13,7 @@ import { SignBoard } from "@/components/SignBoard";
 import { StoreSocial } from "@/components/StoreSocial";
 import { formatPhone, formatWon } from "@/lib/hours";
 import { createClient } from "@/lib/supabase/server";
-import type { StoreDetail } from "@/lib/types";
+import type { StoreArticle, StoreDetail } from "@/lib/types";
 import { StoreClient } from "./StoreClient";
 
 export const dynamic = "force-dynamic";
@@ -31,8 +32,10 @@ export default async function StorePage({
   if (!UUID.test(id)) notFound();
 
   const supabase = await createClient();
-  const { data } = await supabase.rpc("get_store_detail", { p_store_id: id });
+  // 가게 정보와, 옥천신문이 이 가게에 붙인 기사 (ADR-020)
+  const [{ data }, articlesRes] = await Promise.all([supabase.rpc("get_store_detail", { p_store_id: id }), supabase.rpc("get_store_articles").eq("store_id", id)]);
   if (!data) notFound();
+  const articles = (articlesRes.data ?? []) as StoreArticle[];
   const detail = data as StoreDetail;
   const { store, profile, menus, photos, closures } = detail;
   const plans = detail.plans ?? [];
@@ -142,6 +145,9 @@ export default async function StorePage({
             <Gallery photos={photos} />
           </section>
         )}
+
+        {/* 8. 옥천신문 기사 (옥천신문이 붙인 가게만) */}
+        <StoreArticleSection articles={articles} />
 
         <StoreClient detail={detail} reported={reported} />
       </main>

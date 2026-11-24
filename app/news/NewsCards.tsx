@@ -9,6 +9,9 @@ import { createClient, ensureSession } from "@/lib/supabase/client";
 export type NewsStat = { article_id: string; views: number; likes: number; liked_by_me: boolean };
 type Stat = { views: number; likes: number; on: boolean };
 
+/** 처음에는 이만큼만 보여 주고, "기사 더 보기"를 누를 때마다 이만큼씩 더 보여 준다 */
+const PAGE = 10;
+
 function toMap(stats: NewsStat[]): Record<string, Stat> {
   return Object.fromEntries(stats.map((s) => [s.article_id, { views: s.views, likes: s.likes, on: s.liked_by_me }]));
 }
@@ -41,17 +44,23 @@ const HEART = "M12 20s-7.5-4.6-9.3-9.2C1.5 7.5 3.6 4.5 6.8 4.5c2.2 0 3.9 1.2 5.2
 const BUBBLE = "M4 5.5h16v11H10l-4.5 3.5V16.5H4z";
 
 /**
- * 포털 뉴스처럼 글자만: 굵은 제목, 흐린 요약, 작은 출처. 첫 기사만 조금 크게. 누르면 옥천신문으로 간다.
+ * 옥천신문 최근 기사 (ADR-018). 포털 뉴스처럼 글자만: 굵은 제목, 그 아래 흐린 줄거리, 작은 출처.
+ * 제목과 줄거리는 두 줄을 넘으면 줄인다. 누르면 옥천신문으로 간다.
  * 조회·공감은 옥!소리에서 센 숫자, 댓글은 옥천신문 기사에 달린 수
  */
-export function NewsCards({ news, stats }: { news: NewsItem[]; stats: NewsStat[] }) {
+export function NewsCards({ news, stats, loaded, days }: { news: NewsItem[]; stats: NewsStat[]; loaded: boolean; days: number }) {
   const { node, show } = useToast();
   const [stat, setStat] = useState<Record<string, Stat>>(() => toMap(stats));
+  const [count, setCount] = useState(PAGE);
   const queue = useRef<Promise<unknown>>(Promise.resolve());
   useEffect(() => setStat(toMap(stats)), [stats]);
 
   if (news.length === 0) {
-    return <p className="rounded-[22px] border-2 border-dashed border-line px-4 py-3 text-sm text-muted">뉴스를 불러오지 못했어요. 잠시 뒤 다시 봐 주세요.</p>;
+    return (
+      <p className="rounded-[22px] border-2 border-dashed border-line px-4 py-3 text-sm text-muted">
+        {loaded ? `최근 ${days}일 동안 올라온 기사가 없어요.` : "뉴스를 불러오지 못했어요. 잠시 뒤 다시 봐 주세요."}
+      </p>
+    );
   }
 
   const get = (id: string): Stat => stat[id] ?? { views: 0, likes: 0, on: false };
@@ -80,19 +89,19 @@ export function NewsCards({ news, stats }: { news: NewsItem[]; stats: NewsStat[]
     });
   }
 
+  const rest = news.length - count;
+
   return (
-    <>
-      <ul className="divide-y divide-line overflow-hidden rounded-[22px] border-2 border-line bg-card px-4 ok-sticker">
-        {news.map((n, i) => {
-          const top = i === 0;
+    <div className="flex flex-col gap-2.5">
+      <ul className="ok-sticker divide-y divide-line overflow-hidden rounded-[22px] border-2 border-line bg-card px-4">
+        {news.slice(0, count).map((n) => {
           const date = shortDate(n.publishedAt);
           const s = get(n.id);
           return (
             <li key={n.id} className="flex flex-col gap-1.5 py-4">
               <a href={n.url} target="_blank" rel="noopener noreferrer" onClick={() => view(n.id)} className="flex flex-col gap-1.5">
-                {top && <span className="self-start rounded-full bg-yellow-soft px-2 py-0.5 text-xs font-bold text-[#7E5810]">주요 뉴스</span>}
-                <span className={`font-bold tracking-[-0.01em] break-keep text-ink ${top ? "line-clamp-2 text-[19px] leading-[1.4]" : "line-clamp-2 text-[17px] leading-[1.45]"}`}>{n.title}</span>
-                {n.summary && <span className={`text-[14px] leading-[1.55] break-keep text-muted ${top ? "line-clamp-3" : "line-clamp-2"}`}>{n.summary}</span>}
+                <span className="line-clamp-2 text-[17px] leading-[1.45] font-bold tracking-[-0.01em] break-keep text-ink">{n.title}</span>
+                {n.summary && <span className="line-clamp-2 text-[14px] leading-[1.55] break-keep text-muted">{n.summary}</span>}
               </a>
               <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted">
                 <span>옥천신문{date ? ` · ${date}` : ""}</span>
@@ -117,8 +126,13 @@ export function NewsCards({ news, stats }: { news: NewsItem[]; stats: NewsStat[]
           );
         })}
       </ul>
-      <p className="-mt-1 px-1 text-[11px] text-muted">조회·공감은 옥!소리에서 센 숫자, 댓글은 옥천신문 기사에 달린 수예요.</p>
+      {rest > 0 && (
+        <button type="button" onClick={() => setCount((c) => c + PAGE)} className="min-h-12 rounded-full border-2 border-line bg-card font-display text-base">
+          기사 더 보기 <span className="font-sans text-sm text-muted">({rest}개 남음)</span>
+        </button>
+      )}
+      <p className="px-1 text-[11px] leading-normal text-muted">최근 {days}일 동안 올라온 옥천신문 기사예요. 조회·공감은 옥!소리에서 센 숫자, 댓글은 옥천신문 기사에 달린 수예요.</p>
       {node}
-    </>
+    </div>
   );
 }

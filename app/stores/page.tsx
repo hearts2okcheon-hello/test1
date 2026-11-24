@@ -2,20 +2,21 @@ import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
 import { CategorySwipe } from "@/components/CategorySwipe";
 import { PageView } from "@/components/PageView";
+import { StoreArticlesProvider } from "@/components/StoreArticles";
 import { WriteFab } from "@/components/WriteFab";
 import { categoryById, categoryOf } from "@/lib/categories";
 import { createClient } from "@/lib/supabase/server";
-import type { StoreSign } from "@/lib/types";
+import type { StoreArticle, StoreSign } from "@/lib/types";
 import { StoreList } from "./StoreList";
 
 export const dynamic = "force-dynamic";
 
-/** 가게 목록. 홈의 "더 보기"에서 들어온다. 카테고리 줄은 홈 탭과 같은 순서(전체 · 카페 · 한식 …) */
+/** 가게 목록. 홈의 "더 보기"에서 들어온다. 카테고리 줄은 전체 다음에 카테고리를 하나씩 둔다 (카페 · 빵집 · 다과 · 한식 …) */
 export default async function StoresPage({ searchParams }: { searchParams: Promise<{ cat?: string }> }) {
   const { cat } = await searchParams;
   const category = categoryById(cat);
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_store_signs");
+  const [{ data, error }, owner, articles] = await Promise.all([supabase.rpc("get_store_signs"), supabase.rpc("okc_owner_mode"), supabase.rpc("get_store_articles")]);
   const all = (data ?? []) as StoreSign[];
   const stores = category ? all.filter((s) => categoryOf(s.category) === category.id) : all;
 
@@ -35,11 +36,13 @@ export default async function StoresPage({ searchParams }: { searchParams: Promi
           <p className="rounded-[22px] border-2 border-dashed border-line px-4 py-3 text-sm text-muted">가게 소식을 불러오지 못했어요. 잠시 뒤 새로고침 해 주세요.</p>
         ) : (
           <div id="store-list" className="flex flex-col gap-4">
-            <StoreList key={category?.id ?? "all"} stores={stores} />
+            <StoreArticlesProvider articles={(articles.data ?? []) as StoreArticle[]}>
+              <StoreList key={category?.id ?? "all"} stores={stores} />
+            </StoreArticlesProvider>
           </div>
         )}
       </main>
-      <WriteFab />
+      <WriteFab owner={owner.data === true} />
       <BottomNav />
       <PageView />
     </>

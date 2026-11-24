@@ -4,21 +4,18 @@ import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { flushSync } from "react-dom";
 import { HomeFavorites } from "@/app/HomeFavorites";
-import { CATEGORIES } from "@/lib/categories";
-import { HOME_TABS, feedInTab, homeTabName, neighborHomeTab, storesInTab, tabDirection, type HomeTabId } from "@/lib/homeTabs";
+import { CATEGORY_GROUPS, categoryById, type GroupId } from "@/lib/categories";
+import { HOME_TABS, homeTabName, neighborHomeTab, sectionsInTab, storesInTab, tabDirection, type HomeTabId } from "@/lib/homeTabs";
 import { TAB_RESELECT } from "@/lib/nav";
-import { feedLine } from "@/lib/signs";
 import { filterByStatus, storeStatus, type StatusFilter } from "@/lib/storeFilter";
 import { setInnerPager, shouldCommitSwipe, swipeLock } from "@/lib/swipe";
 import { blocksSwipe } from "@/lib/swipeDom";
 import type { FeedItem, StoreSign } from "@/lib/types";
 import { CategoryIcon } from "./CategoryIcon";
-import { StatusCycle } from "./StatusCycle";
+import { StatusSelect } from "./StatusSelect";
 import { StoreCard } from "./StoreCard";
-import { TimeAgo } from "./TimeAgo";
 
-/** 홈에서는 글과 가게를 이만큼씩만 보여 주고, 더 있으면 "더 보기"로 넘긴다 */
-const FEED_LIMIT = 10;
+/** 홈에서는 가게를 구역마다 이만큼씩만 보여 주고, 더 있으면 "더 보기"로 넘긴다 */
 const STORE_LIMIT = 10;
 const SLIDE_MS = 240;
 const BACK_MS = 200;
@@ -30,8 +27,8 @@ const remembered: { tab: HomeTabId; status: StatusFilter } = { tab: "all", statu
 const calm = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /**
- * 홈의 카테고리 탭 (ADR-016). 맨 왼쪽이 전체, 그다음 카페 · 한식 … 생활·기타.
- * 탭을 누르거나 화면을 옆으로 밀면 그 카테고리의 올라온 글과 가게로 넘어간다.
+ * 홈의 카테고리 탭 (ADR-016, ADR-017). 맨 왼쪽이 전체, 그다음 카페·디저트 · 식사 · 생활 · 가전.
+ * 탭을 누르거나 화면을 옆으로 밀면 그 묶음의 가게로 넘어가고, 묶음 안에서는 아래로 카테고리마다 나뉜다 (카페 → 빵집 → 다과).
  * 미는 동안 지금 화면과 옆 화면이 손가락을 따라오고, 마지막 탭에서 더 밀면 아래 탭(소통광장)으로 넘어간다 (TabSwipe 가 맡는다)
  */
 export function HomePager({ feed, stores, favoriteIds }: { feed: FeedItem[]; stores: StoreSign[]; favoriteIds: string[] }) {
@@ -333,133 +330,142 @@ export function HomePager({ feed, stores, favoriteIds }: { feed: FeedItem[]; sto
   );
 }
 
-/** 탭 그림: 카테고리 그림을 작은 동그라미에. 전체는 네 칸 */
+/** 탭 그림: 묶음을 대표하는 카테고리 그림을 작은 동그라미에. 전체는 네 칸 */
 function TabIcon({ id }: { id: HomeTabId }) {
   if (id === "all") {
     return (
       <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-full bg-yellow-soft text-ink">
         <svg width="24" height="24" viewBox="0 0 64 64" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round">
-          <rect x="9" y="9" width="20" height="20" rx="6" fill={CATEGORIES[0].bg} />
-          <rect x="35" y="9" width="20" height="20" rx="6" fill={CATEGORIES[1].bg} />
-          <rect x="9" y="35" width="20" height="20" rx="6" fill={CATEGORIES[3].bg} />
+          <rect x="9" y="9" width="20" height="20" rx="6" fill={categoryById("cafe")!.bg} />
+          <rect x="35" y="9" width="20" height="20" rx="6" fill={categoryById("korean")!.bg} />
+          <rect x="9" y="35" width="20" height="20" rx="6" fill={categoryById("japanese")!.bg} />
           <rect x="35" y="35" width="20" height="20" rx="6" fill="var(--color-yellow)" />
         </svg>
       </span>
     );
   }
-  const c = CATEGORIES.find((x) => x.id === id)!;
+  const icon = CATEGORY_GROUPS.find((g) => g.id === id)!.icon;
   return (
-    <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-full" style={{ background: c.bg }}>
-      <CategoryIcon id={id} size={26} />
+    <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-full" style={{ background: categoryById(icon)!.bg }}>
+      <CategoryIcon id={icon} size={26} />
     </span>
   );
 }
 
-/** 탭 하나의 내용: 올라온 글(실시간 마을방송) → (전체만) 즐겨찾는 가게 → 가게 */
-function TabPane({
-  id,
-  feed,
-  stores,
-  favoriteIds,
-  status,
-  onStatus,
-}: {
-  id: HomeTabId;
-  feed: FeedItem[];
-  stores: StoreSign[];
-  favoriteIds: string[];
-  status: StatusFilter;
-  onStatus: (next: StatusFilter) => void;
-}) {
-  const name = homeTabName(id);
-  const rows = feedInTab(feed, stores, id);
-  const inTab = storesInTab(stores, id);
-  const shown = filterByStatus(inTab, status);
-  const open = inTab.filter((s) => storeStatus(s) === "open").length;
+type PaneProps = { stores: StoreSign[]; status: StatusFilter; onStatus: (next: StatusFilter) => void };
 
+/** 탭 하나의 내용. 전체는 (즐겨찾는 가게) → 전체 가게, 묶음 탭은 카테고리마다 나뉜 가게 */
+function TabPane({ id, feed, favoriteIds, ...rest }: PaneProps & { id: HomeTabId; feed: FeedItem[]; favoriteIds: string[] }) {
+  return id === "all" ? <AllPane feed={feed} favoriteIds={favoriteIds} {...rest} /> : <GroupPane id={id} {...rest} />;
+}
+
+/** 전체 탭: 즐겨찾는 가게가 있으면 그 소식과 팻말이 먼저, 그 아래 전체 가게 */
+function AllPane({ feed, favoriteIds, stores, status, onStatus }: PaneProps & { feed: FeedItem[]; favoriteIds: string[] }) {
+  const shown = filterByStatus(stores, status);
   return (
     <div className="flex flex-col gap-6 pb-1">
-      <section aria-label={`${name} 실시간 마을방송`} className="flex flex-col gap-2.5">
-        <div className="flex items-center gap-2">
-          <h2 className="flex min-w-0 flex-1 items-center gap-2 font-display text-[19px] font-normal">
-            <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-coral" />
-            실시간 마을방송
-          </h2>
-          {rows.length > FEED_LIMIT && (
-            <Link href="/news" className="flex min-h-11 shrink-0 items-center gap-0.5 rounded-full border-2 border-line bg-card pr-2.5 pl-3.5 font-display text-[15px]">
-              더 보기
-              <Chevron />
-            </Link>
-          )}
-        </div>
-        {rows.length === 0 ? (
-          <p className="rounded-[20px] border-2 border-dashed border-line px-4 py-3.5 text-[15px] leading-normal text-muted">
-            {id === "all" ? "아직 오늘 방송이 없어요. 사장님들 소식을 기다리는 중!" : `오늘 올라온 ${name} 소식이 아직 없어요.`}
-          </p>
-        ) : (
-          <ul className="ok-sticker flex flex-col rounded-[22px] border-2 border-line bg-card px-4">
-            {rows.slice(0, FEED_LIMIT).map((f, i) => (
-              <li key={`${f.item_type}-${f.item_id}`} className={i > 0 ? "border-t-2 border-line" : ""}>
-                <Link href={f.item_type === "post" ? `/stores/${f.store_id}/posts/${f.item_id}` : `/stores/${f.store_id}`} className="flex flex-col gap-0.5 py-3">
-                  <span className="flex items-baseline justify-between gap-2">
-                    <span className="truncate font-display text-base">{f.store_name}</span>
-                    <span className="shrink-0 text-[13px] text-muted">
-                      {f.source === "owner" ? "사장님" : "옥천신문"} · <TimeAgo iso={f.created_at} />
-                    </span>
-                  </span>
-                  <span className="line-clamp-2 text-[15px] leading-snug">{feedLine(f)}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {id === "all" && <HomeFavorites stores={stores} initialIds={favoriteIds} />}
-
-      <section aria-label={`${name} 가게`} className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <div className="flex min-w-0 flex-1 flex-col">
-            <h2 className="truncate font-display text-[19px] font-normal">{name} 가게</h2>
-            <span aria-live="polite" className="text-sm text-muted">
-              {status === "all" ? (
-                <>
-                  영업중 <b className={open > 0 ? "text-open" : ""}>{open}곳</b> · 모두 {inTab.length}곳
-                </>
-              ) : (
-                <>
-                  <b className="text-ink">{shown.length}곳</b> · 모두 {inTab.length}곳
-                </>
-              )}
-            </span>
-          </div>
-          <StatusCycle value={status} onChange={onStatus} />
-          {inTab.length >= STORE_LIMIT && (
-            <Link href={id === "all" ? "/stores" : `/stores?cat=${id}`} className="flex min-h-11 shrink-0 items-center gap-0.5 rounded-full border-2 border-line bg-card pr-2.5 pl-3.5 font-display text-[15px]">
-              더 보기
-              <Chevron />
-            </Link>
-          )}
-        </div>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(300px,100%),1fr))] gap-3">
-          {shown.slice(0, STORE_LIMIT).map((s) => (
-            <StoreCard key={s.store_id} store={s} />
-          ))}
-        </div>
-        {shown.length === 0 && (
-          <p className="rounded-[20px] border-2 border-dashed border-line px-4 py-3.5 text-[15px] leading-normal text-muted">
-            {inTab.length === 0 ? `아직 등록된 ${name} 가게가 없어요.` : "지금 이 상태인 가게가 없어요. 버튼을 눌러 다른 상태를 봐 주세요."}
-          </p>
-        )}
+      <HomeFavorites stores={stores} feed={feed} initialIds={favoriteIds} />
+      <section aria-label="전체 가게" className="flex flex-col gap-3">
+        <PaneHead title="전체 가게" stores={stores} shown={shown.length} status={status} onStatus={onStatus} more={stores.length >= STORE_LIMIT ? "/stores" : null} />
+        <StoreGrid stores={shown} />
+        {shown.length === 0 && <EmptyNote>{stores.length === 0 ? "아직 등록된 가게가 없어요." : NO_MATCH}</EmptyNote>}
       </section>
     </div>
   );
 }
 
-function Chevron() {
+/** 묶음 탭: 아래로 카테고리마다 나뉜다 (카페 → 빵집 → 다과). 카테고리가 하나뿐인 묶음은 나누지 않는다 */
+function GroupPane({ id, stores, status, onStatus }: PaneProps & { id: GroupId }) {
+  const name = homeTabName(id);
+  const inTab = storesInTab(stores, id);
+  const sections = sectionsInTab(stores, id);
+  const single = sections.length === 1;
+  const filled = sections.map((s) => ({ ...s, shown: filterByStatus(s.stores, status) })).filter((s) => s.shown.length > 0);
+  const vacant = sections.filter((s) => s.stores.length === 0).map((s) => s.category.name);
+  const shown = filled.reduce((n, s) => n + s.shown.length, 0);
+
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M9 6l6 6-6 6" />
-    </svg>
+    <section aria-label={`${name} 가게`} className="flex flex-col gap-4 pb-1">
+      <PaneHead
+        title={`${name} 가게`}
+        stores={inTab}
+        shown={shown}
+        status={status}
+        onStatus={onStatus}
+        more={single && inTab.length >= STORE_LIMIT ? `/stores?cat=${sections[0].category.id}` : null}
+      />
+      {filled.map(({ category, stores: all, shown: list }) => (
+        <section key={category.id} aria-label={category.name} className="flex flex-col gap-2.5">
+          {!single && (
+            <div className="flex min-h-11 items-center gap-2">
+              <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-full" style={{ background: category.bg }}>
+                <CategoryIcon id={category.id} size={23} />
+              </span>
+              <h3 className="flex min-w-0 flex-1 items-baseline gap-1.5 font-display text-[17px] font-normal">
+                <span className="truncate">{category.name}</span>
+                <span className="shrink-0 font-sans text-sm text-muted">{list.length}곳</span>
+              </h3>
+              {all.length >= STORE_LIMIT && <MoreLink href={`/stores?cat=${category.id}`} label={`${category.name} 더 보기`} />}
+            </div>
+          )}
+          <StoreGrid stores={list} />
+        </section>
+      ))}
+      {filled.length === 0 && <EmptyNote>{inTab.length === 0 ? `아직 등록된 ${name} 가게가 없어요.` : NO_MATCH}</EmptyNote>}
+      {!single && inTab.length > 0 && status === "all" && vacant.length > 0 && <p className="px-1 text-sm leading-normal text-muted">아직 가게가 없는 분류: {vacant.join(" · ")}</p>}
+    </section>
+  );
+}
+
+const NO_MATCH = "지금 이 상태인 가게가 없어요. 위에서 다른 상태를 골라 주세요.";
+
+/** 구역 머리: 제목 · 영업중 수 · 상태 고르기 · (많으면) 더 보기 */
+function PaneHead({ title, stores, shown, status, onStatus, more }: PaneProps & { title: string; shown: number; more: string | null }) {
+  const open = stores.filter((s) => storeStatus(s) === "open").length;
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <h2 className="truncate font-display text-[19px] font-normal">{title}</h2>
+        <span aria-live="polite" className="text-sm text-muted">
+          {status === "all" ? (
+            <>
+              영업중 <b className={open > 0 ? "text-open" : ""}>{open}곳</b> · 모두 {stores.length}곳
+            </>
+          ) : (
+            <>
+              <b className="text-ink">{shown}곳</b> · 모두 {stores.length}곳
+            </>
+          )}
+        </span>
+      </div>
+      <StatusSelect value={status} onChange={onStatus} />
+      {more && <MoreLink href={more} label="더 보기" />}
+    </div>
+  );
+}
+
+function StoreGrid({ stores }: { stores: StoreSign[] }) {
+  if (stores.length === 0) return null;
+  return (
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(min(300px,100%),1fr))] items-start gap-3">
+      {stores.slice(0, STORE_LIMIT).map((s) => (
+        <StoreCard key={s.store_id} store={s} />
+      ))}
+    </div>
+  );
+}
+
+function EmptyNote({ children }: { children: React.ReactNode }) {
+  return <p className="rounded-[20px] border-2 border-dashed border-line px-4 py-3.5 text-[15px] leading-normal text-muted">{children}</p>;
+}
+
+function MoreLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link href={href} aria-label={label} className="flex min-h-11 shrink-0 items-center gap-0.5 rounded-full border-2 border-line bg-card pr-2.5 pl-3.5 font-display text-[15px]">
+      더 보기
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M9 6l6 6-6 6" />
+      </svg>
+    </Link>
   );
 }

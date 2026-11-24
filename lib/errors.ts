@@ -38,6 +38,10 @@ const MESSAGES: Record<string, string> = {
   REASON_REQUIRED: "확인하는 이유를 적어 주세요.",
   WRONG_PASSWORD: "비밀번호가 맞지 않아요.",
   PROTECTED_CODE: "보호된 코드는 바꿀 수 없어요.",
+  BAD_ARTICLE_URL: "옥천신문 기사 주소를 붙여 넣어 주세요. (기사 화면의 주소)",
+  NO_SUCH_ARTICLE: "기사를 찾지 못했어요. 주소를 다시 확인해 주세요.",
+  INVALID_ARTICLE: "기사 정보를 읽지 못했어요. 주소를 다시 확인해 주세요.",
+  TOO_MANY_ARTICLES: "기사는 가게마다 5개까지 붙일 수 있어요. 먼저 하나를 떼 주세요.",
 };
 
 export function errorMessage(error: unknown): string {

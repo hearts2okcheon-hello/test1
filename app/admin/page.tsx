@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Osori } from "@/components/Osori";
 import { SignOutButton } from "@/components/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
-import type { AdminContent, CommunityAdminPost, Metrics, QueueItem, ResidentItem, StoreInfoItem, StoreSign } from "@/lib/types";
+import type { AdminContent, CommunityAdminPost, Metrics, QueueItem, ResidentItem, StoreArticle, StoreInfoItem, StoreSign } from "@/lib/types";
 import { QueueList, StoreForm, StoreManager } from "./AdminPanels";
 import { ContentPanel } from "./ContentPanel";
 import { UserInfoPanel } from "./UserInfoPanel";
@@ -80,8 +80,12 @@ async function QueueTab() {
 
 async function InfoTab() {
   const supabase = await createClient();
-  const [{ data }, { data: residents }] = await Promise.all([supabase.rpc("admin_list_store_info"), supabase.rpc("admin_list_residents")]);
-  return <UserInfoPanel stores={(data ?? []) as StoreInfoItem[]} residents={(residents ?? []) as ResidentItem[]} />;
+  const [{ data }, { data: residents }, { data: articles }] = await Promise.all([
+    supabase.rpc("admin_list_store_info"),
+    supabase.rpc("admin_list_residents"),
+    supabase.rpc("get_store_articles"),
+  ]);
+  return <UserInfoPanel stores={(data ?? []) as StoreInfoItem[]} residents={(residents ?? []) as ResidentItem[]} articles={(articles ?? []) as StoreArticle[]} />;
 }
 
 async function StoresTab() {

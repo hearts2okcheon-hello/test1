@@ -7,6 +7,7 @@ import { FavoriteStar } from "./FavoriteStar";
 import { ScheduleBadge } from "./ScheduleBadge";
 import { SignChip } from "./SignChip";
 import { SourceLine } from "./SourceLine";
+import { StoreArticles } from "./StoreArticles";
 
 const TILES = 3;
 
@@ -27,14 +28,15 @@ export function StoreLogo({ store, size = 48 }: { store: Pick<StoreSign, "name" 
 
 /**
  * 가게 카드: 프로필 동그라미 · 이름 · 팻말 한 줄, 그 아래 가게·메뉴 사진 세 칸.
- * 사진이 있든 없든, 이름이 길든 짧든 카드 크기가 같다
+ * 사진이 있든 없든, 이름이 길든 짧든 카드 크기가 같다.
+ * 옥천신문이 기사를 붙인 가게는 맨 아래에 "옥천신문 기사" 줄이 더 붙고, 눌러서 펼친다 (ADR-020)
  */
 export function StoreCard({ store, extra }: { store: StoreSign; extra?: string }) {
   const photos = (store.card_photos ?? []).slice(0, TILES);
   const c = categoryById(categoryOf(store.category))!;
   return (
-    <div className="relative">
-      <Link href={`/stores/${store.store_id}`} className="ok-sticker flex w-full flex-col gap-2.5 rounded-[22px] border-2 border-line bg-card px-3.5 pt-3.5 pb-3 text-left">
+    <div className="ok-sticker relative flex flex-col rounded-[22px] border-2 border-line bg-card">
+      <Link href={`/stores/${store.store_id}`} className="flex w-full flex-col gap-2.5 rounded-[20px] px-3.5 pt-3.5 pb-3 text-left">
         <span className="flex h-[52px] items-center gap-3 pr-8">
           <StoreLogo store={store} />
           <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -61,6 +63,7 @@ export function StoreCard({ store, extra }: { store: StoreSign; extra?: string }
           )}
         </span>
       </Link>
+      <StoreArticles storeId={store.store_id} storeName={store.name} />
       <FavoriteStar storeId={store.store_id} storeName={store.name} size={22} className="absolute top-0.5 right-0.5" />
     </div>
   );

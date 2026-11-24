@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function WritePage() {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("get_store_signs");
+  const [{ data }, owner] = await Promise.all([supabase.rpc("get_store_signs"), supabase.rpc("okc_owner_mode")]);
   const stores = ((data ?? []) as StoreSign[]).map((s) => ({ store_id: s.store_id, name: s.name }));
 
   return (
@@ -18,7 +18,7 @@ export default async function WritePage() {
           <BackButton />
           <h1 className="font-display text-[26px] font-normal">소식 쓰기</h1>
         </header>
-        <WriteChoices stores={stores} />
+        <WriteChoices stores={stores} owner={owner.data === true} />
       </main>
       <BottomNav />
     </>

@@ -127,6 +127,11 @@
 | T-ME-06 | 닉네임 없이 등록 / 닉네임 넣고 등록 | "익명의 오소리 NNN" / 넣은 그대로 | P1 |
 | T-ME-07~08 | 관리자 아닌 사람이 주민 목록·수정 / 관리자 | 빈 목록·`NOT_ADMIN` / 조회·수정 됨 | P0 |
 | T-ME-09 | 계정 삭제 (`supabase/tests/account_test.sql`) | 내 정보·혼자 관리하던 가게가 지워지고, 다시 등록부터 | P0 |
+| T-ME-10 | 가입할 때 가게 등록 여부 (`supabase/tests/store_intent_test.sql`) | 예·아니요가 `profile.wants_store`에 남고, 다시 저장할 때 안 보내면 그대로 | P0 |
+| T-ME-11 | 사장님 메뉴를 볼 사람 `okc_owner_mode()` | 아니요 · 내 정보 등록 전 · 익명 · 로그인 전은 false, 예 또는 가게가 있으면 true | P0 |
+| T-ME-12 | 이 질문 전에 가입한 사람 | 답이 비어 있고(null) 예로 본다 | P1 |
+| T-ME-13 | 계정 삭제 뒤 | 답이 지워진다 (다시 가입하면 다시 묻는다) | P1 |
+| T-ME-14 | 내 공간의 가게 줄 (`tests/plaza.test.ts`) | 아니요면 가게 등록하기를 감추고, 가게나 코드가 있으면 답과 상관없이 보인다 | P0 |
 | T-CAL-01~02 | 일정 표 직접 읽기 / 사장님 아닌 사람이 일정 넣기 | 불가 / `NOT_OWNER` | P0 |
 | T-CAL-03 | 외출 중 공지 | 팻말 `out`, 영업 상태는 영업중이 아님 | P0 |
 | T-CAL-04 | 캘린더 외출 시간 안 / 일정 지움 | 영업중 아님 / 다시 영업중 | P0 |
@@ -159,15 +164,25 @@
 |---|---|---|---|
 | T-TIME-01 | 시간 돌림판 | 24시간 시각 ↔ 오전/오후·시·분 | `tests/clock.test.ts` |
 | T-POST-01 | 소식 글의 제목과 본문 | 첫 줄이 제목, 나머지가 본문 | `tests/clock.test.ts` |
-| T-HOME-01 | 홈 카테고리 탭 순서 (가게 목록의 카테고리 줄도 같음) | 맨 왼쪽 전체, 전체 다음은 카페, 양 끝에서는 더 없음 | `tests/home-tabs.test.ts` |
-| T-HOME-02 | 탭마다 보이는 글과 가게 | 그 카테고리 가게만, 글은 유효한 것만·가게당 최신 1개·새 순서 | `tests/home-tabs.test.ts` |
+| T-HOME-01 | 홈 카테고리 탭 순서 | 맨 왼쪽 전체, 그다음 카페·디저트 · 식사 · 생활 · 가전. 가게 목록 화면의 줄은 전체 다음에 카테고리를 하나씩 | `tests/home-tabs.test.ts` |
+| T-HOME-02 | 탭마다 보이는 가게 | 묶음 탭은 그 묶음의 가게만, 아래로 카테고리마다 나뉨(카페 → 빵집 → 다과). 낯선 분류는 생활 | `tests/home-tabs.test.ts` |
+| T-HOME-04 | 즐겨찾는 가게 소식 | 즐겨찾는 가게가 올린 유효한 글만·가게당 최신 1개·새 순서. 즐겨찾기가 없으면 비어 있음 | `tests/home-tabs.test.ts` |
+| T-CAT-01 | 카테고리 묶음 | 묶음 순서와 묶음 안의 카테고리, 모든 카테고리는 묶음 하나에만 | `tests/categories.test.ts` |
 | T-HOME-03 | 옆으로 밀어 넘기기 | 70px 넘게 밀거나 같은 쪽으로 빠르게 튕기면 넘김. 홈에 넘길 카테고리가 있으면 탭 밀기는 양보 | `tests/home-tabs.test.ts` |
 | T-SWIPE-05 | 탭 화면 미리 받아 두기 | 나머지 두 탭, 25초 안이면 새것 | `tests/swipe-drag.test.ts` |
 | T-ALERT-01~05 | 알림 보관함 | 내 알림만·최근 30일, 읽으면 안 읽은 수가 줄어듦, 남의 알림은 못 바꿈 | `supabase/tests/alert_inbox_test.sql` |
 | T-ALERT-06 | 알림 목록 묶음·벨 숫자·알림 번호 꺼내기 | 오늘·이번 주·이전, 99+, `?alert=12` | `tests/clock.test.ts` |
 | T-COMM-LIKE-01~04 | 동네 이야기 공감 | 한 사람 한 번, 취소, 없는 글은 불가 | `supabase/tests/community_likes_test.sql` |
 | T-ADMIN-INFO-01~04 | 관리자 가게 정보·작성자 확인 | 관리자만, 사유 필수, 기록이 남음 | `supabase/tests/admin_owner_author_test.sql` |
-| T-LIST-01~02 | 가게 목록 상태 돌려 보기·목록 안 검색 | 전체→영업중→휴무중→외출중, 이름·분류·동네·쪽지 | `tests/store-filter.test.ts` |
+| T-LIST-01~02 | 가게 목록 상태 고르기·목록 안 검색 | 펼친 메뉴는 전체 · 영업중 · 휴무중 · 외출중 순서, 이름·분류·동네·쪽지 | `tests/store-filter.test.ts` |
+| T-NEWS-01 | 옥천신문 기사 목록 읽기 | 번호·제목·분야·날짜, 기사 화면의 줄거리·사진·시각, 구조가 바뀌어도 죽지 않음 | `tests/okinews.test.ts` |
+| T-NEWS-02 | 목록 날짜 | 연도 없는 날짜를 올해로, 해가 바뀐 직후에는 지난해로 | `tests/okinews.test.ts` |
+| T-NEWS-03 | 최근 5일 기사 | 오늘과 그 앞 5일 안의 기사만 새 순서로, 날짜를 모르면 뺌 | `tests/okinews.test.ts` |
+| T-NEWS-04 | 기사 합치기 | 줄거리는 RSS 먼저, 날짜는 기사 화면 먼저. 기사 화면을 못 읽어도 제목과 날짜로 보여 줌 | `tests/okinews.test.ts` |
+| T-PLAZA-01 | 소통광장 동네 이야기의 줄 | 옥천신문 · 동네 이야기 · 사장님 소식 · 이웃 제보, `?tab=`은 아는 값만 | `tests/plaza.test.ts` |
+| T-WRITE-01 | 쓰기 버튼에 펼쳐지는 것 | 가게를 등록하는(한) 사람만 사장님 소식, 아니면 동네 이야기 · 이웃 제보 | `tests/plaza.test.ts` |
+| T-ARTICLE-01~06 | 가게에 붙이는 옥천신문 기사 | 관리자만 붙이고 뗌, 누구나 읽음, 같은 기사는 한 번, 잘못된 값 거절, 가게마다 5개, 표 직접 읽기 불가, 가게를 지우면 함께 지워짐 | `supabase/tests/store_articles_test.sql` |
+| T-ARTICLE-07~09 | 기사 주소 읽기·제목·가게별 묶기 | 옥천신문 주소에서만 번호를 읽음, 제목 끝 " - 옥천신문"은 뗌, 가게마다 새 기사 먼저, 날짜는 서울 날짜 | `tests/store-articles.test.ts` |
 
 ## 7. 지표
 

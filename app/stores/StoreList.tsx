@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { Osori } from "@/components/Osori";
-import { StatusCycle } from "@/components/StatusCycle";
+import { StatusSelect } from "@/components/StatusSelect";
 import { StoreCard } from "@/components/StoreCard";
 import { filterByStatus, matchesStore, storeStatus, type StatusFilter } from "@/lib/storeFilter";
 import type { StoreSign } from "@/lib/types";
 
-/** 카테고리 안의 가게 목록. 이 안에서 찾고, 상태(전체·영업중·휴무중·외출중)를 돌려 가며 본다 */
+/** 카테고리 안의 가게 목록. 이 안에서 찾고, 상태(전체·영업중·휴무중·외출중)를 골라 본다 */
 export function StoreList({ stores }: { stores: StoreSign[] }) {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [q, setQ] = useState("");
@@ -44,15 +44,15 @@ export function StoreList({ stores }: { stores: StoreSign[] }) {
             </>
           )}
         </span>
-        <StatusCycle value={status} onChange={setStatus} />
+        <StatusSelect value={status} onChange={setStatus} />
       </div>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(300px,100%),1fr))] gap-3">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(300px,100%),1fr))] items-start gap-3">
         {shown.map((s) => <StoreCard key={s.store_id} store={s} />)}
       </div>
       {shown.length === 0 && (
         <div className="flex flex-col items-center gap-2.5 py-8 text-center font-display text-[17px] text-muted">
           <Osori mood="rest" size={120} />
-          {stores.length === 0 ? "아직 등록된 가게가 없어요." : q.trim() ? "찾는 가게가 없어요. 다른 말로 찾아볼까요?" : "지금 이 상태인 가게가 없어요. 버튼을 눌러 다른 상태를 봐 주세요."}
+          {stores.length === 0 ? "아직 등록된 가게가 없어요." : q.trim() ? "찾는 가게가 없어요. 다른 말로 찾아볼까요?" : "지금 이 상태인 가게가 없어요. 위에서 다른 상태를 골라 주세요."}
         </div>
       )}
     </>

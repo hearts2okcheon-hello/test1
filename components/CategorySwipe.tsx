@@ -3,20 +3,20 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { HOME_TABS, neighborHomeTab, type HomeTabId } from "@/lib/homeTabs";
+import { LIST_TABS, neighborListTab, type ListTabId } from "@/lib/homeTabs";
 import { swipeLock } from "@/lib/swipe";
 
 const MIN_DX = 70;
 // 넘긴 뒤 새 목록이 들어올 방향
 let enterFrom: "left" | "right" | null = null;
 
-const hrefOf = (id: HomeTabId) => (id === "all" ? "/stores" : `/stores?cat=${id}`);
+const hrefOf = (id: ListTabId) => (id === "all" ? "/stores" : `/stores?cat=${id}`);
 
 /**
- * 가게 목록 위의 카테고리 줄 (홈 탭과 같은 순서: 전체 · 카페 · 한식 …).
+ * 가게 목록 위의 카테고리 줄 (전체 · 카페 · 빵집 · 다과 · 한식 … 홈의 묶음 순서대로 카테고리를 하나씩).
  * 줄에서 눌러 바꾸거나, 화면을 옆으로 밀어 앞뒤 카테고리로 넘긴다
  */
-export function CategorySwipe({ current }: { current: HomeTabId }) {
+export function CategorySwipe({ current }: { current: ListTabId }) {
   const router = useRouter();
   const row = useRef<HTMLDivElement>(null);
 
@@ -38,7 +38,7 @@ export function CategorySwipe({ current }: { current: HomeTabId }) {
   // 이웃 카테고리를 미리 받아 둔다
   useEffect(() => {
     for (const dir of [-1, 1] as const) {
-      const to = neighborHomeTab(current, dir);
+      const to = neighborListTab(current, dir);
       if (to) router.prefetch(hrefOf(to));
     }
   }, [current, router]);
@@ -64,7 +64,7 @@ export function CategorySwipe({ current }: { current: HomeTabId }) {
       start = null;
       locked = null;
       if (!wasLocked || Math.abs(dx) < MIN_DX) return;
-      const to = neighborHomeTab(current, dx < 0 ? 1 : -1);
+      const to = neighborListTab(current, dx < 0 ? 1 : -1);
       if (!to) return;
       enterFrom = dx < 0 ? "right" : "left";
       router.replace(hrefOf(to), { scroll: false });
@@ -83,7 +83,7 @@ export function CategorySwipe({ current }: { current: HomeTabId }) {
   return (
     <nav aria-label="카테고리" className="-mx-5">
       <div ref={row} data-no-swipe className="ok-scroll-x relative flex gap-2 overflow-x-auto px-5 pb-1">
-        {HOME_TABS.map((c) => {
+        {LIST_TABS.map((c) => {
           const on = c.id === current;
           return (
             <Link

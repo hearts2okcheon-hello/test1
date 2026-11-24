@@ -46,7 +46,7 @@ export function HomeSearch({ stores, menus, children }: { stores: StoreSign[]; m
       {needle ? (
         <section className="flex flex-col gap-3">
           <h2 className="font-display text-lg font-normal">&lsquo;{needle}&rsquo; 찾은 가게 {results.length}곳</h2>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(300px,100%),1fr))] gap-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(300px,100%),1fr))] items-start gap-3">
             {results.map((r) => <StoreCard key={r.store.store_id} store={r.store} extra={r.extra} />)}
           </div>
           {results.length === 0 && (

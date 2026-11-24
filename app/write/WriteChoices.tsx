@@ -9,8 +9,8 @@ import { pushWithLoading } from "@/lib/nav";
 
 const CARD = "ok-sticker flex items-center gap-3 rounded-[22px] border-2 border-line bg-card px-4 py-3.5 text-left";
 
-/** 쓰기: 이웃 제보 또는 사장님 소식 */
-export function WriteChoices({ stores }: { stores: { store_id: string; name: string }[] }) {
+/** 쓰기: 이웃 제보 또는 사장님 소식. 사장님 소식은 가게를 등록하는(한) 사람(owner)에게만 보인다 (ADR-019) */
+export function WriteChoices({ stores, owner }: { stores: { store_id: string; name: string }[]; owner: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
@@ -23,13 +23,15 @@ export function WriteChoices({ stores }: { stores: { store_id: string; name: str
           <span className="text-sm text-muted">이웃 제보 · 사장님이나 옥천신문이 확인해요</span>
         </span>
       </button>
-      <Link href="/owner/news" className={CARD}>
-        <Osori mood="proud" size={72} />
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="font-display text-xl">우리 가게 소식</span>
-          <span className="text-sm text-muted">사장님이 직접 올려요 · 카카오 로그인이 필요해요</span>
-        </span>
-      </Link>
+      {owner && (
+        <Link href="/owner/news" className={CARD}>
+          <Osori mood="proud" size={72} />
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="font-display text-xl">우리 가게 소식</span>
+            <span className="text-sm text-muted">사장님이 직접 올려요</span>
+          </span>
+        </Link>
+      )}
       {stores.length === 0 && <p className="text-sm text-muted">아직 등록된 가게가 없어요.</p>}
       {open && (
         <ReportSheet

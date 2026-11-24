@@ -1,14 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { filterByStatus, matchesStore, nextStatusFilter, storeStatus } from "@/lib/storeFilter";
+import { STATUS_FILTERS, STATUS_FILTER_LABEL, filterByStatus, matchesStore, storeStatus } from "@/lib/storeFilter";
 
 const store = (name: string, sign: string, schedule_status: string) => ({ name, sign, schedule_status, category: "카페", neighborhood: null, memo: null }) as never;
 
 describe("가게 목록 상태 고르기 (T-LIST-01)", () => {
-  it("누를 때마다 전체 → 영업중 → 휴무중 → 외출중 → 전체", () => {
-    expect(nextStatusFilter("all")).toBe("open");
-    expect(nextStatusFilter("open")).toBe("closed");
-    expect(nextStatusFilter("closed")).toBe("out");
-    expect(nextStatusFilter("out")).toBe("all");
+  it("펼친 메뉴에는 전체 · 영업중 · 휴무중 · 외출중 순서로 나온다", () => {
+    expect(STATUS_FILTERS.map((f) => STATUS_FILTER_LABEL[f])).toEqual(["전체", "영업중", "휴무중", "외출중"]);
   });
   it("외출 팻말이면 외출중, 영업 상태가 open 이면 영업중, 나머지는 휴무중", () => {
     expect(storeStatus({ sign: "out", schedule_status: "open" })).toBe("out");

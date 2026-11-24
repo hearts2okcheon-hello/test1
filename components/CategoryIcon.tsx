@@ -90,6 +90,32 @@ const ICONS: Record<CategoryId, ReactNode> = {
       <circle cx="31" cy="30" r="1.9" fill="#FFF3DE" />
     </>
   ),
+  // 다과: 찻잔과 삼색 경단 꼬치
+  dessert: (
+    <>
+      <path d="M17 21c-2 3 2 4 0 7M26 21c-2 3 2 4 0 7" fill="none" {...line} />
+      <path d="M8 33h28v5a14 14 0 0 1-28 0z" fill="#FFFFFF" {...line} />
+      <path d="M10 33h24v4.5H10z" fill="#A9C27A" />
+      <path d="M8 33h28" fill="none" {...line} />
+      <path d="M12 56h20" fill="none" {...line} />
+      <path d="M43 57L56 12" fill="none" {...line} />
+      <circle cx="45.5" cy="47" r="6.5" fill="#F4B6C4" {...line} />
+      <circle cx="49" cy="35" r="6.5" fill="#FFFFFF" {...line} />
+      <circle cx="52.5" cy="23" r="6.5" fill="#B5D08A" {...line} />
+    </>
+  ),
+  // 가전: 세탁기
+  appliance: (
+    <>
+      <rect x="12" y="8" width="40" height="48" rx="6" fill="#FFFFFF" {...line} />
+      <path d="M12 21h40" fill="none" {...line} />
+      <circle cx="20" cy="14.5" r="2" fill={INK} />
+      <circle cx="27" cy="14.5" r="2" fill={INK} />
+      <rect x="36" y="11.5" width="10" height="6" rx="2" fill="#F5C96A" {...line} strokeWidth={2} />
+      <circle cx="32" cy="38" r="11.5" fill="#BFE0F2" {...line} />
+      <path d="M24 40c3-3 5 2 8 0s5-3 8 0" fill="none" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" />
+    </>
+  ),
   // 집
   etc: (
     <>

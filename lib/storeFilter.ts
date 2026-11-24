@@ -1,14 +1,10 @@
 import type { StoreSign } from "./types";
 
-/** 가게 목록의 상태 고르기. 버튼을 누를 때마다 이 순서로 바뀐다 */
+/** 가게 목록의 상태 고르기. 버튼을 누르면 이 순서로 아래에 펼쳐진다 (components/StatusSelect) */
 export const STATUS_FILTERS = ["all", "open", "closed", "out"] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];
 
 export const STATUS_FILTER_LABEL: Record<StatusFilter, string> = { all: "전체", open: "영업중", closed: "휴무중", out: "외출중" };
-
-export function nextStatusFilter(f: StatusFilter): StatusFilter {
-  return STATUS_FILTERS[(STATUS_FILTERS.indexOf(f) + 1) % STATUS_FILTERS.length];
-}
 
 /** 가게가 지금 어느 묶음인가. 외출 팻말이 걸려 있으면 외출중, 영업 상태가 open 이면 영업중, 나머지는 휴무중 */
 export function storeStatus(s: Pick<StoreSign, "sign" | "schedule_status">): Exclude<StatusFilter, "all"> {

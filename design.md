@@ -188,6 +188,8 @@ create table events (                -- 시범 지표 측정용
 ### 4.0-1 내 정보·가게 번호·캘린더 (ADR-014, `20261113010000_my_info_calendar.sql`)
 
 - `profiles`: `display_name`(이름)·`area`(사는 곳)·`phone`·`avatar_url`·`registered_at`·`store_notice_ack_at`. 쓰기는 `save_my_profile`, `ack_store_notice`. 본인과 관리자만 읽는다.
+- `profiles.wants_store`(가입할 때 "가게를 등록할 것입니까?" 답. true 예 · false 아니요 · null 아직 묻지 않음 = 예로 본다. ADR-019, `20261124000000_store_intent.sql`). `save_my_profile`의 `p_wants_store`로 쓰고(안 보내면 그대로), `get_owner_home().profile.wants_store`로 읽는다. 사장님 메뉴를 보일 사람은 `okc_owner_mode()` 한 곳에서 정한다(카카오 로그인 + 가게가 있거나 · 가게 코드를 받았거나 · 예라고 답함).
+- `store_articles(store_id, article_id, title, image_url, published_at, created_by)`: 가게에 붙인 옥천신문 기사 (ADR-020, `20261124010000_store_articles.sql`). 가게·기사마다 하나, 가게마다 5개까지 `(가정)`. 쓰기는 관리자의 `admin_link_store_article`·`admin_unlink_store_article`, 읽기는 `get_store_articles`(누구나, 붙인 사람은 내보내지 않는다).
 - `stores.store_phone`(가게 번호, 선택)·`store_phone_public`. 표 직접 읽기 권한이 없고 `get_store_detail`의 `profile.store_phone`(공개한 것)·`manage_store_phone`(관리자·사장님)으로만 준다.
 - `store_day_plans(store_id, day, kind, start_time, end_time, note)`: kind 는 `late_open`·`early_close`·`out`, 가게·날짜·종류마다 하나. 쓰기는 `set_day_plan`(오늘~한 달, `closed`는 하루짜리 `temp_closures`로 넣는다)·`clear_day_plan`. 읽기는 `get_store_detail`의 `plans`.
 - 가게 캘린더(ADR-015, `20261119000000_schedule_range.sql`): 화면은 `save_schedule`로 기간(시작일~끝나는 날)에 휴무·늦게 열기·일찍 닫기·외출을 넣고 고친다. 휴무는 `temp_closures` 한 줄, 나머지는 날짜마다 `store_day_plans` 한 줄이고 휴무일은 건너뛴다. 묶인 일정은 `clear_day_plans`로 한 번에 지운다. 화면에서는 이어진 날(같은 종류·시각·쪽지)을 하나의 일정으로 묶어 보여 준다(`lib/schedule.ts`).
@@ -215,7 +217,7 @@ create table events (                -- 시범 지표 측정용
 | notices | 모두 | 없음 (RPC) |
 | reports | **없음** — `reporter_id` 비노출, RPC로만 읽음 | 없음 (RPC) |
 | report_agrees | 없음 (RPC 집계) | 없음 (RPC) |
-| owner_codes · owner_code_members · store_members · code_attempts · store_menus · store_photos · store_posts · post_likes · store_comments · temp_closures | 없음 (RPC) | 없음 (RPC) |
+| owner_codes · owner_code_members · store_members · code_attempts · store_menus · store_photos · store_posts · post_likes · store_comments · temp_closures · store_articles | 없음 (RPC) | 없음 (RPC) |
 | profiles | 본인, admin | 없음 (RPC) |
 | events | 없음 | 없음 (`log_event`는 page_view·store_view만) |
 
@@ -237,13 +239,16 @@ create table events (                -- 시범 지표 측정용
 ### 5.2 화면 목록
 | 경로 | 화면 | 사용자 |
 |---|---|---|
-| `/` | 오늘의 마을방송 — 검색 아래 카테고리 탭(전체 · 카페 · … 생활·기타, 스크롤하면 위에 붙음). 탭마다 실시간 마을방송(가게당 최신 1개) → 전체만 즐겨찾는 가게 → 가게 목록 + 팻말(상태 돌려 보기, 더 보기). 옆으로 밀면 카테고리가 넘어간다 (ADR-016) | 주민 |
-| `/stores/[id]` | 가게 상세 — 큰 팻말, 출처 배지·시각, 쪽지, 평소 영업시간, 확인 중 제보 + 나도 봤어요, 제보 버튼 4개 | 주민·이웃 |
+| `/` | 홈 — 검색 아래 카테고리 탭(전체 · 카페·디저트 · 식사 · 생활 · 가전, 스크롤하면 위에 붙음). 전체 탭: 즐겨찾는 가게가 있으면 그 가게가 올린 소식(가게당 최신 1개)과 팻말 → 전체 가게. 묶음 탭: 아래로 카테고리마다 나뉜 가게(카페 → 빵집 → 다과). 상태는 펼쳐서 고르고, 구역마다 10곳 이상이면 더 보기. 옥천신문 기사를 붙인 가게는 가게 칸에서 기사를 펼쳐 본다(ADR-020). 옆으로 밀면 탭이 넘어간다 (ADR-016, ADR-017) | 주민 |
+| `/stores` | 가게 목록 — 홈의 "더 보기"에서 들어온다. 줄은 전체 다음에 카테고리를 하나씩(`?cat=`), 목록 안 검색과 상태 고르기 | 주민 |
+| `/news` | 소통광장 — 동네 이야기 하나. 줄에서 옥천신문(최근 5일 기사, 제목과 줄거리 두 줄씩) · 동네 이야기 · 사장님 소식 · 이웃 제보를 고른다. `?tab=`으로 처음 열 줄을 정한다. 쓰기 버튼의 사장님 소식은 `okc_owner_mode()`가 참일 때만 (ADR-018, ADR-019) | 주민 |
+| `/stores/[id]` | 가게 상세 — 큰 팻말, 출처 배지·시각, 쪽지, 평소 영업시간, 확인 중 제보 + 나도 봤어요, 제보 버튼 4개. 옥천신문이 기사를 붙인 가게는 사진 갤러리 아래에 "옥천신문 기사" 칸 (ADR-020) | 주민·이웃 |
 | `/owner` | 사장님 홈 — 내 가게 현재 팻말, 공지 버튼 5개, 쪽지 입력, **확인 질문 카드(네/아니요)** 상단 고정 | 사장님 |
+| `/owner/profile` | 내 정보 등록·고치기 — 이름 · 닉네임 · 사는 곳 · 전화번호, 그 아래 "가게를 등록할 것입니까?"(예 · 아니요). 아니요면 내 공간에 가게 등록하기가 보이지 않는다 (ADR-014, ADR-019) | 로그인한 주민 |
 | `/owner` (연결 전) | 사장님 코드 입력(글자 버튼 + 숫자 5자리) | 사장님 |
 | `/owner/register` | 처음 가게 등록 (7구역) | 사장님 |
 | `/owner/edit` · `/owner/news` · `/owner/calendar` | 가게 수정 · 소식·공지 쓰기·고치기 · 가게 캘린더(날짜 기간 → 유형 → 일정 등록, 등록된 일정 고치기·지우기. ADR-015). 예전 `/owner/closure`는 캘린더로 보낸다 | 사장님 |
-| `/admin` | 옥천신문 — 탭: 사장님 코드 / 게시물 / 엇갈림·무응답 / 대리 등록 / 가게 관리 / 지표 | 관리자 |
+| `/admin` | 옥천신문 — 탭: 사장님 코드 / 게시물 / 엇갈림·무응답 / 대리 등록 / 가게 관리 / 지표. 이용자 정보 → 가게 정보에서 가게에 옥천신문 기사를 붙이고 뗀다 (ADR-020) | 관리자 |
 
 ### 5.3 핵심 플로우
 **사장님 공지 (목표: 앱 열고 2탭)**

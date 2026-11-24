@@ -22,13 +22,14 @@ function MenuRow({ href, icon, title }: { href: string; icon: keyof typeof ICONS
 
 /**
  * 내 공간의 메뉴 목록. 아이콘과 이름만 보여 주고, 누르면 그 화면에서 고친다.
- * 가게가 있는 사장님에게만 가게 메뉴 세 줄이 보인다
+ * 가게가 있는 사장님에게만 가게 메뉴 세 줄이 보인다.
+ * 가입할 때 가게를 등록하지 않겠다고 답한 사람(showStore = false)에게는 가게 줄(가게 등록하기)도 보이지 않는다 (ADR-019)
  */
-export function MyMenu({ registered, storeName, storeAck }: { registered: boolean; storeName: string | null; storeAck: boolean }) {
+export function MyMenu({ registered, storeName, storeAck, showStore }: { registered: boolean; storeName: string | null; storeAck: boolean; showStore: boolean }) {
   return (
     <nav aria-label="내 공간 메뉴" className="flex flex-col gap-1">
       <MenuRow href="/owner/profile" icon="person" title={registered ? "내 정보" : "내 정보 등록하기"} />
-      <StoreGate storeName={storeName} acked={storeAck} canRegister={registered} />
+      {showStore && <StoreGate storeName={storeName} acked={storeAck} canRegister={registered} />}
       {storeName && (
         <>
           <MenuRow href="/owner/news" icon="pen" title="소식·공지 올리기" />

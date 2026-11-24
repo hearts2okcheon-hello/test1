@@ -51,6 +51,9 @@ export type StoreReport = {
   is_mine: boolean;
 };
 
+/** 가게에 붙인 옥천신문 기사 (ADR-020). 가게 칸에서 펼쳐 본다 */
+export type StoreArticle = { store_id: string; article_id: string; title: string; image_url: string | null; published_at: string | null };
+
 export type StoreMenu = { id: string; name: string; price: number | null; photo_url: string | null };
 export type StorePhoto = { id: string; category: PhotoCategory; url: string };
 export type StorePost = {
@@ -71,8 +74,8 @@ export type TempClosure = { id: string; start_date: string; end_date: string; re
 /** 사장님 캘린더의 날짜별 일정. 그날 휴무는 TempClosure 로 들어간다 */
 export type DayPlanKind = "late_open" | "early_close" | "out";
 export type DayPlan = { id: string; day: string; kind: DayPlanKind; start_time: string | null; end_time: string | null; note: string | null };
-/** 내 정보 (ADR-014) */
-export type MyProfile = { name: string | null; nickname: string | null; area: string | null; phone: string | null; avatar_url: string | null; registered: boolean; store_ack: boolean };
+/** 내 정보 (ADR-014). wants_store: 가입할 때 "가게를 등록할 것입니까?" 답. null 은 아직 묻지 않은 예전 가입자 (ADR-019) */
+export type MyProfile = { name: string | null; nickname: string | null; area: string | null; phone: string | null; avatar_url: string | null; registered: boolean; store_ack: boolean; wants_store?: boolean | null };
 
 export type StoreDetail = {
   store: StoreSign;

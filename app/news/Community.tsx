@@ -23,7 +23,7 @@ export function CommunityComposer({ signedIn }: { signedIn: boolean }) {
     if (error) return show(errorMessage(error), "think");
     setBody("");
     show("동네 이야기를 올렸어요!", "proud");
-    router.replace("/news");
+    router.replace("/news?tab=community");
     router.refresh();
   }
 

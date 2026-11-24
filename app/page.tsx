@@ -4,19 +4,21 @@ import { HomePager } from "@/components/HomePager";
 import { InstallButton } from "@/components/InstallButton";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { PageView } from "@/components/PageView";
+import { StoreArticlesProvider } from "@/components/StoreArticles";
 import { createClient } from "@/lib/supabase/server";
-import type { FeedItem, StoreSign } from "@/lib/types";
+import type { FeedItem, StoreArticle, StoreSign } from "@/lib/types";
 import { HomeSearch } from "./HomeSearch";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const supabase = await createClient();
-  const [feedRes, signsRes, indexRes, favRes] = await Promise.all([
+  const [feedRes, signsRes, indexRes, favRes, articlesRes] = await Promise.all([
     supabase.rpc("get_today_feed", { p_limit: 50 }),
     supabase.rpc("get_store_signs"),
     supabase.rpc("get_store_search_index"),
     supabase.rpc("get_my_favorites"),
+    supabase.rpc("get_store_articles"),
   ]);
   const favoriteIds = ((favRes.data ?? []) as string[]).map(String);
   const feed = (feedRes.data ?? []) as FeedItem[];
@@ -35,10 +37,13 @@ export default async function HomePage() {
           <InstallButton />
         </header>
 
-        <HomeSearch stores={stores} menus={menus}>
-          {/* 카테고리 탭(맨 왼쪽 전체)과 그 탭의 올라온 글 · 가게 */}
-          <HomePager feed={feed} stores={stores} favoriteIds={favoriteIds} />
-        </HomeSearch>
+        {/* 옥천신문이 기사를 붙인 가게는 가게 칸에서 기사를 펼쳐 볼 수 있다 (ADR-020) */}
+        <StoreArticlesProvider articles={(articlesRes.data ?? []) as StoreArticle[]}>
+          <HomeSearch stores={stores} menus={menus}>
+            {/* 카테고리 탭(맨 왼쪽 전체)과 그 탭의 가게 */}
+            <HomePager feed={feed} stores={stores} favoriteIds={favoriteIds} />
+          </HomeSearch>
+        </StoreArticlesProvider>
       </main>
 
       <BottomNav />

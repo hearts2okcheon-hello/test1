@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { SignOutButton } from "@/components/SignOutButton";
 import { MyMenu } from "@/components/MyMenu";
 import { formatPhone } from "@/lib/hours";
+import { showsStoreMenu } from "@/lib/intent";
 import { kakaoEnv } from "@/lib/kakao";
 import { createClient } from "@/lib/supabase/server";
 import type { OwnerHome } from "@/lib/types";
@@ -74,7 +75,12 @@ export default async function MyInfoPage({ searchParams }: { searchParams: Promi
           </div>
         </section>
 
-        <MyMenu registered={profile.registered} storeName={store?.name ?? null} storeAck={profile.store_ack} />
+        <MyMenu
+          registered={profile.registered}
+          storeName={store?.name ?? null}
+          storeAck={profile.store_ack}
+          showStore={showsStoreMenu({ wantsStore: profile.wants_store, hasStore: !!store, hasCode: !!home.code })}
+        />
 
         <div className="mt-auto flex flex-col items-center gap-1.5 border-t-2 border-line pt-4">
           {store && <p className="text-center text-sm leading-normal text-muted">앱이 어려우시면 옥천신문이 전화로 대신 올려드려요.</p>}

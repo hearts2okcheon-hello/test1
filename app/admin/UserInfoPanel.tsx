@@ -7,13 +7,13 @@ import { errorMessage } from "@/lib/errors";
 import { formatPhone } from "@/lib/hours";
 import { AREAS } from "@/lib/plans";
 import { createClient } from "@/lib/supabase/client";
-import type { ResidentItem, StoreInfoItem } from "@/lib/types";
+import type { ResidentItem, StoreArticle, StoreInfoItem } from "@/lib/types";
 import { StoreInfoPanel } from "./StoreInfoPanel";
 
 const INPUT = "min-h-12 w-full min-w-0 rounded-2xl border-2 border-line bg-white px-3 text-base";
 
-/** 이용자 정보: 주민 정보 · 가게 정보를 눌러 나눠 본다 */
-export function UserInfoPanel({ stores, residents }: { stores: StoreInfoItem[]; residents: ResidentItem[] }) {
+/** 이용자 정보: 주민 정보 · 가게 정보를 눌러 나눠 본다. articles 는 가게에 붙인 옥천신문 기사 (ADR-020) */
+export function UserInfoPanel({ stores, residents, articles }: { stores: StoreInfoItem[]; residents: ResidentItem[]; articles: StoreArticle[] }) {
   const [view, setView] = useState<"residents" | "stores">("residents");
   return (
     <div className="flex flex-col gap-3">
@@ -36,7 +36,7 @@ export function UserInfoPanel({ stores, residents }: { stores: StoreInfoItem[]; 
           </button>
         ))}
       </div>
-      {view === "residents" ? <ResidentPanel items={residents} /> : <StoreInfoPanel items={stores} />}
+      {view === "residents" ? <ResidentPanel items={residents} /> : <StoreInfoPanel items={stores} articles={articles} />}
     </div>
   );
 }
