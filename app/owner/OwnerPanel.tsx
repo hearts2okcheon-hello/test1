@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import { AppAlertCard } from "@/components/AppAlertCard";
 import { GEAR_ICON } from "@/components/MenuParts";
 import { NoticeButtons } from "@/components/NoticeButtons";
+import { PostShelf } from "@/components/PostShelf";
+import { PostKindTag } from "@/components/StoreSocial";
 import { TimeAgo } from "@/components/TimeAgo";
 import { useToast } from "@/components/Toast";
 import { seoulToday } from "@/lib/calendar";
@@ -142,29 +144,37 @@ export function OwnerPanel({ home, posts, closures, plans }: { home: Home; posts
         {posts.length === 0 ? (
           <p className="rounded-[18px] border-2 border-dashed border-line px-3.5 py-3 text-base text-muted">아직 올린 소식이 없어요.</p>
         ) : (
-          posts.map((p) => (
-            <article key={p.id} className="flex flex-col gap-2 rounded-[20px] border-2 border-line bg-card px-3.5 py-3">
-              <div className="flex gap-2.5">
-                <p className="min-w-0 flex-1 text-lg leading-normal whitespace-pre-wrap">{p.body}</p>
-                {p.image_url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.image_url} alt="" loading="lazy" className="size-20 shrink-0 rounded-xl object-cover" />
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="flex-1 text-sm text-muted">
-                  <TimeAgo iso={p.created_at} />
-                  {p.updated_at ? " · 수정됨" : ""} · 공감 {p.like_count}
+          // 공지는 맨 위에서 옆으로 넘겨 보고, 소식은 그 아래에 새 글부터 (ADR-024)
+          <PostShelf
+            posts={posts}
+            moreClass="min-h-16 text-lg"
+            renderPost={(p) => (
+              <article className="flex flex-col gap-2 rounded-[20px] border-2 border-line bg-card px-3.5 py-3">
+                <span className="self-start">
+                  <PostKindTag kind={p.kind} />
                 </span>
-                <Link href={`/owner/news?id=${p.id}`} className="flex min-h-12 items-center rounded-2xl border-2 border-line bg-white px-3.5 text-base font-bold">
-                  고치기
-                </Link>
-                <button type="button" disabled={busy} onClick={() => deletePost(p)} className="min-h-12 rounded-2xl border-2 border-line bg-white px-3.5 text-base font-bold text-danger">
-                  지우기
-                </button>
-              </div>
-            </article>
-          ))
+                <div className="flex gap-2.5">
+                  <p className="line-clamp-4 min-w-0 flex-1 text-lg leading-normal whitespace-pre-wrap">{p.body}</p>
+                  {p.image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.image_url} alt="" loading="lazy" className="size-20 shrink-0 rounded-xl object-cover" />
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="flex-1 text-sm text-muted">
+                    <TimeAgo iso={p.created_at} />
+                    {p.updated_at ? " · 수정됨" : ""} · 공감 {p.like_count}
+                  </span>
+                  <Link href={`/owner/news?id=${p.id}`} className="flex min-h-12 items-center rounded-2xl border-2 border-line bg-white px-3.5 text-base font-bold">
+                    고치기
+                  </Link>
+                  <button type="button" disabled={busy} onClick={() => deletePost(p)} className="min-h-12 rounded-2xl border-2 border-line bg-white px-3.5 text-base font-bold text-danger">
+                    지우기
+                  </button>
+                </div>
+              </article>
+            )}
+          />
         )}
       </section>
       {node}

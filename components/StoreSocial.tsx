@@ -9,6 +9,7 @@ import { postParts } from "@/lib/signs";
 import { createClient, ensureSession } from "@/lib/supabase/client";
 import type { StoreComment, StorePost } from "@/lib/types";
 import { Osori } from "./Osori";
+import { PostShelf } from "./PostShelf";
 import { SourceLine } from "./SourceLine";
 import { TimeAgo } from "./TimeAgo";
 import { useToast } from "./Toast";
@@ -57,26 +58,30 @@ export function StoreSocial({
             아직 올라온 소식이 없어요
           </div>
         ) : (
-          posts.map((p) => {
-            const like = likeOf(p);
-            const href = `/stores/${storeId}/posts/${p.id}`;
-            return (
-              <article key={p.id} className="flex flex-col gap-2.5 rounded-[20px] border-2 border-line bg-card px-4 py-3.5">
-                {/* 글을 누르면 전체 화면에서 댓글과 함께 본다 */}
-                <Link href={href} className="flex flex-col gap-2">
-                  <PostHead post={p} />
-                  <PostBody post={p} clamp />
-                </Link>
-                <div className="flex items-center gap-5 border-t-2 border-line pt-1.5">
-                  <LikeButton on={like.on} count={like.count} onClick={() => toggleLike(p)} />
-                  <Link href={href} className="flex min-h-11 items-center gap-1.5 text-[15px] font-bold">
-                    <CommentIcon />
-                    댓글 {p.comment_count}
+          // 공지는 맨 위에서 옆으로 넘겨 보고, 소식은 그 아래에 새 글부터 (ADR-024)
+          <PostShelf
+            posts={posts}
+            renderPost={(p) => {
+              const like = likeOf(p);
+              const href = `/stores/${storeId}/posts/${p.id}`;
+              return (
+                <article className="flex flex-col gap-2.5 rounded-[20px] border-2 border-line bg-card px-4 py-3.5">
+                  {/* 글을 누르면 전체 화면에서 댓글과 함께 본다 */}
+                  <Link href={href} className="flex flex-col gap-2">
+                    <PostHead post={p} />
+                    <PostBody post={p} clamp />
                   </Link>
-                </div>
-              </article>
-            );
-          })
+                  <div className="flex items-center gap-5 border-t-2 border-line pt-1.5">
+                    <LikeButton on={like.on} count={like.count} onClick={() => toggleLike(p)} />
+                    <Link href={href} className="flex min-h-11 items-center gap-1.5 text-[15px] font-bold">
+                      <CommentIcon />
+                      댓글 {p.comment_count}
+                    </Link>
+                  </div>
+                </article>
+              );
+            }}
+          />
         )}
       </section>
 
@@ -178,16 +183,25 @@ export function usePostLikes(posts: StorePost[], show: (text: string, mood?: "th
   return { likeOf, toggleLike };
 }
 
-/** 누가 언제 알렸는지를 글 맨 위에 둔다 (공지 표시도 함께) */
+/** 누가 언제 알렸는지를 글 맨 위에 둔다. 공지인지 소식인지도 함께 보여 준다 */
 export function PostHead({ post }: { post: StorePost }) {
   return (
     <span className="flex flex-wrap items-center gap-2 text-[13px] text-muted">
-      {post.kind === "notice" && <span className="rounded-[10px] bg-yellow px-2 py-0.5 font-display text-[13px] text-ink">공지</span>}
+      <PostKindTag kind={post.kind} />
       <span>
         <SourceLine source={post.source} at={post.created_at} />
         {post.updated_at ? " · 수정됨" : ""}
       </span>
     </span>
+  );
+}
+
+/** 글의 종류 표시: 공지는 노랑, 소식은 연초록 (홈의 실시간 가게소식과 같은 색) */
+export function PostKindTag({ kind }: { kind: StorePost["kind"] }) {
+  return kind === "notice" ? (
+    <span className="rounded-[10px] bg-yellow px-2 py-0.5 font-display text-[13px] text-ink">공지</span>
+  ) : (
+    <span className="rounded-[10px] bg-sage-soft px-2 py-0.5 font-display text-[13px] text-sage-deep">소식</span>
   );
 }
 

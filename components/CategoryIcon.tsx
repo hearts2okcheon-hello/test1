@@ -104,8 +104,53 @@ const ICONS: Record<CategoryId, ReactNode> = {
       <circle cx="52.5" cy="23" r="6.5" fill="#B5D08A" {...line} />
     </>
   ),
-  // 가전: 세탁기
-  appliance: (
+  // 미용: 가위
+  beauty: (
+    <>
+      <path d="M23 39L45 8l4 3L28 43z" fill="#DCE5EC" {...line} strokeWidth={2.2} />
+      <path d="M41 39L19 8l-4 3 21 32z" fill="#DCE5EC" {...line} strokeWidth={2.2} />
+      <circle cx="20" cy="47" r="7.5" fill="#F4B6D8" {...line} />
+      <circle cx="44" cy="47" r="7.5" fill="#F4B6D8" {...line} />
+      <circle cx="32" cy="29" r="1.9" fill={INK} />
+    </>
+  ),
+  // 패션: 티셔츠
+  fashion: (
+    <>
+      <path d="M22 10L7 19l6 11 7-4v28h24V26l7 4 6-11-15-9c-2 4-6 6-10 6s-8-2-10-6z" fill="#8FB0E3" {...line} />
+      <path d="M25 31h14" fill="none" stroke="#FFFFFF" strokeWidth={2.6} strokeLinecap="round" />
+    </>
+  ),
+  // 의료·건강: 구급 상자
+  health: (
+    <>
+      <path d="M24 19v-5a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v5" fill="none" {...line} />
+      <rect x="9" y="19" width="46" height="35" rx="7" fill="#FFFFFF" {...line} />
+      <path d="M28 27h8v6h6v8h-6v6h-8v-6h-6v-8h6z" fill="#E8604C" {...line} strokeWidth={2} />
+    </>
+  ),
+  // 식료품: 과일이 담긴 바구니
+  grocery: (
+    <>
+      <path d="M19 31c0-10 6-17 13-17s13 7 13 17" fill="none" {...line} />
+      <circle cx="25" cy="27" r="6.5" fill="#E8604C" {...line} strokeWidth={2} />
+      <circle cx="39" cy="26" r="7.5" fill="#F2C65C" {...line} strokeWidth={2} />
+      <path d="M31 21c1-5 4-7 9-7-1 5-4 7-9 7z" fill="#8CC06B" {...line} strokeWidth={2} />
+      <path d="M8 31h48l-5 21a4 4 0 0 1-4 3H17a4 4 0 0 1-4-3z" fill="#D9A867" {...line} />
+      <path d="M22 38v10M32 38v10M42 38v10" fill="none" stroke="#B0803F" strokeWidth={2.2} strokeLinecap="round" />
+    </>
+  ),
+  // 기타: 점 세 개
+  etc: (
+    <>
+      <rect x="9" y="15" width="46" height="34" rx="12" fill="#FFFFFF" {...line} />
+      <circle cx="21" cy="32" r="3.2" fill={INK} />
+      <circle cx="32" cy="32" r="3.2" fill={INK} />
+      <circle cx="43" cy="32" r="3.2" fill={INK} />
+    </>
+  ),
+  // 생활용품: 세탁기 (가전도 여기에 든다)
+  goods: (
     <>
       <rect x="12" y="8" width="40" height="48" rx="6" fill="#FFFFFF" {...line} />
       <path d="M12 21h40" fill="none" {...line} />
@@ -116,8 +161,8 @@ const ICONS: Record<CategoryId, ReactNode> = {
       <path d="M24 40c3-3 5 2 8 0s5-3 8 0" fill="none" stroke="#FFFFFF" strokeWidth={2.4} strokeLinecap="round" />
     </>
   ),
-  // 집
-  etc: (
+  // 생활시설: 집
+  facility: (
     <>
       <path d="M43 12h7v13h-7z" fill="#C98B5B" {...line} />
       <path d="M14 29h36v25H14z" fill="#FFF8E6" {...line} />

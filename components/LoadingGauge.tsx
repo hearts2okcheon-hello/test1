@@ -4,9 +4,10 @@ const WIDTH = 280;
 const STEP = 22;
 const PAWS = Array.from({ length: Math.floor((WIDTH - 10) / STEP) }, (_, i) => i);
 
-function Paw({ className = "" }: { className?: string }) {
+/** 오소리 발자국 */
+export function Paw({ className = "", size = 14 }: { className?: string; size?: number }) {
   return (
-    <svg viewBox="0 0 20 20" aria-hidden className={`size-[14px] shrink-0 fill-[#9C8670] ${className}`}>
+    <svg viewBox="0 0 20 20" aria-hidden width={size} height={size} className={`block shrink-0 fill-[#9C8670] ${className}`}>
       <ellipse cx="10" cy="13.5" rx="5" ry="4.2" />
       <circle cx="4" cy="8" r="2" />
       <circle cx="8" cy="4.6" r="2" />

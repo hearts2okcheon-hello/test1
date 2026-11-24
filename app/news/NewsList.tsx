@@ -47,7 +47,7 @@ function feedChip(f: FeedItem) {
 type Row = { key: string; kind: Kind; at: string; storeId: string | null; title: string; chip: React.ReactNode; body: string; source: string | null; image: string | null; dim: boolean; post: CommunityPost | null };
 
 /**
- * 소통광장 "동네 이야기" (ADR-018). 줄에서 옥천신문(최근 기사) · 동네 이야기 · 사장님 소식 · 이웃 제보를 고른다.
+ * 소통광장 "우리동네 소식" (ADR-018, ADR-023). 줄에서 옥천신문(최근 기사) · 동네 이야기 · 사장님 소식 · 이웃 제보를 고른다.
  * initialTab 은 주소의 ?tab= 값 (글을 올린 뒤 그 줄로 돌아올 때 쓴다)
  */
 export function NewsList({
@@ -89,6 +89,8 @@ export function NewsList({
   function pick(next: PlazaTab) {
     remembered = next;
     setFilter(next);
+    // 고른 줄을 주소에도 남긴다. 기사를 보고 돌아오거나 화면이 새로 열려도 같은 줄이 열린다
+    window.history.replaceState(null, "", next === "okinews" ? "/news" : `/news?tab=${next}`);
   }
 
   async function removePost(id: string) {
@@ -110,7 +112,7 @@ export function NewsList({
 
   return (
     <>
-      <div ref={row} role="group" aria-label="동네 이야기 종류" className="ok-scroll-x -mx-5 flex gap-1.5 overflow-x-auto px-5 py-1.5">
+      <div ref={row} role="group" aria-label="우리동네 소식 종류" className="ok-scroll-x -mx-5 flex gap-1.5 overflow-x-auto px-5 py-1.5">
         {PLAZA_TABS.map((f) => (
           <button
             key={f.id}

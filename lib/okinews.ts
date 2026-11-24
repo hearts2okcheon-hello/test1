@@ -16,7 +16,8 @@ export const NEWS_DAYS = 5;
 export const NEWS_MAX = 20;
 
 /** comments: 옥천신문 기사에 달린 댓글 수. 조회수·공감은 옥천신문이 공개하지 않아 가져올 수 없다 */
-export type NewsItem = { id: string; url: string; title: string; image: string | null; summary: string | null; publishedAt: string | null; comments?: number | null };
+/** section: 옥천신문이 붙인 분야 이름("사회일반", "정치일반" …). 모르면 null */
+export type NewsItem = { id: string; url: string; title: string; image: string | null; summary: string | null; publishedAt: string | null; section: string | null; comments?: number | null };
 export type ListedArticle = { id: string; title: string; section: string | null; date: string | null };
 export type ArticleMeta = { summary: string | null; image: string | null; publishedAt: string | null; comments?: number | null };
 
@@ -126,6 +127,19 @@ export function recentNews<T extends { publishedAt: string | null }>(items: T[],
   return items.filter((n) => at(n) >= from).sort((a, b) => at(b) - at(a));
 }
 
+// 생활 기사가 아닌 분야: 정치와 의견 글. 그 밖의 분야(사회·교육·문화·인물·경제 …)는 생활 기사로 본다
+const NOT_LIFE = /정치|칼럼|사설|오피니언|기고|논단/;
+
+/** 생활밀착형 기사인가. 분야를 모르면 생활 기사로 둔다 */
+export function isLifeSection(section: string | null | undefined): boolean {
+  return !section || !NOT_LIFE.test(section);
+}
+
+/** 생활 기사를 앞에 둔다 (ADR-023). 앞뒤 묶음 안에서는 받은 순서(새 기사 먼저)를 그대로 지킨다 */
+export function lifeFirst<T extends { section: string | null }>(items: T[]): T[] {
+  return [...items.filter((n) => isLifeSection(n.section)), ...items.filter((n) => !isLifeSection(n.section))];
+}
+
 /**
  * 기사 목록에 기사마다의 정보를 합친다. metas[i] 는 list[i] 의 기사 화면에서 읽은 것(못 읽었으면 undefined).
  * 요약은 RSS(더 길다)가 있으면 그것을, 날짜는 기사 화면의 것을 먼저 쓴다
@@ -142,6 +156,7 @@ export function buildNews(list: ListedArticle[], metas: (ArticleMeta | undefined
       image: meta?.image ?? null,
       summary: fromRss?.summary ?? meta?.summary ?? null,
       publishedAt: meta?.publishedAt ?? fromRss?.publishedAt ?? listDate(a.date, now),
+      section: a.section,
       comments: meta?.comments ?? null,
     };
   });
@@ -192,7 +207,7 @@ export async function getRecentNews(now: Date = new Date()): Promise<{ news: New
 
   if (listed.length === 0) {
     // 기사 목록을 못 읽으면 RSS 로 대신한다
-    const items = rss.map((r): NewsItem => ({ id: r.id, url: articleUrl(r.id), title: r.title, image: null, summary: r.summary, publishedAt: r.publishedAt, comments: null }));
+    const items = rss.map((r): NewsItem => ({ id: r.id, url: articleUrl(r.id), title: r.title, image: null, summary: r.summary, publishedAt: r.publishedAt, section: null, comments: null }));
     return { news: recentNews(items, now).slice(0, NEWS_MAX), loaded: rss.length > 0 };
   }
 
@@ -207,5 +222,5 @@ export async function getRecentNews(now: Date = new Date()): Promise<{ news: New
     const page = await fetchText(`/news/articleView.html?idxno=${a.id}`);
     return page ? { ...parseArticleMeta(page), comments: parseCommentCount(page) } : undefined;
   });
-  return { news: recentNews(buildNews(list, metas, rss, now), now), loaded: true };
+  return { news: lifeFirst(recentNews(buildNews(list, metas, rss, now), now)), loaded: true };
 }

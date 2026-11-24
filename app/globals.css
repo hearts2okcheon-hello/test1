@@ -219,6 +219,121 @@ a:active {
   75% { transform: translateY(-6px) rotate(0deg); }
 }
 
+/* ── 시작 화면 (components/Splash.tsx): 앱을 처음 열 때 가방 오소리가 달려간다 ── */
+.ok-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  overflow: hidden;
+  padding: 24px 24px max(24px, env(safe-area-inset-bottom));
+  background-color: var(--color-paper);
+  background-image: radial-gradient(#EFE3C4 1.6px, transparent 1.7px);
+  background-size: 22px 22px;
+  /* 화면이 준비되면 오소리가 먼저 달려 나가고, 조금 뒤에 화면이 옅어진다 */
+  transition: opacity 260ms ease-out 140ms;
+  /* 스크립트가 돌지 못해도 화면을 계속 가리지 않게, 6초 뒤에는 스스로 사라진다 */
+  animation: ok-splash-bye 300ms ease-out 6s forwards;
+}
+
+/* 같은 창에서 이미 본 사람에게는 그리지 않는다 (lib/splash.ts 의 스크립트가 표시한다) */
+.ok-splash[data-state="off"] {
+  display: none;
+}
+
+.ok-splash[data-state="leaving"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ok-splash-stage {
+  position: relative;
+  flex-shrink: 0;
+  width: 100vw;
+  height: 148px;
+}
+
+/* 왼쪽에서 달려 들어온다 → (제자리에서 달린다) → 오른쪽으로 달려 나간다 */
+.ok-splash-runner {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  width: 124px;
+  margin-left: -62px;
+  animation: ok-splash-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ok-splash[data-state="leaving"] .ok-splash-dash {
+  animation: ok-splash-out 380ms cubic-bezier(0.5, 0, 0.9, 0.4) forwards;
+}
+
+.ok-splash-bob {
+  transform-origin: 50% 90%;
+  animation: ok-splash-bob 380ms ease-in-out infinite;
+}
+
+/* 발 아래로 지나가는 길 */
+.ok-splash-ground {
+  position: absolute;
+  right: 0;
+  bottom: 8px;
+  left: 0;
+  height: 4px;
+  background-image: repeating-linear-gradient(90deg, var(--color-line-strong) 0 20px, transparent 20px 48px);
+  opacity: 0.75;
+  animation: ok-splash-ground 380ms linear infinite;
+}
+
+/* 발자국이 발밑에서 생겨 뒤로 흘러가며 옅어진다 (달려 들어온 뒤부터) */
+.ok-splash-paw {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  margin-left: -64px;
+  opacity: 0;
+  animation: ok-splash-paw 760ms linear 420ms infinite;
+}
+
+.ok-splash-paw:nth-child(2) {
+  bottom: 14px;
+  animation-delay: 673ms;
+}
+
+.ok-splash-paw:nth-child(3) {
+  animation-delay: 926ms;
+}
+
+@keyframes ok-splash-in {
+  from { transform: translateX(-62vw); }
+  to { transform: translateX(0); }
+}
+
+@keyframes ok-splash-out {
+  to { transform: translateX(72vw); }
+}
+
+@keyframes ok-splash-bob {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  50% { transform: translateY(-10px) rotate(3deg); }
+}
+
+@keyframes ok-splash-ground {
+  to { background-position-x: -48px; }
+}
+
+@keyframes ok-splash-paw {
+  from { transform: translateX(0); opacity: 0.85; }
+  to { transform: translateX(-42vw); opacity: 0; }
+}
+
+@keyframes ok-splash-bye {
+  to { opacity: 0; visibility: hidden; }
+}
+
 .ok-bob { animation: ok-bob 1.6s ease-in-out infinite; }
 .ok-pop { animation: ok-pop 0.2s ease-out; }
 .ok-ring { animation: ok-ring 1.8s ease-in-out infinite; transform-origin: 50% 10%; }
@@ -227,6 +342,9 @@ a:active {
 
 @media (prefers-reduced-motion: reduce) {
   .ok-bob, .ok-pop, .ok-walk, .ok-gauge, .ok-ring, .ok-slide-in-left, .ok-slide-in-right { animation: none; }
+  /* 시작 화면: 오소리는 가운데에 서 있고, 화면만 옅어지며 사라진다 */
+  .ok-splash-runner, .ok-splash[data-state="leaving"] .ok-splash-dash, .ok-splash-bob, .ok-splash-ground, .ok-splash-paw { animation: none; }
+  .ok-splash { transition-delay: 0ms; }
   .ok-gauge { width: 70%; }
   .ok-ripple { animation-name: ok-ripple-still; }
 }

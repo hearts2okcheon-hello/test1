@@ -1,5 +1,6 @@
-import { articleDate, articleUrl } from "@/lib/storeArticles";
+import { articleDate } from "@/lib/storeArticles";
 import type { StoreArticle } from "@/lib/types";
+import { ArticleLink } from "./ArticleLink";
 
 /**
  * 가게에 붙인 옥천신문 기사 줄들 (ADR-020). 제목은 두 줄까지, 그 아래 날짜, 사진이 있으면 오른쪽에 4:3 으로.
@@ -12,7 +13,7 @@ export function ArticleRows({ list, className = "" }: { list: StoreArticle[]; cl
         const date = articleDate(a.published_at);
         return (
           <li key={a.article_id} className={i > 0 ? "border-t-2 border-line" : ""}>
-            <a href={articleUrl(a.article_id)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 py-3">
+            <ArticleLink articleId={a.article_id} className="flex items-center gap-3 py-3">
               <span className="flex min-w-0 flex-1 flex-col gap-1">
                 <span className="line-clamp-2 text-[15px] leading-snug font-bold break-keep">{a.title}</span>
                 <span className="text-[12px] text-muted">옥천신문{date ? ` · ${date}` : ""}</span>
@@ -21,7 +22,7 @@ export function ArticleRows({ list, className = "" }: { list: StoreArticle[]; cl
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={a.image_url} alt="" loading="lazy" referrerPolicy="no-referrer" className="aspect-[4/3] w-20 shrink-0 rounded-xl border border-line object-cover" />
               )}
-            </a>
+            </ArticleLink>
           </li>
         );
       })}

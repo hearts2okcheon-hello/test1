@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { flushSync } from "react-dom";
 import { HomeFavorites } from "@/app/HomeFavorites";
-import { CATEGORY_GROUPS, categoryById, type GroupId } from "@/lib/categories";
-import { HOME_TABS, homeTabName, neighborHomeTab, sectionsInTab, storesInTab, tabDirection, type HomeTabId } from "@/lib/homeTabs";
+import { CATEGORY_GROUPS, categoryById } from "@/lib/categories";
+import { HOME_TABS, feedInTab, homeTabName, neighborHomeTab, sectionsInTab, storesInTab, tabDirection, type HomeTabId, type TabGroupId } from "@/lib/homeTabs";
 import { TAB_RESELECT } from "@/lib/nav";
+import { feedDetail, feedTag } from "@/lib/signs";
 import { filterByStatus, storeStatus, type StatusFilter } from "@/lib/storeFilter";
 import { setInnerPager, shouldCommitSwipe, swipeLock } from "@/lib/swipe";
 import { blocksSwipe } from "@/lib/swipeDom";
@@ -14,9 +15,12 @@ import type { FeedItem, StoreSign } from "@/lib/types";
 import { CategoryIcon } from "./CategoryIcon";
 import { StatusSelect } from "./StatusSelect";
 import { StoreCard } from "./StoreCard";
+import { TimeAgo } from "./TimeAgo";
 
 /** 홈에서는 가게를 구역마다 이만큼씩만 보여 주고, 더 있으면 "더 보기"로 넘긴다 */
 const STORE_LIMIT = 10;
+/** 실시간 가게소식은 이만큼만 보여 주고, 더 있으면 소통광장의 사장님 소식으로 넘긴다 */
+const FEED_LIMIT = 5;
 const SLIDE_MS = 240;
 const BACK_MS = 200;
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -27,8 +31,8 @@ const remembered: { tab: HomeTabId; status: StatusFilter } = { tab: "all", statu
 const calm = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /**
- * 홈의 카테고리 탭 (ADR-016, ADR-017). 맨 왼쪽이 전체, 그다음 카페·디저트 · 식사 · 생활 · 가전.
- * 탭을 누르거나 화면을 옆으로 밀면 그 묶음의 가게로 넘어가고, 묶음 안에서는 아래로 카테고리마다 나뉜다 (카페 → 빵집 → 다과).
+ * 홈의 카테고리 탭 (ADR-016, ADR-022). 맨 왼쪽이 전체, 그다음 식당 · 카페·디저트 · 미용 · 생활용품 · 패션 · 의료·건강 · 생활시설 · 식료품.
+ * 탭을 누르거나 화면을 옆으로 밀면 그 업종의 가게소식과 가게로 넘어가고, 식당처럼 여러 카테고리가 든 묶음은 아래로 카테고리마다 나뉜다.
  * 미는 동안 지금 화면과 옆 화면이 손가락을 따라오고, 마지막 탭에서 더 밀면 아래 탭(소통광장)으로 넘어간다 (TabSwipe 가 맡는다)
  */
 export function HomePager({ feed, stores, favoriteIds }: { feed: FeedItem[]; stores: StoreSign[]; favoriteIds: string[] }) {
@@ -354,17 +358,59 @@ function TabIcon({ id }: { id: HomeTabId }) {
 
 type PaneProps = { stores: StoreSign[]; status: StatusFilter; onStatus: (next: StatusFilter) => void };
 
-/** 탭 하나의 내용. 전체는 (즐겨찾는 가게) → 전체 가게, 묶음 탭은 카테고리마다 나뉜 가게 */
+/** 탭 하나의 내용. 맨 위에 실시간 가게소식(글이 있을 때만), 전체는 (즐겨찾는 가게) → 전체 가게, 묶음 탭은 카테고리마다 나뉜 가게 */
 function TabPane({ id, feed, favoriteIds, ...rest }: PaneProps & { id: HomeTabId; feed: FeedItem[]; favoriteIds: string[] }) {
-  return id === "all" ? <AllPane feed={feed} favoriteIds={favoriteIds} {...rest} /> : <GroupPane id={id} {...rest} />;
+  return id === "all" ? <AllPane feed={feed} favoriteIds={favoriteIds} {...rest} /> : <GroupPane id={id} feed={feed} {...rest} />;
 }
 
-/** 전체 탭: 즐겨찾는 가게가 있으면 그 소식과 팻말이 먼저, 그 아래 전체 가게 */
+/**
+ * 그 탭의 "실시간 가게소식" (ADR-022): 영업시간 변경 · 임시휴무 · 외출 · 사장님 소식과 공지를 짧게 보여 준다.
+ * 올라온 글이 있을 때만 그린다. 없으면 빈 칸도 여백도 두지 않는다.
+ * 글마다 종류(공지 · 소식 · 임시휴무 · 외출 중 …)를 붙여 구별한다
+ */
+function LiveNews({ rows, name }: { rows: FeedItem[]; name: string }) {
+  if (rows.length === 0) return null;
+  return (
+    <section aria-label={`${name} 실시간 가게소식`} className="flex flex-col gap-2.5">
+      <div className="flex items-center gap-2">
+        <h2 className="flex min-w-0 flex-1 items-center gap-2 font-display text-[19px] font-normal">
+          <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-coral" />
+          실시간 가게소식
+        </h2>
+        {rows.length > FEED_LIMIT && <MoreLink href="/news?tab=owner" label="가게소식 더 보기" />}
+      </div>
+      <ul className="ok-sticker flex flex-col rounded-[22px] border-2 border-line bg-card px-4">
+        {rows.slice(0, FEED_LIMIT).map((f, i) => {
+          const tag = feedTag(f);
+          return (
+            <li key={`${f.item_type}-${f.item_id}`} className={i > 0 ? "border-t-2 border-line" : ""}>
+              <Link href={f.item_type === "post" ? `/stores/${f.store_id}/posts/${f.item_id}` : `/stores/${f.store_id}`} className="flex flex-col gap-1 py-2.5">
+                <span className="flex items-center gap-2">
+                  <span className="shrink-0 rounded-[9px] px-2 py-0.5 font-display text-[13px] leading-snug" style={{ background: tag.bg, color: tag.fg }}>
+                    {tag.label}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate font-display text-base">{f.store_name}</span>
+                  <span className="shrink-0 text-[13px] text-muted">
+                    {f.source === "owner" ? "사장님" : "옥천신문"} · <TimeAgo iso={f.created_at} />
+                  </span>
+                </span>
+                <span className="line-clamp-2 text-[15px] leading-snug">{feedDetail(f)}</span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/** 전체 탭: 실시간 가게소식 → (즐겨찾는 가게가 있으면) 그 가게들의 팻말 → 전체 가게 */
 function AllPane({ feed, favoriteIds, stores, status, onStatus }: PaneProps & { feed: FeedItem[]; favoriteIds: string[] }) {
   const shown = filterByStatus(stores, status);
   return (
     <div className="flex flex-col gap-6 pb-1">
-      <HomeFavorites stores={stores} feed={feed} initialIds={favoriteIds} />
+      <LiveNews rows={feedInTab(feed, stores, "all")} name="전체" />
+      <HomeFavorites stores={stores} initialIds={favoriteIds} />
       <section aria-label="전체 가게" className="flex flex-col gap-3">
         <PaneHead title="전체 가게" stores={stores} shown={shown.length} status={status} onStatus={onStatus} more={stores.length >= STORE_LIMIT ? "/stores" : null} />
         <StoreGrid stores={shown} />
@@ -374,8 +420,8 @@ function AllPane({ feed, favoriteIds, stores, status, onStatus }: PaneProps & { 
   );
 }
 
-/** 묶음 탭: 아래로 카테고리마다 나뉜다 (카페 → 빵집 → 다과). 카테고리가 하나뿐인 묶음은 나누지 않는다 */
-function GroupPane({ id, stores, status, onStatus }: PaneProps & { id: GroupId }) {
+/** 묶음 탭: 실시간 가게소식 아래로 카테고리마다 나뉜다 (식당은 한식 → 중식 → …). 카테고리가 하나뿐인 묶음은 나누지 않는다 */
+function GroupPane({ id, feed, stores, status, onStatus }: PaneProps & { id: TabGroupId; feed: FeedItem[] }) {
   const name = homeTabName(id);
   const inTab = storesInTab(stores, id);
   const sections = sectionsInTab(stores, id);
@@ -385,7 +431,9 @@ function GroupPane({ id, stores, status, onStatus }: PaneProps & { id: GroupId }
   const shown = filled.reduce((n, s) => n + s.shown.length, 0);
 
   return (
-    <section aria-label={`${name} 가게`} className="flex flex-col gap-4 pb-1">
+    <div className="flex flex-col gap-6 pb-1">
+      <LiveNews rows={feedInTab(feed, stores, id)} name={name} />
+      <section aria-label={`${name} 가게`} className="flex flex-col gap-4">
       <PaneHead
         title={`${name} 가게`}
         stores={inTab}
@@ -413,7 +461,8 @@ function GroupPane({ id, stores, status, onStatus }: PaneProps & { id: GroupId }
       ))}
       {filled.length === 0 && <EmptyNote>{inTab.length === 0 ? `아직 등록된 ${name} 가게가 없어요.` : NO_MATCH}</EmptyNote>}
       {!single && inTab.length > 0 && status === "all" && vacant.length > 0 && <p className="px-1 text-sm leading-normal text-muted">아직 가게가 없는 분류: {vacant.join(" · ")}</p>}
-    </section>
+      </section>
+    </div>
   );
 }
 

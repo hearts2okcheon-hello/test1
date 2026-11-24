@@ -1,35 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
 import { FavoriteStar } from "@/components/FavoriteStar";
 import { StoreLogo } from "@/components/StoreCard";
 import { ScheduleBadge } from "@/components/ScheduleBadge";
 import { SignChip } from "@/components/SignChip";
 import { TimeAgo } from "@/components/TimeAgo";
-import { seedFavorites, useFavorites } from "@/lib/favorites";
-import { favoriteFeed } from "@/lib/homeTabs";
-import { feedLine } from "@/lib/signs";
-import type { FeedItem, StoreSign } from "@/lib/types";
-
-/** 즐겨찾는 가게가 올린 소식은 이만큼만 보여 준다 (나머지는 소통광장에서) */
-const NEWS_LIMIT = 10;
+import { useFavoriteStores } from "@/lib/favorites";
+import type { StoreSign } from "@/lib/types";
 
 /**
- * 홈 "즐겨찾는 가게" (ADR-017). 별을 누른 가게가 있을 때만 나온다.
- * 그 가게가 오늘 소식을 올리면 맨 위에 글이 보이고, 아래에는 가게마다 지금 팻말을 보여 준다.
- * 즐겨찾는 가게가 없으면 아무것도 그리지 않아서 홈에는 전체 가게만 남는다
+ * 홈 "즐겨찾는 가게". 별을 누른 가게가 있을 때만 나오고, 가게마다 지금 팻말을 한눈에 보여 준다.
+ * 즐겨찾는 가게가 없으면 아무것도 그리지 않는다. 가게들이 올린 소식은 위의 "실시간 가게소식"에서 본다 (ADR-022).
+ * 같은 목록을 내 공간의 "즐겨찾는 가게"에서도 볼 수 있다
  */
-export function HomeFavorites({ stores, feed, initialIds }: { stores: StoreSign[]; feed: FeedItem[]; initialIds: string[] }) {
-  useEffect(() => seedFavorites(initialIds), [initialIds]);
-  const favs = useFavorites();
-  const ids = favs.ready ? favs.ids : new Set(initialIds);
-  const byId = new Map(stores.map((s) => [s.store_id, s]));
-  const order = [...initialIds, ...[...ids].filter((id) => !initialIds.includes(id))];
-  const list = order.filter((id) => ids.has(id)).map((id) => byId.get(id)).filter((s): s is StoreSign => !!s);
+export function HomeFavorites({ stores, initialIds }: { stores: StoreSign[]; initialIds: string[] }) {
+  const list = useFavoriteStores(stores, initialIds);
   if (list.length === 0) return null;
-
-  const news = favoriteFeed(feed, list.map((s) => s.store_id)).slice(0, NEWS_LIMIT);
 
   return (
     <section aria-labelledby="fav-title" className="flex flex-col gap-2.5">
@@ -39,25 +26,6 @@ export function HomeFavorites({ stores, feed, initialIds }: { stores: StoreSign[
         </svg>
         즐겨찾는 가게
       </h2>
-
-      {news.length > 0 && (
-        <ul aria-label="즐겨찾는 가게가 올린 소식" className="ok-sticker flex flex-col rounded-[22px] border-2 border-line bg-card px-4">
-          {news.map((f, i) => (
-            <li key={`${f.item_type}-${f.item_id}`} className={i > 0 ? "border-t-2 border-line" : ""}>
-              <Link href={f.item_type === "post" ? `/stores/${f.store_id}/posts/${f.item_id}` : `/stores/${f.store_id}`} className="flex flex-col gap-0.5 py-3">
-                <span className="flex items-baseline justify-between gap-2">
-                  <span className="truncate font-display text-base">{f.store_name}</span>
-                  <span className="shrink-0 text-[13px] text-muted">
-                    {f.source === "owner" ? "사장님" : "옥천신문"} · <TimeAgo iso={f.created_at} />
-                  </span>
-                </span>
-                <span className="line-clamp-2 text-[15px] leading-snug">{feedLine(f)}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-
       <div className="grid grid-cols-2 gap-2.5 min-[560px]:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]">
         {list.map((s) => (
           <div key={s.store_id} className="relative">

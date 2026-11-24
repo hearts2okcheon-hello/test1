@@ -8,6 +8,7 @@ const ICONS = {
   calendar: ["M5 6h14v14H5z", "M5 10h14", "M9 3.5v4", "M15 3.5v4"],
   gear: GEAR_ICON,
   bell: ["M6 10.5a6 6 0 0 1 12 0v3.7l1.6 2.6H4.4L6 14.2z", "M10 19.5a2 2 0 0 0 4 0"],
+  star: ["M12 3.2l2.7 5.5 6 .9-4.35 4.25 1 6L12 17l-5.35 2.85 1-6L3.3 9.6l6-.9z"],
 } as const;
 
 function MenuRow({ href, icon, title }: { href: string; icon: keyof typeof ICONS; title: string }) {
@@ -37,6 +38,7 @@ export function MyMenu({ registered, storeName, storeAck, showStore }: { registe
           <MenuRow href="/owner/edit" icon="gear" title="가게 정보 고치기" />
         </>
       )}
+      <MenuRow href="/owner/favorites" icon="star" title="즐겨찾는 가게" />
       <MenuRow href="/alerts" icon="bell" title="알림" />
     </nav>
   );

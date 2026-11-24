@@ -155,6 +155,25 @@ export function feedLine(f: Pick<FeedItem, "item_type" | "kind" | "at_time" | "m
   return castLine(f.kind as NoticeKind, f.at_time, f.memo);
 }
 
+/**
+ * 홈 "실시간 가게소식"의 글마다 붙는 종류 표시 (ADR-022): 사장님 글은 공지 · 소식을 구별하고,
+ * 임시휴무와 팻말 알림(늦게 열어요 · 외출 중 …)은 그 이름과 색을 쓴다
+ */
+export function feedTag(f: Pick<FeedItem, "item_type" | "kind">): { label: string; bg: string; fg: string } {
+  if (f.item_type === "post") {
+    // 공지는 노랑(yellow · ink), 소식은 연초록(sage-soft · sage-deep)
+    return f.kind === "notice" ? { label: "공지", bg: "#F5C96A", fg: "#5B4636" } : { label: "소식", bg: "#E6F0DF", fg: "#4A6340" };
+  }
+  const s = f.item_type === "closure" ? SIGN_STYLES.temp_closed : (SIGN_STYLES[f.kind as SignKind] ?? SIGN_STYLES.none);
+  return { label: s.chip, bg: s.bg, fg: s.fg };
+}
+
+/** 실시간 가게소식 한 줄의 내용. 쪽지 없는 팻말 알림은 종류 표시와 같은 말이 겹치지 않게, 풀어 쓴 문구를 쓴다 */
+export function feedDetail(f: Pick<FeedItem, "item_type" | "kind" | "at_time" | "memo" | "closure_start" | "closure_end">): string {
+  if (f.item_type === "notice" && !f.memo) return signTitle(f.kind as SignKind, f.at_time);
+  return feedLine(f);
+}
+
 /** 30분 단위 시각 버튼 (오전 7시 ~ 오후 10시) */
 export function timeOptions(from = 7, to = 22): string[] {
   const out: string[] = [];

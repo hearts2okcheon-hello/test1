@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { createClient, ensureSession } from "./supabase/client";
 
 // 즐겨찾기 가게 id 를 한 곳에 두고, 별을 누르면 모든 화면이 함께 바뀐다
@@ -74,4 +74,17 @@ export async function toggleFavorite(storeId: string): Promise<{ on: boolean; er
     emit();
     return { on: !on, error };
   }
+}
+
+/**
+ * 즐겨찾는 가게들. 서버가 준 순서를 먼저, 방금 별을 누른 가게는 그 뒤에 둔다 (별을 빼면 바로 빠진다).
+ * initialIds 는 서버에서 이미 읽어 온 즐겨찾기로, 첫 화면에 쓴다
+ */
+export function useFavoriteStores<T extends { store_id: string }>(stores: T[], initialIds: string[]): T[] {
+  useEffect(() => seedFavorites(initialIds), [initialIds]);
+  const favs = useFavorites();
+  const ids = favs.ready ? favs.ids : new Set(initialIds);
+  const byId = new Map(stores.map((s) => [s.store_id, s]));
+  const order = [...initialIds, ...[...ids].filter((id) => !initialIds.includes(id))];
+  return order.filter((id) => ids.has(id)).map((id) => byId.get(id)).filter((s): s is T => !!s);
 }

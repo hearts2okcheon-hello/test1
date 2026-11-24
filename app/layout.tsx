@@ -6,9 +6,11 @@ import { InAppGate } from "@/components/InAppGate";
 import { NavLoading } from "@/components/NavLoading";
 import { OwnerAlertHost } from "@/components/OwnerAlertHost";
 import { PwaSetup } from "@/components/PwaSetup";
+import { Splash } from "@/components/Splash";
 import { BadgeSync } from "@/components/BadgeSync";
 import { TabSwipe } from "@/components/TabSwipe";
 import { TouchRipple } from "@/components/TouchRipple";
+import { SPLASH_ONCE_SCRIPT } from "@/lib/splash";
 import "./globals.css";
 
 const jua = Jua({ weight: "400", subsets: ["latin"], variable: "--font-jua", preload: false });
@@ -49,6 +51,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko" className={`${jua.variable} ${noto.variable}`}>
       <body>
+        {/* 앱·웹을 처음 열 때의 시작 화면: 달려가는 오소리 (ADR-021). 같은 창에서 두 번째부터는 그리기 전에 감춘다 */}
+        <Splash />
+        <script dangerouslySetInnerHTML={{ __html: SPLASH_ONCE_SCRIPT }} />
         <div className="ok-shell mx-auto flex min-h-dvh max-w-[480px] flex-col">
           <InAppGate />
           <OwnerAlertHost />

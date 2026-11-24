@@ -1,3 +1,4 @@
+import { BannerCarousel } from "@/components/BannerCarousel";
 import { BottomNav } from "@/components/BottomNav";
 import { Osori } from "@/components/Osori";
 import { PageView } from "@/components/PageView";
@@ -12,8 +13,8 @@ import { NewsList, type CommunityPost, type TodayReport } from "./NewsList";
 export const dynamic = "force-dynamic";
 
 /**
- * 소통광장 (ADR-018): 동네 이야기 하나로, 그 안의 줄에서 옥천신문(최근 기사) · 동네 이야기 · 사장님 소식 · 이웃 제보를 고른다.
- * ?tab= 으로 처음 열 줄을 정할 수 있다
+ * 소통광장 (ADR-018, ADR-023): 맨 위에 광고 배너, 그 아래 "우리동네 소식".
+ * 줄에서 옥천신문(최근 기사) · 동네 이야기 · 사장님 소식 · 이웃 제보를 고른다. ?tab= 으로 처음 열 줄을 정할 수 있다
  */
 export default async function PlazaPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const { tab } = await searchParams;
@@ -41,8 +42,10 @@ export default async function PlazaPage({ searchParams }: { searchParams: Promis
           </div>
         </header>
 
+        <BannerCarousel />
+
         <section aria-labelledby="community-title" className="flex flex-col gap-3">
-          <h2 id="community-title" className="font-display text-[22px] font-normal">동네 이야기</h2>
+          <h2 id="community-title" className="font-display text-[22px] font-normal">우리동네 소식</h2>
           <NewsList
             feed={(feed.data ?? []) as FeedItem[]}
             reports={(reports.data ?? []) as TodayReport[]}
