@@ -63,7 +63,7 @@ export function ReportAlert({
     <>
       {!hidden && (
         <div className={`sticky top-2 z-40 ${className}`}>
-          <div className="ok-pop relative flex items-center rounded-[22px] border-2 border-yellow-deep bg-yellow shadow-[0_4px_0_var(--color-yellow-deep)]">
+          <div className="ok-pop relative flex items-center rounded-[22px] border-2 border-yellow-deep bg-yellow">
             <button type="button" onClick={() => setSheet(true)} className="flex min-h-16 flex-1 items-center justify-center gap-2 py-2 pr-10 pl-4 font-display text-xl text-ink">
               <Bell className="ok-ring" />
               이웃 제보가 왔어요

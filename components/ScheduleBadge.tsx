@@ -6,7 +6,7 @@ export function ScheduleBadge({ status, basis, large = false }: { status: Schedu
   const s = SCHEDULE_STYLES[status];
   return (
     <span className={`inline-flex shrink-0 flex-wrap items-center gap-1.5 ${large ? "" : "whitespace-nowrap"}`}>
-      <span className={`ok-sign ${large ? "text-lg" : ""}`} style={{ background: s.bg, color: s.fg, borderColor: s.border, boxShadow: `0 2px 0 ${s.border}` }}>
+      <span className={`ok-sign ${large ? "text-lg" : ""}`} style={{ background: s.bg, color: s.fg, borderColor: s.border }}>
         <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: s.dot }} />
         {s.label}
       </span>

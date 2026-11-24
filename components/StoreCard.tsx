@@ -35,7 +35,7 @@ export function StoreCard({ store, extra }: { store: StoreSign; extra?: string }
   const photos = (store.card_photos ?? []).slice(0, TILES);
   const c = categoryById(categoryOf(store.category))!;
   return (
-    <div className="ok-sticker relative flex flex-col rounded-[22px] border-2 border-line bg-card">
+    <div className="relative flex flex-col rounded-[22px] border-2 border-line bg-card">
       <Link href={`/stores/${store.store_id}`} className="flex w-full flex-col gap-2.5 rounded-[20px] px-3.5 pt-3.5 pb-3 text-left">
         <span className="flex h-[52px] items-center gap-3 pr-8">
           <StoreLogo store={store} />

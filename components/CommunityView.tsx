@@ -5,14 +5,18 @@ import { useMemo, useState } from "react";
 import { useCommunityLikes, type CommunityPost } from "@/app/news/NewsList";
 import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
+import { goBackRefreshed } from "@/lib/nav";
+import { postActions, storyEditHref } from "@/lib/posts";
 import { createClient } from "@/lib/supabase/client";
-import { CommentIcon, LikeButton } from "./StoreSocial";
+import { MoreMenu, type MoreItem } from "./MoreMenu";
+import { CommentIcon, LikeButton } from "./PostParts";
 import { TimeAgo } from "./TimeAgo";
 import { useToast } from "./Toast";
 
 /**
  * 동네 이야기 하나를 전체 화면으로: 글 · 공감 · 모든 댓글 · 아래에 붙은 댓글 쓰기.
- * 댓글은 카카오 로그인한 사람만 쓰고, 화면에는 익명으로 보인다 (ADR-012)
+ * 댓글은 카카오 로그인한 사람만 쓰고, 화면에는 익명으로 보인다 (ADR-012).
+ * 내가 쓴 글이면 오른쪽 위 점 세 개 메뉴로 수정·삭제한다 (관리자는 남의 글도 삭제만, ADR-025)
  */
 export function CommunityView({ post, signedIn, isAdmin }: { post: CommunityPost; signedIn: boolean; isAdmin: boolean }) {
   const router = useRouter();
@@ -44,14 +48,20 @@ export function CommunityView({ post, signedIn, isAdmin }: { post: CommunityPost
     if (!(await askDelete({ detail: "이 글이 사라져요." }))) return;
     const { error } = await createClient().rpc("delete_community_post", { p_post_id: post.id });
     if (error) return show(errorMessage(error), "think");
-    router.replace("/news");
-    router.refresh();
+    // 지운 글 화면에 머물 수 없다: 들어온 화면(소통광장의 보던 자리)으로 돌아간다
+    goBackRefreshed(router, "/news?tab=community");
   }
+
+  const items: MoreItem[] = postActions({ mine: post.is_mine, admin: isAdmin }).map((a) =>
+    a === "edit" ? { label: "수정", href: storyEditHref(post.id) } : { label: "삭제", onSelect: removePost, danger: true },
+  );
 
   return (
     <>
-      <article className="flex flex-col gap-3 rounded-[22px] border-2 border-line bg-card px-4 py-4">
-        <span className="flex items-center gap-2 text-[13px] text-muted">
+      <article className="relative flex flex-col gap-3 rounded-[22px] border-2 border-line bg-card px-4 py-4">
+        <MoreMenu label="글 메뉴" items={items} className="!absolute top-1.5 right-1.5" />
+        {/* 점 세 개 자리만큼 오른쪽을 비운다 */}
+        <span className={`flex items-center gap-2 text-[13px] text-muted ${items.length > 0 ? "pr-10" : ""}`}>
           <span className="rounded-full bg-sage-soft px-2.5 py-[3px] text-[12px] font-bold text-sage-deep">동네 이야기</span>
           <b>{post.anon_name}</b>
           <TimeAgo iso={post.created_at} />
@@ -63,11 +73,8 @@ export function CommunityView({ post, signedIn, isAdmin }: { post: CommunityPost
             <CommentIcon />
             댓글 {post.comment_count}
           </span>
-          {(post.is_mine || isAdmin) && (
-            <button type="button" onClick={removePost} className="ml-auto min-h-11 px-2 text-sm font-bold text-danger">
-              지우기
-            </button>
-          )}
+          {/* 글쓴이가 내용을 고친 글 (목록과 같은 자리) */}
+          {post.updated_at && <span className="ml-auto text-[13px] text-muted">수정됨</span>}
         </div>
       </article>
 

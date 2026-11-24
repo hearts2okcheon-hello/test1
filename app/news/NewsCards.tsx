@@ -107,7 +107,7 @@ export function NewsCards({ news, stats, loaded, days }: { news: NewsItem[]; sta
           const date = shortDate(n.publishedAt);
           const s = get(n.id);
           return (
-            <li key={n.id} className="ok-sticker flex gap-3 rounded-[22px] border-2 border-line bg-card p-3">
+            <li key={n.id} className="flex gap-3 rounded-[22px] border-2 border-line bg-card p-3">
               {/* 사진도 눌리지만, 같은 곳으로 가는 링크가 두 번 읽히지 않게 글 쪽 링크만 알린다 */}
               <ArticleLink articleId={n.id} tabIndex={-1} aria-hidden className="shrink-0 self-start">
                 <Thumb src={n.image} />

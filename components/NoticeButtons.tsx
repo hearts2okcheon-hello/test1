@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { nextHalfHour } from "@/lib/clock";
 import { errorMessage } from "@/lib/errors";
-import { MEMO_CHIPS, MEMO_MAX, NOTICE_KINDS, PROXY_MEMO_CHIPS, SIGN_STYLES, TIMED_KINDS, formatClock } from "@/lib/signs";
+import { MEMO_MAX, NOTICE_KINDS, PROXY_MEMO_CHIPS, SIGN_STYLES, TIMED_KINDS, formatClock } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
 import { seoulClock } from "@/lib/time";
 import type { NoticeKind, OwnerNotice } from "@/lib/types";
@@ -13,7 +13,7 @@ import { useToast } from "./Toast";
 
 /**
  * 원탭 공지 (MVP ①). 누르면 바로 방송, 5분 안에 되돌리기.
- * 사장님 화면과 옥천신문 대리 등록이 같이 쓴다.
+ * 사장님 화면과 옥천신문 대리 등록(proxy)이 같이 쓴다. 쪽지 한 줄 더하기는 대리 등록에서만 보인다
  */
 export function NoticeButtons({ storeId, current, proxy = false }: { storeId: string; current: OwnerNotice | null; proxy?: boolean }) {
   const router = useRouter();
@@ -124,6 +124,8 @@ export function NoticeButtons({ storeId, current, proxy = false }: { storeId: st
         </section>
       )}
 
+      {/* 쪽지 한 줄 더하기는 옥천신문이 대신 올릴 때만 둔다. 사장님 화면(내 가게)에는 없다 (ADR-025) */}
+      {proxy && (
       <section className="flex flex-col gap-2">
         <h2 className="font-display text-[19px] font-normal">
           쪽지 한 줄 더하기 <span className="font-sans text-[13px] text-muted">(선택)</span>
@@ -131,7 +133,7 @@ export function NoticeButtons({ storeId, current, proxy = false }: { storeId: st
         {current ? (
           <>
             <div className="flex flex-wrap gap-2">
-              {(proxy ? PROXY_MEMO_CHIPS : MEMO_CHIPS).map((c) => (
+              {PROXY_MEMO_CHIPS.map((c) => (
                 <button
                   key={c}
                   type="button"
@@ -171,6 +173,7 @@ export function NoticeButtons({ storeId, current, proxy = false }: { storeId: st
           <p className="text-sm text-muted">먼저 위에서 오늘 소식을 하나 골라 주세요.</p>
         )}
       </section>
+      )}
       {node}
     </>
   );

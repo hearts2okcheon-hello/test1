@@ -4,16 +4,22 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { errorMessage } from "@/lib/errors";
 import { uploadStoreImage } from "@/lib/images";
-import { pushWithLoading } from "@/lib/nav";
+import { goBack, goBackRefreshed, pushWithLoading } from "@/lib/nav";
+import { postHref } from "@/lib/posts";
 import { createClient } from "@/lib/supabase/client";
 import type { StorePost } from "@/lib/types";
+import { BackButton } from "./BackButton";
 import { Osori } from "./Osori";
 import { PhotoPicker } from "./PhotoPicker";
 import { useToast } from "./Toast";
 
 const BODY_MAX = 500;
 
-/** 소식·공지 쓰기·고치기. 올리면 오늘 들어온 소식에 바로 뜬다 */
+/**
+ * 소식·공지 쓰기·고치기. 올리면 오늘 들어온 소식에 바로 뜬다.
+ * 새 글은 올린 뒤 내 가게로 간다. 고칠 때(post 가 있음)는 그 글만 고치는 따로 된 화면이고,
+ * 저장하거나 취소하면 들어온 화면(글 화면 · 소통광장 · 내 가게)으로 돌아간다 (ADR-025)
+ */
 export function PostComposer({ storeId, storeName, post }: { storeId: string; storeName: string; post: StorePost | null }) {
   const router = useRouter();
   const { node, show } = useToast();
@@ -37,12 +43,18 @@ export function PostComposer({ storeId, storeName, post }: { storeId: string; st
         p_post_id: post?.id ?? null,
       });
       if (error) throw error;
+      if (post) return goBackRefreshed(router, postHref(storeId, post.id));
       pushWithLoading(router, "/owner/store");
       router.refresh();
     } catch (e) {
       show(errorMessage(e), "think");
       setBusy(false);
     }
+  }
+
+  function cancel() {
+    if (post) goBack(router, postHref(storeId, post.id));
+    else pushWithLoading(router, "/owner/store");
   }
 
   return (
@@ -54,9 +66,9 @@ export function PostComposer({ storeId, storeName, post }: { storeId: string; st
       }}
     >
       <header className="flex items-center gap-2.5">
-        <Osori mood="talk" size={76} />
-        <div className="flex flex-1 flex-col gap-0.5">
-          <span className="text-base text-muted">{storeName}</span>
+        {post ? <BackButton fallback={postHref(storeId, post.id)} /> : <Osori mood="talk" size={76} />}
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="truncate text-base text-muted">{storeName}</span>
           <h1 className="font-display text-[26px] leading-tight font-normal">{post ? "소식 고치기" : "소식·공지 올리기"}</h1>
         </div>
       </header>
@@ -119,11 +131,11 @@ export function PostComposer({ storeId, storeName, post }: { storeId: string; st
       </div>
 
       <div className="flex gap-2">
-        <button type="button" onClick={() => pushWithLoading(router, "/owner/store")} className="min-h-16 shrink-0 rounded-[22px] border-2 border-line bg-card px-4 text-lg font-bold">
+        <button type="button" onClick={cancel} className="min-h-16 shrink-0 rounded-[22px] border-2 border-line bg-card px-4 text-lg font-bold">
           취소
         </button>
         <button type="submit" disabled={busy} className="min-h-16 flex-1 rounded-[22px] border-2 border-sage-deep bg-sage font-display text-[21px] text-white disabled:opacity-60">
-          {busy ? "올리는 중…" : post ? "고친 내용 저장" : "마을방송에 올리기"}
+          {busy ? (post ? "저장하는 중…" : "올리는 중…") : post ? "고친 내용 저장" : "마을방송에 올리기"}
         </button>
       </div>
       {node}

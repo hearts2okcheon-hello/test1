@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { CommentIcon, LikeButton } from "@/components/StoreSocial";
+import { MoreMenu, type MoreItem } from "@/components/MoreMenu";
+import { CommentIcon, LikeButton } from "@/components/PostParts";
 import { SignChip } from "@/components/SignChip";
 import { TimeAgo } from "@/components/TimeAgo";
 import { useToast } from "@/components/Toast";
@@ -11,6 +12,7 @@ import { askDelete } from "@/lib/confirm";
 import { errorMessage } from "@/lib/errors";
 import type { NewsItem } from "@/lib/okinews";
 import { PLAZA_TABS, type PlazaTab } from "@/lib/plaza";
+import { feedHref, postActions, postEditHref, storyEditHref, storyHref } from "@/lib/posts";
 import { feedLine, REPORT_STYLES } from "@/lib/signs";
 import { createClient, ensureSession } from "@/lib/supabase/client";
 import type { FeedItem, NoticeKind, ReportKind } from "@/lib/types";
@@ -18,7 +20,8 @@ import { NewsCards, type NewsStat } from "./NewsCards";
 
 export type TodayReport = { report_id: string; store_id: string; store_name: string; kind: ReportKind; status: "pending" | "confirmed"; resolved_source: "owner" | "okcheon" | null; created_at: string };
 export type CommunityComment = { id: string; anon_name: string; body: string; created_at: string; is_mine: boolean };
-export type CommunityPost = { id: string; anon_name: string; body: string; created_at: string; is_mine: boolean; comment_count: number; comments: CommunityComment[]; like_count: number; liked_by_me: boolean };
+/** updated_at: 글쓴이가 내용을 고친 시각. 한 번도 안 고친 글은 비어 있다 (있을 때만 "수정됨"을 붙인다) */
+export type CommunityPost = { id: string; anon_name: string; body: string; created_at: string; updated_at: string | null; is_mine: boolean; comment_count: number; comments: CommunityComment[]; like_count: number; liked_by_me: boolean };
 
 type Kind = Exclude<PlazaTab, "okinews">;
 
@@ -31,7 +34,7 @@ const KIND_TAG: Record<Kind, { name: string; cls: string }> = {
   owner: { name: "사장님 소식", cls: "bg-[#FFF1C9] text-[#7A4E00]" },
   neighbor: { name: "이웃 제보", cls: "bg-[#DCEEF7] text-[#1F5A7A]" },
 };
-const CARD = "ok-sticker flex flex-col gap-2.5 rounded-[22px] border-2 border-line bg-card px-[18px] py-4";
+const CARD = "flex flex-col gap-2.5 rounded-[22px] border-2 border-line bg-card px-[18px] py-4";
 
 function reportSource(r: TodayReport) {
   if (r.status === "pending") return "확인 중";
@@ -44,17 +47,35 @@ function feedChip(f: FeedItem) {
   return f.is_current ? <SignChip sign={f.kind as NoticeKind} atTime={f.at_time} /> : <span className="text-xs font-bold text-muted">지난 소식</span>;
 }
 
-type Row = { key: string; kind: Kind; at: string; storeId: string | null; title: string; chip: React.ReactNode; body: string; source: string | null; image: string | null; dim: boolean; post: CommunityPost | null };
+type Row = {
+  key: string;
+  kind: Kind;
+  at: string;
+  /** 누르면 갈 곳: 글이면 그 글 화면, 팻말 알림·제보는 가게 화면 */
+  href: string;
+  title: string;
+  chip: React.ReactNode;
+  body: string;
+  source: string | null;
+  image: string | null;
+  dim: boolean;
+  post: CommunityPost | null;
+  /** 내 글이면 오른쪽 위 점 세 개 메뉴에 들어갈 것 (수정 · 삭제) */
+  menu: MoreItem[];
+};
 
 /**
  * 소통광장 "우리동네 소식" (ADR-018, ADR-023). 줄에서 옥천신문(최근 기사) · 동네 이야기 · 사장님 소식 · 이웃 제보를 고른다.
- * initialTab 은 주소의 ?tab= 값 (글을 올린 뒤 그 줄로 돌아올 때 쓴다)
+ * initialTab 은 주소의 ?tab= 값 (글을 올린 뒤 그 줄로 돌아올 때 쓴다).
+ * 사장님이 쓴 글(소식·공지)과 동네 이야기는 누르면 그 글 화면으로 간다. 내가 쓴 글에는 오른쪽 위에 점 세 개 메뉴가 붙는다 (ADR-025).
+ * myStoreId 는 내 가게(사장님일 때): 그 가게의 글이 "내 글"이다
  */
 export function NewsList({
   feed,
   reports,
   posts,
   isAdmin,
+  myStoreId,
   news,
   stats,
   newsLoaded,
@@ -65,6 +86,7 @@ export function NewsList({
   reports: TodayReport[];
   posts: CommunityPost[];
   isAdmin: boolean;
+  myStoreId: string | null;
   news: NewsItem[];
   stats: NewsStat[];
   newsLoaded: boolean;
@@ -93,19 +115,30 @@ export function NewsList({
     window.history.replaceState(null, "", next === "okinews" ? "/news" : `/news?tab=${next}`);
   }
 
-  async function removePost(id: string) {
-    if (!(await askDelete({ detail: "이 글이 사라져요." }))) return;
-    const { error } = await createClient().rpc("delete_community_post", { p_post_id: id });
+  /** 글 지우기: 확인 창을 거친 뒤 지우고, 목록을 새로 받는다 */
+  async function remove(rpc: "delete_community_post" | "delete_store_post", id: string, detail: string) {
+    if (!(await askDelete({ detail }))) return;
+    const { error } = await createClient().rpc(rpc, { p_post_id: id });
     if (error) return show(errorMessage(error), "think");
     show("지웠어요.", "proud");
     router.refresh();
   }
 
+  const storyMenu = (p: CommunityPost): MoreItem[] =>
+    postActions({ mine: p.is_mine, admin: isAdmin }).map((a) =>
+      a === "edit" ? { label: "수정", href: storyEditHref(p.id) } : { label: "삭제", danger: true, onSelect: () => remove("delete_community_post", p.id, "이 글이 사라져요.") },
+    );
+  // 사장님 소식: 내 가게에서 올린 글만 내 글이다 (팻말 알림·임시휴무는 글이 아니라 메뉴가 없다)
+  const feedMenu = (f: FeedItem): MoreItem[] =>
+    postActions({ mine: f.item_type === "post" && !!myStoreId && f.store_id === myStoreId }).map((a) =>
+      a === "edit" ? { label: "수정", href: postEditHref(f.store_id, f.item_id) } : { label: "삭제", danger: true, onSelect: () => remove("delete_store_post", f.item_id, "이 소식이 사라져요.") },
+    );
+
   const rows: Row[] = [
-    ...posts.map((p): Row => ({ key: `community-${p.id}`, kind: "community", at: p.created_at, storeId: null, title: p.anon_name, chip: null, body: p.body, source: null, image: null, dim: false, post: p })),
-    ...feed.map((f): Row => ({ key: `${f.item_type}-${f.item_id}`, kind: "owner", at: f.created_at, storeId: f.store_id, title: f.store_name, chip: feedChip(f), body: feedLine(f), source: f.source === "owner" ? "사장님이 올림" : "옥천신문 확인", image: f.image_url, dim: !f.is_current, post: null })),
+    ...posts.map((p): Row => ({ key: `community-${p.id}`, kind: "community", at: p.created_at, href: storyHref(p.id), title: p.anon_name, chip: null, body: p.body, source: null, image: null, dim: false, post: p, menu: storyMenu(p) })),
+    ...feed.map((f): Row => ({ key: `${f.item_type}-${f.item_id}`, kind: "owner", at: f.created_at, href: feedHref(f), title: f.store_name, chip: feedChip(f), body: feedLine(f), source: f.source === "owner" ? "사장님이 올림" : "옥천신문 확인", image: f.image_url, dim: !f.is_current, post: null, menu: feedMenu(f) })),
     // 확인 전 제보는 확정처럼 보이면 안 된다
-    ...reports.map((r): Row => ({ key: `report-${r.report_id}`, kind: "neighbor", at: r.created_at, storeId: r.store_id, title: r.store_name, chip: r.status === "pending" ? <SignChip sign="checking" /> : null, body: REPORT_STYLES[r.kind].label, source: reportSource(r), image: null, dim: false, post: null })),
+    ...reports.map((r): Row => ({ key: `report-${r.report_id}`, kind: "neighbor", at: r.created_at, href: `/stores/${r.store_id}`, title: r.store_name, chip: r.status === "pending" ? <SignChip sign="checking" /> : null, body: REPORT_STYLES[r.kind].label, source: reportSource(r), image: null, dim: false, post: null, menu: [] })),
   ].sort((a, b) => b.at.localeCompare(a.at));
 
   const shown = rows.filter((r) => r.kind === filter);
@@ -133,51 +166,45 @@ export function NewsList({
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(300px,100%),1fr))] items-start gap-3">
             {shown.map((r) => {
               const tag = KIND_TAG[r.kind];
-              const head = (
-                <>
-                  <span className="flex w-full items-center gap-2">
-                    <span className={`shrink-0 rounded-full px-2.5 py-[3px] text-[12px] font-bold ${tag.cls}`}>{tag.name}</span>
-                    <span className="min-w-0 flex-1 truncate text-[14px] font-bold text-muted">{r.title}</span>
-                    <span className="shrink-0 text-xs whitespace-nowrap text-muted"><TimeAgo iso={r.at} /></span>
-                  </span>
-                  <span className="flex gap-3">
-                    <span className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
-                      {r.chip}
-                      <span className="text-[18px] leading-[1.55] break-words break-keep whitespace-pre-wrap">{r.body}</span>
+              const hasMenu = r.menu.length > 0;
+              const post = r.post;
+              const like = post ? likeOf(post) : null;
+              return (
+                // 메뉴가 있는 칸만 자리 기준(relative)으로 삼는다. 흐린 칸(지난 소식)에는 메뉴가 없다
+                <article key={r.key} className={`${CARD} ${hasMenu ? "relative" : ""} ${r.dim ? "opacity-60" : ""}`}>
+                  <MoreMenu label="글 메뉴" items={r.menu} className="!absolute top-1.5 right-1.5" />
+                  {/* 글을 누르면 전체 화면에서 본다 */}
+                  <Link href={r.href} className="flex flex-col gap-2.5">
+                    {/* 점 세 개 자리만큼 오른쪽을 비운다 */}
+                    <span className={`flex w-full items-center gap-2 ${hasMenu ? "pr-9" : ""}`}>
+                      <span className={`shrink-0 rounded-full px-2.5 py-[3px] text-[12px] font-bold ${tag.cls}`}>{tag.name}</span>
+                      <span className="min-w-0 flex-1 truncate text-[14px] font-bold text-muted">{r.title}</span>
+                      <span className="shrink-0 text-xs whitespace-nowrap text-muted"><TimeAgo iso={r.at} /></span>
                     </span>
-                    {r.image && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.image} alt="" loading="lazy" className="size-[72px] shrink-0 self-center rounded-xl object-cover" />
-                    )}
-                  </span>
-                  {r.source && <span className="text-[12px] text-muted">{r.source}</span>}
-                </>
-              );
-              if (r.post) {
-                const post = r.post;
-                const like = likeOf(post);
-                const href = `/news/${post.id}`;
-                return (
-                  <article key={r.key} className={CARD}>
-                    {/* 글을 누르면 전체 화면에서 댓글과 함께 본다 */}
-                    <Link href={href} className="flex flex-col gap-2.5">{head}</Link>
+                    <span className="flex gap-3">
+                      <span className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
+                        {r.chip}
+                        <span className="text-[18px] leading-[1.55] break-words break-keep whitespace-pre-wrap">{r.body}</span>
+                      </span>
+                      {r.image && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={r.image} alt="" loading="lazy" className="size-[72px] shrink-0 self-center rounded-xl object-cover" />
+                      )}
+                    </span>
+                    {r.source && <span className="text-[12px] text-muted">{r.source}</span>}
+                  </Link>
+                  {post && like && (
                     <div className="flex items-center gap-5 border-t-2 border-line pt-1">
                       <LikeButton on={like.on} count={like.count} onClick={() => toggleLike(post)} />
-                      <Link href={href} className="flex min-h-11 items-center gap-1.5 text-[15px] font-bold">
+                      <Link href={r.href} className="flex min-h-11 items-center gap-1.5 text-[15px] font-bold">
                         <CommentIcon />
                         댓글 {post.comment_count}
                       </Link>
-                      {(post.is_mine || isAdmin) && (
-                        <button type="button" onClick={() => removePost(post.id)} className="ml-auto min-h-11 px-2 text-sm font-bold text-danger">
-                          지우기
-                        </button>
-                      )}
+                      {/* 글쓴이가 내용을 고친 글. 윗줄은 좁아서 이름이 잘리므로 여기 오른쪽 끝에 둔다 */}
+                      {post.updated_at && <span className="ml-auto text-[13px] text-muted">수정됨</span>}
                     </div>
-                  </article>
-                );
-              }
-              return (
-                <Link key={r.key} href={`/stores/${r.storeId}`} className={`${CARD} ${r.dim ? "opacity-60" : ""}`}>{head}</Link>
+                  )}
+                </article>
               );
             })}
           </div>

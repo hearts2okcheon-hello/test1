@@ -69,7 +69,7 @@ export function AlertList({ alerts }: { alerts: AlertItem[] }) {
     <>
       {/* 알림 켜기 · 끄기 */}
       {state !== null && (
-        <section className={`flex items-center gap-3 rounded-[22px] border-[2.5px] bg-card px-4 py-3.5 ${on ? "border-sage" : "border-coral"}`}>
+        <section className={`flex items-center gap-3 rounded-[22px] border-2 bg-card px-4 py-3.5 ${on ? "border-sage" : "border-coral"}`}>
           <span className={`flex size-11 shrink-0 items-center justify-center rounded-full ${on ? "bg-yellow-soft text-olive" : "bg-coral-soft text-danger"}`}>
             <Bell off={!on} size={26} />
           </span>
@@ -117,7 +117,7 @@ export function AlertList({ alerts }: { alerts: AlertItem[] }) {
             return (
               <section key={g} aria-label={g} className="flex flex-col gap-1.5">
                 <h2 className="px-1 text-sm font-bold text-muted">{g}</h2>
-                <ul className="ok-sticker flex flex-col rounded-[22px] border-2 border-line bg-card px-3">
+                <ul className="flex flex-col rounded-[22px] border-2 border-line bg-card px-3">
                   {rows.map((a, i) => (
                     <li key={a.id} className={i > 0 ? "border-t-2 border-line" : ""}>
                       <button type="button" onClick={() => open(a)} className="flex w-full items-start gap-2.5 py-3 text-left active:!transform-none">

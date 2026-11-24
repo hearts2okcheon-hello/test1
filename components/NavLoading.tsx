@@ -2,7 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { NAV_START, isInternalNav } from "@/lib/nav";
+import { NAV_START, isInternalNav, noteArrival } from "@/lib/nav";
 import { LoadingGauge } from "./LoadingGauge";
 
 const SHOW_AFTER_MS = 500; // 금방 넘어가는 화면에서는 로딩 창을 띄우지 않는다
@@ -59,7 +59,11 @@ export function NavLoading() {
     };
   }, []);
 
-  useEffect(finish, [pathname, search]);
+  useEffect(() => {
+    // "뒤로"가 앱 안의 앞 화면으로 돌아갈 수 있는지 알 수 있게, 화면을 옮긴 것을 세어 둔다 (lib/nav)
+    noteArrival(`${pathname}?${search}`);
+    finish();
+  }, [pathname, search]);
 
   // 로딩 화면은 잠깐만 뜨므로 그림을 미리 받아 둔다
   // eslint-disable-next-line @next/next/no-img-element

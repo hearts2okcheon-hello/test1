@@ -30,7 +30,7 @@ export function HomeFavorites({ stores, initialIds }: { stores: StoreSign[]; ini
         {list.map((s) => (
           <div key={s.store_id} className="relative">
             {/* 이름 길이·소식 유무와 상관없이 카드 크기가 같다 */}
-            <Link href={`/stores/${s.store_id}`} className="ok-sticker flex h-[116px] flex-col items-start justify-between rounded-[20px] border-2 border-line bg-card py-3 pr-3 pl-3.5">
+            <Link href={`/stores/${s.store_id}`} className="flex h-[116px] flex-col items-start justify-between rounded-[20px] border-2 border-line bg-card py-3 pr-3 pl-3.5">
               <span className="flex w-full items-center gap-2 pr-6">
                 <StoreLogo store={s} size={36} />
                 <span className="min-w-0 truncate font-display text-[17px] leading-snug">{s.name}</span>

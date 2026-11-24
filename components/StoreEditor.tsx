@@ -371,7 +371,8 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
         )}
       </Section>
 
-      <Section n={nextNo()} title="사진 갤러리" optional>
+      {/* 가게 화면의 "사진 고치기"가 이 칸으로 바로 온다 (#photos) */}
+      <Section n={nextNo()} title="사진 갤러리" optional id="photos">
         <p className="text-base text-muted">대표 메뉴나 가게 분위기 사진을 올려 주세요. 앞에서부터 3장이 가게 목록의 가게 이름 아래에 보여요. (없으면 메뉴 사진이 보여요)</p>
         <div role="tablist" aria-label="사진 종류" className="flex gap-1.5">
           {PHOTO_CATEGORIES.map((c) => (
@@ -437,9 +438,9 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
   );
 }
 
-function Section({ n, title, optional, required, children }: { n: number; title: string; optional?: boolean; required?: boolean; children: React.ReactNode }) {
+function Section({ n, title, optional, required, id, children }: { n: number; title: string; optional?: boolean; required?: boolean; id?: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-3 rounded-[22px] border-2 border-line bg-card px-3.5 py-4">
+    <section id={id} className="flex scroll-mt-4 flex-col gap-3 rounded-[22px] border-2 border-line bg-card px-3.5 py-4">
       <h2 className="font-display text-[21px] leading-snug font-normal">
         {n}. {title}
         {optional && <span className="ml-1.5 font-sans text-sm text-muted">(선택)</span>}

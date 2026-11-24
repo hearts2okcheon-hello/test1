@@ -7,6 +7,7 @@ import { HomeFavorites } from "@/app/HomeFavorites";
 import { CATEGORY_GROUPS, categoryById } from "@/lib/categories";
 import { HOME_TABS, feedInTab, homeTabName, neighborHomeTab, sectionsInTab, storesInTab, tabDirection, type HomeTabId, type TabGroupId } from "@/lib/homeTabs";
 import { TAB_RESELECT } from "@/lib/nav";
+import { feedHref } from "@/lib/posts";
 import { feedDetail, feedTag } from "@/lib/signs";
 import { filterByStatus, storeStatus, type StatusFilter } from "@/lib/storeFilter";
 import { setInnerPager, shouldCommitSwipe, swipeLock } from "@/lib/swipe";
@@ -379,12 +380,12 @@ function LiveNews({ rows, name }: { rows: FeedItem[]; name: string }) {
         </h2>
         {rows.length > FEED_LIMIT && <MoreLink href="/news?tab=owner" label="가게소식 더 보기" />}
       </div>
-      <ul className="ok-sticker flex flex-col rounded-[22px] border-2 border-line bg-card px-4">
+      <ul className="flex flex-col rounded-[22px] border-2 border-line bg-card px-4">
         {rows.slice(0, FEED_LIMIT).map((f, i) => {
           const tag = feedTag(f);
           return (
             <li key={`${f.item_type}-${f.item_id}`} className={i > 0 ? "border-t-2 border-line" : ""}>
-              <Link href={f.item_type === "post" ? `/stores/${f.store_id}/posts/${f.item_id}` : `/stores/${f.store_id}`} className="flex flex-col gap-1 py-2.5">
+              <Link href={feedHref(f)} className="flex flex-col gap-1 py-2.5">
                 <span className="flex items-center gap-2">
                   <span className="shrink-0 rounded-[9px] px-2 py-0.5 font-display text-[13px] leading-snug" style={{ background: tag.bg, color: tag.fg }}>
                     {tag.label}

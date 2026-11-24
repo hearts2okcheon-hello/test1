@@ -195,6 +195,7 @@ create table events (                -- 시범 지표 측정용
 - 가게 캘린더(ADR-015, `20261119000000_schedule_range.sql`): 화면은 `save_schedule`로 기간(시작일~끝나는 날)에 휴무·늦게 열기·일찍 닫기·외출을 넣고 고친다. 휴무는 `temp_closures` 한 줄, 나머지는 날짜마다 `store_day_plans` 한 줄이고 휴무일은 건너뛴다. 묶인 일정은 `clear_day_plans`로 한 번에 지운다. 화면에서는 이어진 날(같은 종류·시각·쪽지)을 하나의 일정으로 묶어 보여 준다(`lib/schedule.ts`).
 - `okc_schedule_status`는 외출 중 공지와 오늘의 일정(늦게 열기·일찍 닫기·외출)을 반영한다.
 - `profiles.nickname`(선택, 비우면 "익명의 오소리 NNN"). 관리자용 `admin_list_residents`·`admin_update_resident`, 본인용 `delete_my_account` (`20261113040000_nickname_residents_account.sql`).
+- `community_posts.updated_at`(동네 이야기를 고친 시각. 한 번도 안 고친 글은 비어 있다. ADR-025, `20261124030000_community_edited_mark.sql`). `update_community_post`가 내용이 실제로 바뀐 때에만 적고, `get_community_posts`·`get_community_post`가 `updated_at`으로 돌려준다. 화면은 값이 있을 때만 "수정됨"을 붙인다. 고치기 전 내용은 보관하지 않는다.
 - `stores.logo_url`(가게 프로필 사진, 쓰기는 `set_store_logo`). `get_store_signs`가 `logo_url`과 `card_photos`(갤러리 사진 먼저, 그다음 메뉴 사진, 4장까지)를 함께 준다 (`20261113030000_store_logo_card_photos.sql`).
 
 ### 4.1 파생 뷰
@@ -241,14 +242,18 @@ create table events (                -- 시범 지표 측정용
 |---|---|---|
 | `/` | 홈 — 검색 아래 업종 탭(전체 · 식당 · 카페·디저트 · 미용 · 생활용품 · 패션 · 의료·건강 · 생활시설 · 식료품, 스크롤하면 위에 붙음). 탭마다 맨 위에 실시간 가게소식(글이 있을 때만, 공지 · 소식 · 임시휴무 · 외출 중 …을 구별해 다섯 개까지). 전체 탭: 즐겨찾는 가게가 있으면 그 팻말 → 전체 가게. 묶음 탭: 아래로 카테고리마다 나뉜 가게(식당은 한식 → 중식 → …). 상태는 펼쳐서 고르고, 구역마다 10곳 이상이면 더 보기. 옥천신문 기사를 붙인 가게는 가게 칸에서 기사를 펼쳐 본다. 옆으로 밀면 탭이 넘어간다 (ADR-016, ADR-017, ADR-020, ADR-022) | 주민 |
 | `/stores` | 가게 목록 — 홈의 "더 보기"에서 들어온다. 줄은 전체 다음에 카테고리를 하나씩(`?cat=`), 목록 안 검색과 상태 고르기 | 주민 |
-| `/news` | 소통광장 — 맨 위에 옆으로 넘기는 광고 배너(높이 104px, 내용은 `lib/banners.ts`), 그 아래 "우리동네 소식". 줄에서 옥천신문(최근 5일 기사, 왼쪽 사진 · 오른쪽 글의 카드: 제목 두 줄 · 줄거리 한 줄 · 공감 · 댓글, 생활 기사 먼저) · 동네 이야기 · 사장님 소식 · 이웃 제보를 고른다. 고른 줄은 `?tab=`에 남는다. 쓰기 버튼의 사장님 소식은 `okc_owner_mode()`가 참일 때만 (ADR-018, ADR-019, ADR-023) | 주민 |
-| `/stores/[id]` | 가게 상세 — 큰 팻말, 출처 배지·시각, 쪽지, 평소 영업시간, 확인 중 제보 + 나도 봤어요, 제보 버튼 4개. 사장님 소식은 공지가 맨 위(옆으로 넘김), 소식은 새 글부터 세 개씩(ADR-024). 옥천신문이 기사를 붙인 가게는 사진 갤러리 아래에 "옥천신문 기사" 칸 (ADR-020) | 주민·이웃 |
+| `/news` | 소통광장 — 맨 위에 옆으로 넘기는 광고 배너(높이 104px, 내용은 `lib/banners.ts`), 그 아래 "우리동네 소식". 줄에서 옥천신문(최근 5일 기사, 왼쪽 사진 · 오른쪽 글의 카드: 제목 두 줄 · 줄거리 한 줄 · 공감 · 댓글, 생활 기사 먼저) · 동네 이야기 · 사장님 소식 · 이웃 제보를 고른다. 고른 줄은 `?tab=`에 남는다. 사장님이 쓴 글과 동네 이야기는 누르면 그 글 화면으로 가고(팻말 알림·제보는 가게 화면), 내가 쓴 글에는 오른쪽 위에 점 세 개 메뉴(수정 · 삭제). 쓰기 버튼은 아래 탭 줄 위 16px 에 늘 떠 있고, 사장님 소식은 `okc_owner_mode()`가 참일 때만 (ADR-018, ADR-019, ADR-023, ADR-025) | 주민 |
+| `/stores/[id]` | 가게 상세 — 위에서부터 사진(옆으로 밀어 넘김, 누르면 크게. 가게를 고칠 수 있으면 "사진 고치기") → 운영 날짜 & 영업시간(맨 위 줄이 오늘 상태: 오늘 알린 팻말 + 출처·시각·쪽지, 없으면 영업시간 기준 상태) → 전화번호 → 사장님 소식 & 공지(있을 때만. 공지는 맨 위에서 옆으로 넘김, 소식은 새 글부터 세 개씩, 누르면 글 화면) → 소개글(있을 때만) → 대표 메뉴 → 위치 → 옥천신문 기사 → 오늘 이웃들의 제보 + 나도 봤어요, 제보 버튼. 큰 팻말·빈 칸·공감·주민 댓글은 없다 (ADR-020, ADR-024, ADR-025) | 주민·이웃 |
+| `/stores/[id]/posts/[postId]` | 사장님 소식 글 하나 — 글과 사진, 그 아래 가게로 가는 줄. 가게를 고칠 수 있는 사람에게는 오른쪽 위 점 세 개 메뉴(수정 · 삭제). 공감·댓글 없음 (ADR-025) | 주민 |
+| `/stores/[id]/posts/[postId]/edit` | 사장님 소식 글 하나 고치기 — 저장·취소하면 들어온 화면으로 돌아간다. 가게를 고칠 수 없으면 글 화면으로 돌려보냄 (ADR-025) | 사장님·관리자 |
+| `/news/[id]` · `/news/[id]/edit` | 동네 이야기 글 하나(공감 · 댓글, 내 글이면 점 세 개 메뉴. 고친 글에는 공감·댓글 줄 오른쪽 끝에 "수정됨" — 소통광장 목록에서도 같다) · 내 글 고치기(글쓴이만) (ADR-012, ADR-025) | 주민 · 글쓴이 |
 | `/owner` | 사장님 홈 — 내 가게 현재 팻말, 공지 버튼 5개, 쪽지 입력, **확인 질문 카드(네/아니요)** 상단 고정 | 사장님 |
+| `/owner/store` | 내 가게 — 오늘의 가게 상태(영업 중 · 오늘 휴무) → 오늘 소식(누르면 바로 방송) → 다가오는 일정 → 내가 올린 소식(고치기는 그 글만 고치는 화면으로, 지우기) → 휴대폰 알림 받기. 소식 올리기·캘린더·가게 정보 고치기는 내 공간 메뉴에서 (ADR-025) | 사장님 |
 | `/owner/favorites` | 내 공간 → 즐겨찾는 가게 — 별을 누른 가게들을 가게 칸으로 모아 본다 (ADR-024) | 주민 |
 | `/owner/profile` | 내 정보 등록·고치기 — 이름 · 닉네임 · 사는 곳 · 전화번호, 그 아래 "가게를 등록할 것입니까?"(예 · 아니요). 아니요면 내 공간에 가게 등록하기가 보이지 않는다 (ADR-014, ADR-019) | 로그인한 주민 |
 | `/owner` (연결 전) | 사장님 코드 입력(글자 버튼 + 숫자 5자리) | 사장님 |
 | `/owner/register` | 처음 가게 등록 (7구역) | 사장님 |
-| `/owner/edit` · `/owner/news` · `/owner/calendar` | 가게 수정 · 소식·공지 쓰기·고치기 · 가게 캘린더(날짜 기간 → 유형 → 일정 등록, 등록된 일정 고치기·지우기. ADR-015). 예전 `/owner/closure`는 캘린더로 보낸다 | 사장님 |
+| `/owner/edit` · `/owner/news` · `/owner/calendar` | 가게 수정(`#photos` 로 사진 칸에 바로) · 소식·공지 쓰기(고치기는 `/stores/[id]/posts/[postId]/edit`) · 가게 캘린더(날짜 기간 → 유형 → 일정 등록, 등록된 일정 고치기·지우기. ADR-015). 예전 `/owner/closure`는 캘린더로 보낸다 | 사장님 |
 | `/admin` | 옥천신문 — 탭: 사장님 코드 / 게시물 / 엇갈림·무응답 / 대리 등록 / 가게 관리 / 지표. 이용자 정보 → 가게 정보에서 가게에 옥천신문 기사를 붙이고 뗀다 (ADR-020) | 관리자 |
 
 ### 5.3 핵심 플로우
@@ -293,7 +298,8 @@ MVP에 푸시 알림은 없다(brd 범위 밖). 그래서:
 | `admin_reissue_code(phone)` | admin | 새 코드로 교체하고 연결된 기기 모두 끊기 |
 | `register_store(...)` · `update_store_profile(...)` · `save_store_media(store, menus, photos)` | 사장님 | 가게 등록·수정·메뉴와 사진 저장 |
 | `save_store_post(store, body, kind?, image?, post?)` · `delete_store_post(post)` | 사장님·admin | 소식·공지 쓰기·고치기·지우기 |
-| `toggle_post_like(post, on?)` · `post_store_comment(store, body)` · `delete_store_comment(comment)` | 익명 포함 로그인 | 공감·댓글. 삭제는 쓴 사람·사장님·admin |
+| `toggle_post_like(post, on?)` · `post_store_comment(store, body)` · `delete_store_comment(comment)` | 익명 포함 로그인 | 공감·댓글. 삭제는 쓴 사람·사장님·admin. 2026-11-24부터 화면에서는 쓰지 않는다 (ADR-025) |
+| `post_community(body)` · `update_community_post(post, body)` · `delete_community_post(post)` | 카카오 로그인한 주민 | 동네 이야기 쓰기 · 고치기(글쓴이 본인만, 내용이 바뀌면 고친 시각 `updated_at`을 적는다) · 지우기(글쓴이·admin). 작성자 id 는 내보내지 않는다 (ADR-012, ADR-025) |
 | `set_temp_closure(store, start, end, reason?)` · `cancel_temp_closure(id)` | 사장님·admin | 임시휴무 잡기·취소 |
 | `save_schedule(store, kind, start, end, from?, to?, note?, closure_id?, plan_ids?)` · `clear_day_plans(store, plan_ids)` | 사장님·admin | 가게 캘린더: 기간으로 일정 넣기·고치기(들어간 날 수를 돌려줌) · 묶인 일정 지우기 (ADR-015) |
 | `admin_list_content()` | admin | 소식·댓글 최근 50개 |

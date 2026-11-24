@@ -1,18 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { goBack } from "@/lib/nav";
 
-/** 들어온 화면으로 돌아간다. 링크로 바로 들어왔으면 홈으로 */
-export function BackButton({ label = "뒤로" }: { label?: string }) {
+/** 들어온 화면으로 돌아간다 (보던 자리 그대로). 링크로 바로 들어왔으면 홈(또는 fallback)으로 */
+export function BackButton({ label = "뒤로", fallback = "/" }: { label?: string; fallback?: string }) {
   const router = useRouter();
   return (
     <button
       type="button"
       aria-label={label}
-      onClick={() => {
-        if (document.referrer.startsWith(window.location.origin)) router.back();
-        else router.push("/");
-      }}
+      onClick={() => goBack(router, fallback)}
       className="flex size-[46px] shrink-0 items-center justify-center rounded-full border-2 border-line bg-card"
     >
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

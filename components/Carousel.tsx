@@ -28,9 +28,8 @@ export function Carousel({ label, children, className = "" }: { label: string; c
   }
 
   return (
-    <div role="group" aria-roledescription="carousel" aria-label={label} className={`flex flex-col gap-1 ${className}`}>
-      {/* 아래 여백은 카드 밑 그림자가 잘리지 않게 둔 자리 */}
-      <div ref={scroller} onScroll={onScroll} className="ok-scroll-x flex snap-x snap-mandatory overflow-x-auto pb-1.5">
+    <div role="group" aria-roledescription="carousel" aria-label={label} className={`flex flex-col gap-1.5 ${className}`}>
+      <div ref={scroller} onScroll={onScroll} className="ok-scroll-x flex snap-x snap-mandatory overflow-x-auto">
         {slides.map((slide, i) => (
           <div key={i} role="group" aria-roledescription="slide" aria-label={`${slides.length}장 가운데 ${i + 1}번째`} className="w-full shrink-0 snap-center">
             {slide}

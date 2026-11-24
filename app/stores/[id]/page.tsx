@@ -3,14 +3,13 @@ import { notFound } from "next/navigation";
 import { StoreArticleSection } from "@/components/ArticleRows";
 import { BackButton } from "@/components/BackButton";
 import { FavoriteStar } from "@/components/FavoriteStar";
-import { Gallery } from "@/components/Gallery";
 import { HoursPanel } from "@/components/HoursPanel";
 import { StoreCalendarButton } from "@/components/StoreCalendarButton";
 import { KakaoMap } from "@/components/KakaoMap";
 import { PageView } from "@/components/PageView";
-import { ScheduleBadge } from "@/components/ScheduleBadge";
-import { SignBoard } from "@/components/SignBoard";
-import { StoreSocial } from "@/components/StoreSocial";
+import { StorePhotos } from "@/components/StorePhotos";
+import { StorePosts } from "@/components/StorePosts";
+import { StoreStatus } from "@/components/StoreStatus";
 import { formatPhone, formatWon } from "@/lib/hours";
 import { createClient } from "@/lib/supabase/server";
 import type { StoreArticle, StoreDetail } from "@/lib/types";
@@ -20,6 +19,11 @@ export const dynamic = "force-dynamic";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * 가게 화면 (ADR-025). 위에서부터: 사진(옆으로 넘겨 봄) → 운영 날짜 & 영업시간(오늘 상태 한 줄 포함) → 전화번호
+ * → 사장님 소식 & 공지(있을 때만) → 소개글(있을 때만) → 대표 메뉴 → 위치 → 옥천신문 기사 → 오늘 이웃들의 제보.
+ * 큰 팻말 화면, "소식이 없어요" 같은 빈 칸, 공감·주민 댓글은 두지 않는다
+ */
 export default async function StorePage({
   params,
   searchParams,
@@ -52,7 +56,7 @@ export default async function StorePage({
 
   return (
     <>
-      {/* 1. 가게 이름 · 카테고리 · 동네 태그 · 전화번호 */}
+      {/* 가게 이름 · 카테고리 · 동네 태그 */}
       <header className="flex items-center gap-2.5 px-5 pt-4 pb-2">
         <BackButton />
         <div className="flex min-w-0 flex-1 flex-col">
@@ -69,6 +73,17 @@ export default async function StorePage({
       </header>
 
       <main className="flex flex-1 flex-col gap-[18px] px-5 pt-1 pb-4">
+        {/* 1. 사진: 맨 위에서 옆으로 넘겨 본다. 가게를 고칠 수 있는 사람에게는 "사진 고치기"가 보인다 */}
+        <StorePhotos photos={photos} editHref={detail.can_manage ? `/owner/edit${editQuery}#photos` : undefined} />
+
+        {/* 2. 운영 날짜 & 영업시간. 맨 위 줄이 오늘의 상태다 (큰 팻말 대신) */}
+        <section aria-labelledby="hours-title" className="flex flex-col gap-2.5 rounded-[22px] border-2 border-line bg-card px-4 py-4">
+          <h2 id="hours-title" className="font-display text-[19px] font-normal">운영 날짜 & 영업시간</h2>
+          <StoreStatus store={store} />
+          <HoursPanel hours={store.regular_hours} closures={closures} plans={plans} />
+        </section>
+
+        {/* 3. 전화번호 */}
         {phones.length > 0 && (
           <section aria-label="전화번호" className="flex flex-col rounded-2xl border-2 border-line bg-card px-4">
             {phones.map((p, i) => (
@@ -81,18 +96,18 @@ export default async function StorePage({
           </section>
         )}
 
-        <SignBoard store={store} />
+        {/* 4. 사장님 소식 & 공지 (올린 글이 있을 때만) */}
+        <StorePosts storeId={store.store_id} posts={detail.posts} />
 
-        <StoreSocial
-          storeId={store.store_id}
-          intro={profile.intro}
-          posts={detail.posts}
-          comments={detail.comments}
-          commentCount={detail.comment_count}
-          canManage={detail.can_manage}
-        />
+        {/* 5. 소개글 (사장님이 써 둔 가게만) */}
+        {profile.intro && (
+          <section aria-labelledby="intro-title" className="flex flex-col gap-2 rounded-[22px] border-2 border-line bg-card px-4 py-4">
+            <h2 id="intro-title" className="font-display text-[19px] font-normal">소개글</h2>
+            <p className="text-[15px] leading-relaxed break-words whitespace-pre-wrap">{profile.intro}</p>
+          </section>
+        )}
 
-        {/* 4. 대표 메뉴 & 가격 */}
+        {/* 6. 대표 메뉴 & 가격 */}
         {menus.length > 0 && (
           <section aria-labelledby="menu-title" className="flex flex-col gap-2.5 rounded-[22px] border-2 border-line bg-card px-4 py-4">
             <h2 id="menu-title" className="font-display text-[19px] font-normal">대표 메뉴 & 가격</h2>
@@ -113,7 +128,7 @@ export default async function StorePage({
           </section>
         )}
 
-        {/* 5. 위치 & 바로 연결 */}
+        {/* 7. 위치 & 바로 연결 */}
         {(store.address || phones.length > 0) && (
           <section aria-labelledby="place-title" className="flex flex-col gap-2.5 rounded-[22px] border-2 border-line bg-card px-4 py-4">
             <h2 id="place-title" className="font-display text-[19px] font-normal">위치 & 바로 연결</h2>
@@ -128,21 +143,6 @@ export default async function StorePage({
                 전화하기
               </a>
             )}
-          </section>
-        )}
-
-        {/* 6. 운영 날짜 & 영업시간 */}
-        <section aria-labelledby="hours-title" className="flex flex-col gap-2 rounded-[22px] border-2 border-line bg-card px-4 py-4">
-          <h2 id="hours-title" className="font-display text-[19px] font-normal">운영 날짜 & 영업시간</h2>
-          <ScheduleBadge status={store.schedule_status} basis={store.schedule_basis} large />
-          <HoursPanel hours={store.regular_hours} closures={closures} plans={plans} />
-        </section>
-
-        {/* 7. 사진 갤러리 */}
-        {photos.length > 0 && (
-          <section aria-labelledby="gallery-title" className="flex flex-col gap-2.5 rounded-[22px] border-2 border-line bg-card px-4 py-4">
-            <h2 id="gallery-title" className="font-display text-[19px] font-normal">사진 갤러리</h2>
-            <Gallery photos={photos} />
           </section>
         )}
 

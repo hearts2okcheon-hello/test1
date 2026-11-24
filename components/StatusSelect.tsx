@@ -127,7 +127,7 @@ export function StatusSelect({ value, onChange }: { value: StatusFilter; onChang
               aria-label="가게 상태"
               onKeyDown={onKey}
               style={{ top: spot.top, bottom: spot.bottom, right: spot.right }}
-              className={`ok-sticker absolute flex min-w-[152px] flex-col gap-0.5 rounded-[20px] border-2 border-line bg-card p-1.5 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${spot.up ? "origin-bottom-right" : "origin-top-right"} ${open ? "opacity-100" : "scale-90 opacity-0"}`}
+              className={`absolute flex min-w-[152px] flex-col gap-0.5 rounded-[20px] border-2 border-line bg-card p-1.5 shadow-lg transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${spot.up ? "origin-bottom-right" : "origin-top-right"} ${open ? "opacity-100" : "scale-90 opacity-0"}`}
             >
               {STATUS_FILTERS.map((f, i) => {
                 const on = f === value;

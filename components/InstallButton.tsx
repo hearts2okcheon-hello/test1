@@ -47,7 +47,7 @@ export function InstallButton() {
       <button
         type="button"
         onClick={click}
-        className="ok-sticker inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border-2 border-sage-deep bg-sage px-4 py-2 font-display text-[16px] text-white"
+        className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border-2 border-sage-deep bg-sage px-4 py-2 font-display text-[16px] text-white"
       >
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M12 4v11" />

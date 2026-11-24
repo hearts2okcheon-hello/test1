@@ -6,7 +6,7 @@ import { WriteFab } from "@/components/WriteFab";
 import { NEWS_DAYS, getRecentNews } from "@/lib/okinews";
 import { plazaTab } from "@/lib/plaza";
 import { createClient } from "@/lib/supabase/server";
-import type { FeedItem } from "@/lib/types";
+import type { FeedItem, OwnerHome } from "@/lib/types";
 import type { NewsStat } from "./NewsCards";
 import { NewsList, type CommunityPost, type TodayReport } from "./NewsList";
 
@@ -19,16 +19,18 @@ export const dynamic = "force-dynamic";
 export default async function PlazaPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const { tab } = await searchParams;
   const supabase = await createClient();
-  const [recent, feed, reports, posts, auth, admin, owner] = await Promise.all([
+  const [recent, feed, reports, posts, auth, mine, owner] = await Promise.all([
     getRecentNews(),
     supabase.rpc("get_today_feed", { p_limit: 30 }),
     supabase.rpc("get_today_reports", { p_limit: 30 }),
     supabase.rpc("get_community_posts", { p_limit: 30 }),
     supabase.auth.getUser(),
-    supabase.rpc("okc_is_admin"),
+    // 관리자인지, 내 가게가 어디인지 (내 가게에서 올린 사장님 소식에 점 세 개 메뉴를 붙인다, ADR-025)
+    supabase.rpc("get_owner_home"),
     supabase.rpc("okc_owner_mode"),
   ]);
   const signedIn = !!auth.data.user && !auth.data.user.is_anonymous;
+  const home = (mine.data ?? { state: "no_store", is_admin: false }) as OwnerHome;
   const stats = recent.news.length > 0 ? await supabase.rpc("get_news_stats", { p_article_ids: recent.news.map((n) => n.id) }) : { data: [] };
 
   return (
@@ -50,7 +52,8 @@ export default async function PlazaPage({ searchParams }: { searchParams: Promis
             feed={(feed.data ?? []) as FeedItem[]}
             reports={(reports.data ?? []) as TodayReport[]}
             posts={(posts.data ?? []) as CommunityPost[]}
-            isAdmin={!!admin.data && signedIn}
+            isAdmin={home.is_admin && signedIn}
+            myStoreId={home.state === "owner" ? home.store.store_id : null}
             news={recent.news}
             stats={(stats.data ?? []) as NewsStat[]}
             newsLoaded={recent.loaded}

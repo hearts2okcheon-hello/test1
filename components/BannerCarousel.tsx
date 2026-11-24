@@ -21,7 +21,7 @@ export function BannerCarousel({ banners = BANNERS }: { banners?: Banner[] }) {
 }
 
 function BannerSlide({ banner: b }: { banner: Banner }) {
-  const cls = `ok-sticker mx-0.5 flex h-[104px] items-center gap-3 overflow-hidden rounded-[22px] border-2 border-line ${b.image ? "bg-card" : `${TONE[b.tone]} pr-3 pl-[18px]`}`;
+  const cls = `mx-0.5 flex h-[104px] items-center gap-3 overflow-hidden rounded-[22px] border-2 border-line ${b.image ? "bg-card" : `${TONE[b.tone]} pr-3 pl-[18px]`}`;
   const inner = b.image ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={b.image} alt={b.title} className="size-full object-cover" />

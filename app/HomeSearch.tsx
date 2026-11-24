@@ -26,7 +26,7 @@ export function HomeSearch({ stores, menus, children }: { stores: StoreSign[]; m
 
   return (
     <>
-      <label className="ok-sticker flex min-h-[54px] items-center gap-2.5 rounded-full border-2 border-line bg-card px-[18px]">
+      <label className="flex min-h-[54px] items-center gap-2.5 rounded-full border-2 border-line bg-card px-[18px]">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0">
           <circle cx="11" cy="11" r="7" />
           <path d="M20 20l-3.5-3.5" />

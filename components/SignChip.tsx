@@ -7,7 +7,7 @@ export function SignChip({ sign, atTime = null, className = "" }: { sign: SignKi
   return (
     <span
       className={`ok-sign ${className}`}
-      style={{ background: s.bg, color: s.fg, borderColor: s.border, boxShadow: `0 2px 0 ${s.border}`, borderStyle: sign === "checking" ? "dashed" : "solid" }}
+      style={{ background: s.bg, color: s.fg, borderColor: s.border, borderStyle: sign === "checking" ? "dashed" : "solid" }}
     >
       <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: s.dot }} />
       {signChip(sign, atTime)}

@@ -31,7 +31,7 @@ export function Bell({ off = false, size = 30 }: { off?: boolean; size?: number 
 /** 동그란 알림 버튼의 모양만 (누르는 동작은 밖에서 감싼다). 흰 바탕 대신 종이색, 켜지면 황갈색 테두리 · 꺼지면 빨간 테두리 */
 export function BellFace({ on, count = 0 }: { on: boolean; count?: number }) {
   return (
-    <span className={`ok-sticker relative flex size-12 shrink-0 items-center justify-center rounded-full border-2 bg-cream ${on ? "border-line-strong text-olive" : "border-coral text-danger"}`}>
+    <span className={`relative flex size-12 shrink-0 items-center justify-center rounded-full border-2 bg-cream ${on ? "border-line-strong text-olive" : "border-coral text-danger"}`}>
       <Bell off={!on} />
       {count > 0 && (
         <span className="absolute -top-1.5 -right-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-[#E5484D] px-1 text-[13px] leading-none font-bold text-white">

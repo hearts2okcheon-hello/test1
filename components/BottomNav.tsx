@@ -10,6 +10,10 @@ const TABS = [
   { href: "/owner", label: "내 공간", match: (p: string) => p.startsWith("/owner"), paths: ["M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M4.5 20a7.5 7.5 0 0 1 15 0"] },
 ];
 
+/**
+ * 아래 탭 줄. 높이(윗선 2px + 72px + 홈 막대 자리)는 globals.css 의 --ok-nav-height 와 같아야 한다:
+ * 떠 있는 쓰기 버튼(WriteFab)이 그 값만큼 위에 붙는다
+ */
 export function BottomNav() {
   const path = usePathname();
   return (

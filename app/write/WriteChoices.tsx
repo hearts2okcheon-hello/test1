@@ -7,7 +7,7 @@ import { Osori } from "@/components/Osori";
 import { ReportSheet } from "@/components/ReportSheet";
 import { pushWithLoading } from "@/lib/nav";
 
-const CARD = "ok-sticker flex items-center gap-3 rounded-[22px] border-2 border-line bg-card px-4 py-3.5 text-left";
+const CARD = "flex items-center gap-3 rounded-[22px] border-2 border-line bg-card px-4 py-3.5 text-left";
 
 /** 쓰기: 이웃 제보 또는 사장님 소식. 사장님 소식은 가게를 등록하는(한) 사람(owner)에게만 보인다 (ADR-019) */
 export function WriteChoices({ stores, owner }: { stores: { store_id: string; name: string }[]; owner: boolean }) {

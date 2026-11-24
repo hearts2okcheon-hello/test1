@@ -16,7 +16,7 @@ export function StoreList({ stores }: { stores: StoreSign[] }) {
 
   return (
     <>
-      <label className="ok-sticker flex min-h-12 items-center gap-2.5 rounded-full border-2 border-line bg-card px-4">
+      <label className="flex min-h-12 items-center gap-2.5 rounded-full border-2 border-line bg-card px-4">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0">
           <circle cx="11" cy="11" r="7" />
           <path d="M20 20l-3.5-3.5" />
