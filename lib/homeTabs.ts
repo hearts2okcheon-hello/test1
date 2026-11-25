@@ -2,6 +2,7 @@
 // 묶음 탭 안에서는 아래로 카테고리마다 나뉜다. 가게 목록 화면(/stores)의 줄은 전체 다음에 카테고리를 하나씩 둔다
 
 import { CATEGORIES, CATEGORY_GROUPS, categoriesInGroup, categoryOf, groupOf, type Category, type CategoryId, type GroupId } from "./categories";
+import { firstPage } from "./posts";
 import { latestPerStore } from "./signs";
 import type { FeedItem, StoreSign } from "./types";
 
@@ -57,4 +58,15 @@ export function feedInTab(feed: FeedItem[], stores: Pick<StoreSign, "store_id" |
   if (id === "all") return latestPerStore(current);
   const mine = new Set(storesInTab(stores, id).map((s) => s.store_id));
   return latestPerStore(current.filter((f) => mine.has(f.store_id)));
+}
+
+/** 실시간 가게소식 줄에 놓는 글 수. 더 있으면 줄 끝의 "소식 더 보기"가 소통광장의 사장님 소식으로 넘긴다 */
+export const FEED_SHELF = 10;
+
+/**
+ * 옆으로 넘겨 보는 실시간 가게소식 줄 (ADR-026).
+ * total 은 제목 옆에 적는 수(그 탭에 올라온 글 전부), shown 은 줄에 놓는 글(새 글부터 limit 개까지), more 는 줄에 놓지 못한 수
+ */
+export function feedShelf<T>(rows: T[], limit: number = FEED_SHELF): { total: number; shown: T[]; more: number } {
+  return { total: rows.length, ...firstPage(rows, false, limit) };
 }

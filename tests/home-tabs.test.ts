@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HOME_TABS, LIST_TABS, feedInTab, neighborHomeTab, neighborListTab, sectionsInTab, storesInTab, tabDirection } from "@/lib/homeTabs";
+import { FEED_SHELF, HOME_TABS, LIST_TABS, feedInTab, feedShelf, neighborHomeTab, neighborListTab, sectionsInTab, storesInTab, tabDirection } from "@/lib/homeTabs";
 import { innerPagerTakes, setInnerPager, shouldCommitSwipe } from "@/lib/swipe";
 import type { FeedItem, StoreSign } from "@/lib/types";
 
@@ -68,6 +68,28 @@ describe("실시간 가게소식 (T-HOME-04)", () => {
   it("올라온 글이 없으면 비어 있다 (그때는 칸을 그리지 않는다)", () => {
     expect(feedInTab(FEED, STORES, "beauty")).toEqual([]);
     expect(feedInTab([], STORES, "all")).toEqual([]);
+  });
+});
+
+describe("실시간 가게소식을 옆으로 넘겨 보는 줄 (T-HOME-06)", () => {
+  const rows = (n: number) => Array.from({ length: n }, (_, i) => `글${i + 1}`);
+
+  it("제목 옆의 수는 올라온 글 전부다 (줄에 놓인 수가 아니다)", () => {
+    expect(feedShelf(rows(3)).total).toBe(3);
+    expect(feedShelf(rows(FEED_SHELF + 4)).total).toBe(FEED_SHELF + 4);
+  });
+  it("줄에는 새 글부터 열 개까지 놓고, 더 있으면 남은 수를 알려 준다 (줄 끝의 더 보기)", () => {
+    expect(FEED_SHELF).toBe(10);
+    const shelf = feedShelf(rows(14));
+    expect(shelf.shown).toEqual(rows(10));
+    expect(shelf.more).toBe(4);
+  });
+  it("열 개까지는 모두 놓고 더 보기가 없다", () => {
+    expect(feedShelf(rows(10))).toEqual({ total: 10, shown: rows(10), more: 0 });
+    expect(feedShelf(rows(1))).toEqual({ total: 1, shown: ["글1"], more: 0 });
+  });
+  it("올라온 글이 없으면 놓을 것도 없다", () => {
+    expect(feedShelf([])).toEqual({ total: 0, shown: [], more: 0 });
   });
 });
 

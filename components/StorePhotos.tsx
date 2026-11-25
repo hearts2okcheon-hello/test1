@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PHOTO_CATEGORIES } from "@/lib/signs";
+import { revealFocused } from "@/lib/swipeDom";
 import type { StorePhoto } from "@/lib/types";
 
 const LABEL = Object.fromEntries(PHOTO_CATEGORIES.map((c) => [c.id, c.label])) as Record<StorePhoto["category"], string>;
@@ -44,7 +45,7 @@ export function StorePhotos({ photos, editHref }: { photos: StorePhoto[]; editHr
   return (
     <section aria-label="가게 사진" className="flex flex-col gap-2">
       {/* 화면 양 끝까지 닿게 놓는다. 다음 사진이 조금 보여서 옆으로 넘길 수 있음을 알 수 있다 */}
-      <div data-no-swipe className="ok-scroll-x -mx-5 flex snap-x gap-2 overflow-x-auto scroll-px-5 px-5">
+      <div data-no-swipe onFocus={revealFocused} className="ok-scroll-x -mx-5 flex snap-x gap-2 overflow-x-auto scroll-px-5 px-5">
         {photos.map((p, i) => (
           <button
             key={p.id}

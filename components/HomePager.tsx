@@ -5,13 +5,13 @@ import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from
 import { flushSync } from "react-dom";
 import { HomeFavorites } from "@/app/HomeFavorites";
 import { CATEGORY_GROUPS, categoryById } from "@/lib/categories";
-import { HOME_TABS, feedInTab, homeTabName, neighborHomeTab, sectionsInTab, storesInTab, tabDirection, type HomeTabId, type TabGroupId } from "@/lib/homeTabs";
+import { HOME_TABS, feedInTab, feedShelf, homeTabName, neighborHomeTab, sectionsInTab, storesInTab, tabDirection, type HomeTabId, type TabGroupId } from "@/lib/homeTabs";
 import { TAB_RESELECT } from "@/lib/nav";
 import { feedHref } from "@/lib/posts";
 import { feedDetail, feedTag } from "@/lib/signs";
 import { filterByStatus, storeStatus, type StatusFilter } from "@/lib/storeFilter";
 import { setInnerPager, shouldCommitSwipe, swipeLock } from "@/lib/swipe";
-import { blocksSwipe } from "@/lib/swipeDom";
+import { blocksSwipe, revealFocused } from "@/lib/swipeDom";
 import type { FeedItem, StoreSign } from "@/lib/types";
 import { CategoryIcon } from "./CategoryIcon";
 import { StatusSelect } from "./StatusSelect";
@@ -20,8 +20,6 @@ import { TimeAgo } from "./TimeAgo";
 
 /** 홈에서는 가게를 구역마다 이만큼씩만 보여 주고, 더 있으면 "더 보기"로 넘긴다 */
 const STORE_LIMIT = 10;
-/** 실시간 가게소식은 이만큼만 보여 주고, 더 있으면 소통광장의 사장님 소식으로 넘긴다 */
-const FEED_LIMIT = 5;
 const SLIDE_MS = 240;
 const BACK_MS = 200;
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -365,43 +363,115 @@ function TabPane({ id, feed, favoriteIds, ...rest }: PaneProps & { id: HomeTabId
 }
 
 /**
- * 그 탭의 "실시간 가게소식" (ADR-022): 영업시간 변경 · 임시휴무 · 외출 · 사장님 소식과 공지를 짧게 보여 준다.
+ * 그 탭의 "실시간 가게소식" (ADR-022, ADR-026): 영업시간 변경 · 임시휴무 · 외출 · 사장님 소식과 공지를 짧게 보여 준다.
  * 올라온 글이 있을 때만 그린다. 없으면 빈 칸도 여백도 두지 않는다.
- * 글마다 종류(공지 · 소식 · 임시휴무 · 외출 중 …)를 붙여 구별한다
+ * 제목 옆에 올라온 수를 적고, 글은 작은 칸으로 옆으로 늘어놓아 밀어서 넘겨 본다 (다음 칸이 조금 보여서 넘길 수 있음을 알 수 있다).
+ * 글이 하나뿐이면 넘길 것이 없으니 가로를 다 쓰는 한 칸으로 둔다. 줄에 다 놓지 못하면 줄 끝이 "소식 더 보기"다
  */
 function LiveNews({ rows, name }: { rows: FeedItem[]; name: string }) {
-  if (rows.length === 0) return null;
+  const { total, shown, more } = feedShelf(rows);
+  const strip = useRef<HTMLUListElement>(null);
+  // 줄을 더 넘길 수 있는 쪽 (넘치지 않으면 둘 다 false)
+  const [reach, setReach] = useState({ prev: false, next: false });
+
+  useEffect(() => {
+    const el = strip.current;
+    if (!el) return;
+    const measure = () => {
+      const now = { prev: el.scrollLeft > 2, next: el.scrollLeft < el.scrollWidth - el.clientWidth - 2 };
+      setReach((cur) => (cur.prev === now.prev && cur.next === now.next ? cur : now));
+    };
+    measure();
+    el.addEventListener("scroll", measure, { passive: true });
+    const watch = new ResizeObserver(measure);
+    watch.observe(el);
+    return () => {
+      el.removeEventListener("scroll", measure);
+      watch.disconnect();
+    };
+  }, [total]);
+
+  if (total === 0) return null;
+  const single = total === 1;
+  const nudge = (dir: 1 | -1) => strip.current?.scrollBy({ left: dir * strip.current.clientWidth * 0.8, behavior: calm() ? "auto" : "smooth" });
+
   return (
     <section aria-label={`${name} 실시간 가게소식`} className="flex flex-col gap-2.5">
       <div className="flex items-center gap-2">
-        <h2 className="flex min-w-0 flex-1 items-center gap-2 font-display text-[19px] font-normal">
-          <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-coral" />
+        <h2 className="flex min-w-0 flex-1 items-baseline gap-2 font-display text-[19px] font-normal">
+          <span aria-hidden className="size-2.5 shrink-0 self-center rounded-full bg-coral" />
           실시간 가게소식
+          <span className="font-sans text-sm text-muted">
+            <b className="text-ink">{total}</b>개
+          </span>
         </h2>
-        {rows.length > FEED_LIMIT && <MoreLink href="/news?tab=owner" label="가게소식 더 보기" />}
+        {/* 마우스로는 옆으로 밀 수 없으니, 마우스를 쓰는 화면에서 줄이 넘칠 때만 넘김 단추를 둔다 */}
+        {(reach.prev || reach.next) && (
+          <span className="hidden gap-1.5 pointer-fine:flex">
+            <StripArrow dir={-1} label="앞 소식 보기" disabled={!reach.prev} onClick={() => nudge(-1)} />
+            <StripArrow dir={1} label="다음 소식 보기" disabled={!reach.next} onClick={() => nudge(1)} />
+          </span>
+        )}
       </div>
-      <ul className="flex flex-col rounded-[22px] border-2 border-line bg-card px-4">
-        {rows.slice(0, FEED_LIMIT).map((f, i) => {
-          const tag = feedTag(f);
-          return (
-            <li key={`${f.item_type}-${f.item_id}`} className={i > 0 ? "border-t-2 border-line" : ""}>
-              <Link href={feedHref(f)} className="flex flex-col gap-1 py-2.5">
-                <span className="flex items-center gap-2">
-                  <span className="shrink-0 rounded-[9px] px-2 py-0.5 font-display text-[13px] leading-snug" style={{ background: tag.bg, color: tag.fg }}>
-                    {tag.label}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate font-display text-base">{f.store_name}</span>
-                  <span className="shrink-0 text-[13px] text-muted">
-                    {f.source === "owner" ? "사장님" : "옥천신문"} · <TimeAgo iso={f.created_at} />
-                  </span>
-                </span>
-                <span className="line-clamp-2 text-[15px] leading-snug">{feedDetail(f)}</span>
-              </Link>
-            </li>
-          );
-        })}
+      {/* 화면 양 끝까지 닿게 놓는다. 위아래 여백은 글쇠로 고른 칸의 초록 테두리가 잘리지 않게 두는 자리다 (바깥 여백으로 되돌려 간격은 그대로) */}
+      <ul ref={strip} onFocus={revealFocused} className="ok-scroll-x -mx-5 -my-1.5 flex snap-x gap-2.5 overflow-x-auto scroll-px-5 px-5 py-1.5">
+        {shown.map((f) => (
+          <li key={`${f.item_type}-${f.item_id}`} className={`flex shrink-0 snap-start ${single ? "w-full" : NEWS_CARD_W}`}>
+            <NewsCard item={f} wide={single} />
+          </li>
+        ))}
+        {more > 0 && (
+          <li className="flex shrink-0 snap-start">
+            <Link href="/news?tab=owner" className={`flex ${NEWS_CARD_H} w-[136px] flex-col items-center justify-center gap-1 rounded-[20px] border-2 border-dashed border-line-strong bg-cream font-display text-[17px]`}>
+              소식 더 보기
+              <span className="font-sans text-sm text-muted">{more}개 더</span>
+            </Link>
+          </li>
+        )}
       </ul>
     </section>
+  );
+}
+
+/** 옆으로 넘기는 줄의 넘김 단추 (마우스를 쓰는 화면에서만 보인다) */
+function StripArrow({ dir, label, disabled, onClick }: { dir: 1 | -1; label: string; disabled: boolean; onClick: () => void }) {
+  return (
+    <button type="button" aria-label={label} disabled={disabled} onClick={onClick} className="flex size-9 items-center justify-center rounded-full border-2 border-line bg-card disabled:opacity-40">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d={dir === 1 ? "M9 6l6 6-6 6" : "M15 6l-6 6 6 6"} />
+      </svg>
+    </button>
+  );
+}
+
+// 작은 칸의 크기: 소통광장의 사장님 소식 칸(335×161쯤)을 같은 비율로 0.78배 줄였다 (가로 2.1 : 세로 1).
+// 높이는 내용이 두 줄일 때의 높이라서 한 줄짜리 글만 있어도 칸 높이가 같다. 좁은 화면에서도 다음 칸이 보이게 가로는 80%를 넘지 않는다
+const NEWS_CARD_W = "w-[min(264px,80%)]";
+const NEWS_CARD_H = "min-h-[125px]";
+
+/**
+ * 실시간 가게소식 한 칸: 종류(공지 · 소식 · 임시휴무 · 외출 중 …)와 가게 이름, 내용 두 줄, 올린 사람과 시각.
+ * 작은 칸은 올린 사람·시각을 맨 아래에 두고, 가로를 다 쓰는 칸(wide)은 첫 줄 오른쪽에 둔다
+ */
+function NewsCard({ item: f, wide }: { item: FeedItem; wide: boolean }) {
+  const tag = feedTag(f);
+  const when = (
+    <>
+      {f.source === "owner" ? "사장님" : "옥천신문"} · <TimeAgo iso={f.created_at} />
+    </>
+  );
+  return (
+    <Link href={feedHref(f)} className={`flex w-full flex-col border-2 border-line bg-card ${wide ? "gap-1 rounded-[22px] px-4 py-2.5" : `${NEWS_CARD_H} gap-1.5 rounded-[20px] px-3.5 py-3`}`}>
+      <span className="flex items-center gap-2">
+        <span className="shrink-0 rounded-[9px] px-2 py-0.5 font-display text-[13px] leading-snug" style={{ background: tag.bg, color: tag.fg }}>
+          {tag.label}
+        </span>
+        <span className="min-w-0 flex-1 truncate font-display text-base">{f.store_name}</span>
+        {wide && <span className="shrink-0 text-[13px] text-muted">{when}</span>}
+      </span>
+      <span className="line-clamp-2 text-[15px] leading-snug break-words">{feedDetail(f)}</span>
+      {!wide && <span className="mt-auto text-[13px] text-muted">{when}</span>}
+    </Link>
   );
 }
 
