@@ -18,6 +18,9 @@ const TONE_TEXT: Record<DayTone, string> = { closed: "text-red", plan: "text-blu
 const REASON_MAX = 200;
 const REASON_CHIPS = ["가족 행사", "개인 사정", "가게 공사", "병원 진료"];
 const FIELD = "min-h-14 w-full min-w-0 rounded-2xl border-2 border-line bg-white px-3 text-lg";
+// 날짜 칸: 아이폰은 날짜 칸을 제 기본 모양으로 그려서, 정해 준 너비를 따르지 않고 190px쯤 아래로는 줄지 않는다 (좁은 자리에 넣으면 옆 칸을 덮는다).
+// 기본 모양을 꺼서 다른 칸처럼 정해 준 너비를 따르게 한다
+const DATE_FIELD = `${FIELD} appearance-none`;
 
 /** 일정 유형 그림: 휴무(침대) · 늦게 열어요(시계) · 일찍 닫아요(문) · 외출(가방) */
 const KIND_ICON: Record<ScheduleKind, string[]> = {
@@ -368,14 +371,16 @@ export function OwnerCalendar({
                 </svg>
               </button>
               {periodOpen && (
-                <div id={`${uid}-period`} className="grid grid-cols-2 gap-2">
-                  <label className="flex min-w-0 flex-col gap-1.5">
+                // 날짜 칸은 칸마다 200px 넘게 자리가 날 때만 나란히 놓인다. 휴대폰 폭에서는 한 줄에 하나씩이라,
+                // 아이폰이 날짜 칸을 제 너비대로 그리더라도 두 칸이 서로 닿거나 화면 밖으로 나가지 않는다
+                <div id={`${uid}-period`} className="flex flex-wrap gap-3">
+                  <label className="flex min-w-0 grow basis-[200px] flex-col gap-1.5">
                     <span className="text-lg font-bold">시작하는 날</span>
-                    <input type="date" value={start ?? ""} min={today} max={last} disabled={startLocked} onChange={(e) => typeStart(e.target.value)} className={`${FIELD} disabled:bg-sand disabled:text-muted`} />
+                    <input type="date" value={start ?? ""} min={today} max={last} disabled={startLocked} onChange={(e) => typeStart(e.target.value)} className={`${DATE_FIELD} disabled:bg-sand disabled:text-muted`} />
                   </label>
-                  <label className="flex min-w-0 flex-col gap-1.5">
+                  <label className="flex min-w-0 grow basis-[200px] flex-col gap-1.5">
                     <span className="text-lg font-bold">끝나는 날</span>
-                    <input type="date" value={end ?? ""} min={start && start > today ? start : today} max={last} onChange={(e) => typeEnd(e.target.value)} className={FIELD} />
+                    <input type="date" value={end ?? ""} min={start && start > today ? start : today} max={last} onChange={(e) => typeEnd(e.target.value)} className={DATE_FIELD} />
                   </label>
                 </div>
               )}
