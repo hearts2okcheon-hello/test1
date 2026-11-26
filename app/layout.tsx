@@ -6,6 +6,7 @@ import { InAppGate } from "@/components/InAppGate";
 import { NavLoading } from "@/components/NavLoading";
 import { OwnerAlertHost } from "@/components/OwnerAlertHost";
 import { PwaSetup } from "@/components/PwaSetup";
+import { SessionGuard } from "@/components/SessionGuard";
 import { Splash } from "@/components/Splash";
 import { BadgeSync } from "@/components/BadgeSync";
 import { TabSwipe } from "@/components/TabSwipe";
@@ -67,6 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <TabSwipe />
         <PwaSetup />
         <BadgeSync />
+        <SessionGuard />
       </body>
     </html>
   );

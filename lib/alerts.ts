@@ -1,6 +1,35 @@
 import { createClient } from "./supabase/client";
 
-export type AlertItem = { id: number; title: string; body: string; url: string; created_at: string; is_read: boolean };
+/** 알림 종류 (ADR-013 의 네 가지): 즐겨찾는 가게 소식 · 오픈 시간 확인 · 이웃 제보(사장님께) · 제보 답장. 모르는 것은 other */
+export type AlertKind = "favorite" | "open_check" | "report" | "reply" | "other";
+const ALERT_KINDS: AlertKind[] = ["favorite", "open_check", "report", "reply", "other"];
+
+/**
+ * 받은 알림 하나 (get_my_alerts). kind 와 needs_action 은 DB 가 정해서 준다:
+ * needs_action 은 "아직 할 일이 남은 가장 새 알림"일 때만 참 (오늘 온 오픈 시간 확인인데 아직 오늘 소식을 올리지 않았을 때)
+ */
+export type AlertItem = { id: number; title: string; body: string; url: string; created_at: string; is_read: boolean; kind?: string | null; needs_action?: boolean | null };
+
+/** 서버가 알려 준 종류. 모르는 값이면 other (그때는 기본 아이콘) */
+export function alertKind(value: string | null | undefined): AlertKind {
+  return ALERT_KINDS.find((k) => k === value) ?? "other";
+}
+
+/** 목록에 보일 제목. 휴대폰 알림용으로 앞에 붙인 그림 글자(⭐ 🔔 💬)는 뗀다. 종류는 아이콘이 알려 준다 */
+export function alertTitle(title: string): string {
+  return title.replace(/^(?:⭐|🔔|💬)️?\s*/u, "");
+}
+
+export const ALERT_ACTION_LABEL = "영업 상태 설정";
+
+/**
+ * 알림 아래에 보일 "누를 곳". 할 일이 남은 오픈 시간 확인에만 있다 (이미 처리했거나 날이 지났으면 DB 가 needs_action 을 거짓으로 준다).
+ * 소식만 전하는 알림에는 없다
+ */
+export function alertAction(a: AlertItem): { label: string; href: string } | null {
+  if (alertKind(a.kind) !== "open_check" || a.needs_action !== true) return null;
+  return { label: ALERT_ACTION_LABEL, href: a.url || "/owner/store" };
+}
 
 /** 안 읽은 수가 바뀌었음을 벨 버튼에 알리는 이벤트 */
 export const ALERT_COUNT = "ok:alert-count";

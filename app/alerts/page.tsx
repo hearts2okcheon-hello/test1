@@ -11,7 +11,7 @@ export default async function AlertsPage() {
   const { data } = await supabase.rpc("get_my_alerts", { p_limit: 60 });
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-5 pt-4 pb-8">
+    <main className="flex flex-1 flex-col gap-4 px-5 pt-4 pb-[calc(2rem+env(safe-area-inset-bottom))]">
       <header className="flex items-center gap-2.5">
         <BackButton />
         <h1 className="font-display text-[23px] font-normal">알림</h1>

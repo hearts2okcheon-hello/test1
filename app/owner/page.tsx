@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminDoor } from "@/components/AdminDoor";
-import { Avatar } from "@/components/Avatar";
 import { BottomNav } from "@/components/BottomNav";
+import { ProfileCard } from "@/components/ProfileCard";
 import { SignOutButton } from "@/components/SignOutButton";
 import { MyMenu } from "@/components/MyMenu";
-import { formatPhone } from "@/lib/hours";
 import { showsStoreMenu } from "@/lib/intent";
 import { kakaoEnv } from "@/lib/kakao";
 import { createClient } from "@/lib/supabase/server";
@@ -14,7 +13,7 @@ import { KakaoLogin } from "./KakaoLogin";
 
 export const dynamic = "force-dynamic";
 
-/** 내 공간 탭 (ADR-014): 로그인 → 내 정보 등록 → 프로필과 그 아래 메뉴 목록(components/MyMenu) */
+/** 내 공간 탭 (ADR-014): 로그인 → 내 정보 등록 → 프로필 카드(누르면 내 정보)와 그 아래 메뉴 목록(components/MyMenu) */
 export default async function MyInfoPage({ searchParams }: { searchParams: Promise<{ login?: string; back?: string }> }) {
   const { login, back } = await searchParams;
   const supabase = await createClient();
@@ -57,23 +56,8 @@ export default async function MyInfoPage({ searchParams }: { searchParams: Promi
           <AdminDoor href={adminHref} />
         </div>
 
-        {/* 내 프로필 */}
-        <section className="flex items-center gap-3.5 rounded-[22px] border-2 border-line bg-card px-4 py-4">
-          <Avatar url={profile.avatar_url} size={68} />
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            {profile.registered ? (
-              <>
-                <span className="truncate font-display text-[20px] leading-tight">{profile.name}</span>
-                {profile.nickname && <span className="truncate text-[15px] font-bold text-sage-deep">{profile.nickname}</span>}
-                <span className="truncate text-sm text-muted">
-                  {[profile.area, profile.phone ? formatPhone(profile.phone) : null].filter(Boolean).join(" · ")}
-                </span>
-              </>
-            ) : (
-              <span className="font-display text-lg leading-snug">내 정보를 등록해 주세요</span>
-            )}
-          </div>
-        </section>
+        {/* 내 프로필: 누르면 내 정보로 간다 (메뉴 목록에는 내 정보 줄이 없다, ADR-029) */}
+        <ProfileCard avatarUrl={profile.avatar_url} name={profile.name} nickname={profile.nickname} registered={profile.registered} />
 
         <MyMenu
           registered={profile.registered}
@@ -82,16 +66,15 @@ export default async function MyInfoPage({ searchParams }: { searchParams: Promi
           showStore={showsStoreMenu({ wantsStore: profile.wants_store, hasStore: !!store, hasCode: !!home.code })}
         />
 
-        <div className="mt-auto flex flex-col items-center gap-1.5 border-t-2 border-line pt-4">
+        {/* 메뉴와 선으로 나눈 아래쪽 (ADR-027): 가로를 다 쓰는 로그아웃 버튼 → 도움말 → (관리자에게만) 관리자 화면으로 가는 줄 */}
+        <div className="mt-auto flex flex-col gap-3 border-t-2 border-line pt-4">
+          <SignOutButton wide />
           {store && <p className="text-center text-sm leading-normal text-muted">앱이 어려우시면 옥천신문이 전화로 대신 올려드려요.</p>}
-          <div className="flex items-center gap-2">
-            {home.is_admin && (
-              <Link href="/admin" className="flex min-h-12 items-center rounded-2xl px-4 text-base font-bold text-muted">
-                관리자
-              </Link>
-            )}
-            <SignOutButton label="로그아웃" plain />
-          </div>
+          {home.is_admin && (
+            <Link href="/admin" className="flex min-h-12 items-center self-center rounded-2xl px-4 text-base font-bold text-muted">
+              관리자
+            </Link>
+          )}
         </div>
       </main>
       <BottomNav />

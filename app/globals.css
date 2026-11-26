@@ -325,6 +325,103 @@ a:active {
   to { opacity: 0; visibility: hidden; }
 }
 
+/* ── 저장·올리기 버튼 (components/SubmitButton.tsx, ADR-028) ──
+   버튼의 크기·자리·모서리는 그대로 두고, 안의 표시(도는 고리 → 체크)와 글자만 바뀐다.
+   바뀌는 길이 250ms 는 lib/submit.ts 의 SUBMIT_TRANSITION_MS 와 같다.
+   components 층에 두어, 화면마다 붙이는 Tailwind 클래스(disabled:bg-sand 같은)가 이것을 이긴다 */
+@layer components {
+  .ok-submit {
+    --ok-submit-ms: 250ms;
+    transition: background-color var(--ok-submit-ms) ease, border-color var(--ok-submit-ms) ease;
+  }
+
+  /* 표시 자리: 기본 상태에서는 너비가 0 이라 글자만 가운데 놓이고, 상태가 생기면 글자 왼쪽에 열린다 */
+  .ok-submit-mark {
+    position: relative;
+    flex-shrink: 0;
+    width: 0;
+    height: 1.15em;
+    margin-right: 0;
+    opacity: 0;
+    transition: width var(--ok-submit-ms) ease, margin-right var(--ok-submit-ms) ease, opacity var(--ok-submit-ms) ease;
+  }
+  .ok-submit:not([data-phase="idle"]) .ok-submit-mark {
+    width: 1.15em;
+    margin-right: 0.45em;
+    opacity: 1;
+  }
+
+  /* 고리 · 체크 · 다시 시도 화살표를 같은 자리에 겹쳐 두고, 지금 상태의 것만 보인다 */
+  .ok-submit-icon {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity var(--ok-submit-ms) ease, transform var(--ok-submit-ms) ease;
+  }
+  .ok-submit[data-phase="working"] .ok-submit-spin,
+  .ok-submit[data-phase="done"] .ok-submit-check,
+  .ok-submit[data-phase="failed"] .ok-submit-retry {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .ok-submit-ring {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0.14em solid currentColor;
+    border-top-color: color-mix(in srgb, currentColor 28%, transparent);
+    border-radius: 9999px;
+  }
+  .ok-submit[data-phase="working"] .ok-submit-ring {
+    animation: ok-submit-spin 0.8s linear infinite;
+  }
+
+  /* 체크는 왼쪽부터 그려진다 */
+  .ok-submit-check path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  .ok-submit[data-phase="done"] .ok-submit-check path {
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset var(--ok-submit-ms) ease-out 60ms;
+  }
+
+  .ok-submit-label {
+    display: inline-block;
+  }
+  .ok-submit:not([data-phase="idle"]) .ok-submit-label {
+    animation: ok-submit-text var(--ok-submit-ms) ease-out;
+  }
+}
+
+/* 처리 중 · 완료 표시 중에는 눌러도 아무 일이 없으니, 눌리는 느낌(내려가기 · 어두워지기)도 없다 */
+button.ok-submit[aria-disabled="true"] {
+  cursor: default;
+}
+button.ok-submit[aria-disabled="true"]:active {
+  transform: none;
+  filter: none;
+}
+
+@keyframes ok-submit-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ok-submit-text {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 움직임을 줄인 기기: 고리가 도는 대신 천천히 깜빡인다 */
+@keyframes ok-submit-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 .ok-bob { animation: ok-bob 1.6s ease-in-out infinite; }
 .ok-pop { animation: ok-pop 0.2s ease-out; }
 .ok-ring { animation: ok-ring 1.8s ease-in-out infinite; transform-origin: 50% 10%; }
@@ -338,4 +435,8 @@ a:active {
   .ok-splash { transition-delay: 0ms; }
   .ok-gauge { width: 70%; }
   .ok-ripple { animation-name: ok-ripple-still; }
+  /* 저장·올리기 버튼: 표시와 글자가 움직임 없이 바로 바뀐다 */
+  .ok-submit, .ok-submit-mark, .ok-submit-icon, .ok-submit[data-phase="done"] .ok-submit-check path { transition: none; }
+  .ok-submit:not([data-phase="idle"]) .ok-submit-label { animation: none; }
+  .ok-submit[data-phase="working"] .ok-submit-ring { animation: ok-submit-blink 1.2s ease-in-out infinite; }
 }

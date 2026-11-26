@@ -247,13 +247,14 @@ create table events (                -- 시범 지표 측정용
 | `/stores/[id]/posts/[postId]` | 사장님 소식 글 하나 — 글과 사진, 그 아래 가게로 가는 줄. 가게를 고칠 수 있는 사람에게는 오른쪽 위 점 세 개 메뉴(수정 · 삭제). 공감·댓글 없음 (ADR-025) | 주민 |
 | `/stores/[id]/posts/[postId]/edit` | 사장님 소식 글 하나 고치기 — 저장·취소하면 들어온 화면으로 돌아간다. 가게를 고칠 수 없으면 글 화면으로 돌려보냄 (ADR-025) | 사장님·관리자 |
 | `/news/[id]` · `/news/[id]/edit` | 동네 이야기 글 하나(공감 · 댓글, 내 글이면 점 세 개 메뉴. 고친 글에는 공감·댓글 줄 오른쪽 끝에 "수정됨" — 소통광장 목록에서도 같다) · 내 글 고치기(글쓴이만) (ADR-012, ADR-025) | 주민 · 글쓴이 |
-| `/owner` | 사장님 홈 — 내 가게 현재 팻말, 공지 버튼 5개, 쪽지 입력, **확인 질문 카드(네/아니요)** 상단 고정 | 사장님 |
+| `/owner` | 내 공간 — 로그인 전에는 카카오 로그인. 로그인하면 프로필 카드(사진 · 이름 · 닉네임 · "내 정보 관리". 카드 전체를 누르면 내 정보로 가고, 사는 곳·전화번호는 적지 않는다. ADR-029), 메뉴 목록(내 가게 · 소식·공지 올리기 · 가게 캘린더 · 가게 정보 고치기 · 즐겨찾는 가게 · 알림), 선 아래에 가로를 다 쓰는 로그아웃 버튼. 로그아웃은 확인 창(취소 / 로그아웃)을 거치고, 늦어질 때만 스피너, 실패하면 다시 시도, 끝나면 비로그인 홈을 통째로 새로 받는다 (ADR-014, ADR-027) | 주민 · 사장님 |
 | `/owner/store` | 내 가게 — 오늘의 가게 상태(영업 중 · 오늘 휴무) → 오늘 소식(누르면 바로 방송) → 다가오는 일정 → 내가 올린 소식(고치기는 그 글만 고치는 화면으로, 지우기) → 휴대폰 알림 받기. 소식 올리기·캘린더·가게 정보 고치기는 내 공간 메뉴에서 (ADR-025) | 사장님 |
 | `/owner/favorites` | 내 공간 → 즐겨찾는 가게 — 별을 누른 가게들을 가게 칸으로 모아 본다 (ADR-024) | 주민 |
+| `/alerts` | 받은 알림 — 위에 알림 켜기·끄기 카드, 그 아래 "안 읽은 알림 N개"와 "모두 읽음", 오늘 · 이번 주 · 이전으로 묶은 알림. 알림마다 종류 아이콘(별 · 시계 · 확성기 · 말풍선), 제목과 같은 줄 오른쪽 위에 온 시각, 안 읽은 알림은 옅은 바탕 + 굵은 제목. 할 일이 남은 오픈 시간 확인에만 "영업 상태 설정 ›" (ADR-013, ADR-030) | 로그인한 주민 · 사장님 |
 | `/owner/profile` | 내 정보 등록·고치기 — 이름 · 닉네임 · 사는 곳 · 전화번호, 그 아래 "가게를 등록할 것입니까?"(예 · 아니요). 아니요면 내 공간에 가게 등록하기가 보이지 않는다 (ADR-014, ADR-019) | 로그인한 주민 |
 | `/owner` (연결 전) | 사장님 코드 입력(글자 버튼 + 숫자 5자리) | 사장님 |
 | `/owner/register` | 처음 가게 등록 (7구역) | 사장님 |
-| `/owner/edit` · `/owner/news` · `/owner/calendar` | 가게 수정(`#photos` 로 사진 칸에 바로) · 소식·공지 쓰기(고치기는 `/stores/[id]/posts/[postId]/edit`) · 가게 캘린더(날짜 기간 → 유형 → 일정 등록, 등록된 일정 고치기·지우기. ADR-015). 예전 `/owner/closure`는 캘린더로 보낸다 | 사장님 |
+| `/owner/edit` · `/owner/news` · `/owner/calendar` | 가게 수정(`#photos` 로 사진 칸에 바로) · 소식·공지 쓰기(고치기는 `/stores/[id]/posts/[postId]/edit`) · 가게 캘린더(날짜 기간 → 유형 → 저장하기, 등록된 일정 고치기·지우기. ADR-015). 예전 `/owner/closure`는 캘린더로 보낸다. 저장·올리기 버튼은 버튼 안에서 처리 중 → 완료로 바뀌고(화면을 가리는 로딩 창 없음), 소식·공지를 올리면 소통광장의 사장님 소식 줄로 간다 (ADR-028) | 사장님 |
 | `/admin` | 옥천신문 — 탭: 사장님 코드 / 게시물 / 엇갈림·무응답 / 대리 등록 / 가게 관리 / 지표. 이용자 정보 → 가게 정보에서 가게에 옥천신문 기사를 붙이고 뗀다 (ADR-020) | 관리자 |
 
 ### 5.3 핵심 플로우
@@ -302,6 +303,7 @@ MVP에 푸시 알림은 없다(brd 범위 밖). 그래서:
 | `post_community(body)` · `update_community_post(post, body)` · `delete_community_post(post)` | 카카오 로그인한 주민 | 동네 이야기 쓰기 · 고치기(글쓴이 본인만, 내용이 바뀌면 고친 시각 `updated_at`을 적는다) · 지우기(글쓴이·admin). 작성자 id 는 내보내지 않는다 (ADR-012, ADR-025) |
 | `set_temp_closure(store, start, end, reason?)` · `cancel_temp_closure(id)` | 사장님·admin | 임시휴무 잡기·취소 |
 | `save_schedule(store, kind, start, end, from?, to?, note?, closure_id?, plan_ids?)` · `clear_day_plans(store, plan_ids)` | 사장님·admin | 가게 캘린더: 기간으로 일정 넣기·고치기(들어간 날 수를 돌려줌) · 묶인 일정 지우기 (ADR-015) |
+| `get_my_alerts(limit?)` · `get_my_alert_count()` · `mark_alert_read(id)` · `mark_all_alerts_read()` | 로그인 | 받은 알림(최근 30일, 새것부터) · 안 읽은 수 · 읽음 처리. `get_my_alerts`는 알림마다 `kind`(favorite · open_check · report · reply · other)와 `needs_action`(할 일이 남은 가장 새 오픈 시간 확인일 때만 참: 오늘 온 알림이고 오늘 소식·임시휴무·늦게 여는 일정이 없을 때)을 함께 준다 (ADR-030) |
 | `admin_list_content()` | admin | 소식·댓글 최근 50개 |
 | `admin_upsert_store(store_id?, name, category?, address?, regular_hours?, is_pilot?)` | admin | 가게 등록·수정 (store_id가 없으면 새로 등록) |
 | `admin_get_queue()` | admin | 엇갈림·무응답 제보 |

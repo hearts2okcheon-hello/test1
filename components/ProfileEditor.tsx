@@ -12,6 +12,7 @@ import { AREAS } from "@/lib/plans";
 import { createClient } from "@/lib/supabase/client";
 import type { MyProfile } from "@/lib/types";
 import { Avatar } from "./Avatar";
+import { SubmitButton, SubmitError, useSubmit } from "./SubmitButton";
 import { useToast } from "./Toast";
 
 const INPUT = "min-h-14 w-full min-w-0 rounded-2xl border-2 border-line bg-white px-3.5 text-lg";
@@ -27,6 +28,7 @@ const CHOICE_OFF = "border-line bg-white";
 export function ProfileEditor({ userId, initial, hasStore = false }: { userId: string; initial: MyProfile; hasStore?: boolean }) {
   const router = useRouter();
   const { node, show } = useToast();
+  const submit = useSubmit();
   const registered = initial.registered;
   const [name, setName] = useState(initial.name ?? "");
   const [nickname, setNickname] = useState(initial.nickname ?? "");
@@ -38,33 +40,37 @@ export function ProfileEditor({ userId, initial, hasStore = false }: { userId: s
   const [avatarUrl, setAvatarUrl] = useState(initial.avatar_url);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  // 계정 삭제를 처리하는 중
   const [busy, setBusy] = useState(false);
 
-  async function submit() {
+  /** 저장: 버튼에 "저장했어요!"가 잠깐 보인 뒤 내 공간으로 돌아간다 (화면을 가리는 로딩 창과 따로 뜨는 알림은 없다, ADR-028) */
+  function save() {
+    if (submit.locked || busy) return;
     if (!name.trim()) return show("이름을 써 주세요.", "think");
     if (!area.trim()) return show("사는 곳을 골라 주세요.", "think");
     if (phone.replace(/\D/g, "").length < 9) return show("전화번호를 다시 확인해 주세요.", "think");
     if (wantsStore === null) return show("가게를 등록할지 골라 주세요.", "think");
-    setBusy(true);
-    try {
-      const supabase = createClient();
-      const url = file ? await uploadAvatar(supabase, userId, file) : avatarUrl;
-      const { error } = await supabase.rpc("save_my_profile", {
-        p_name: name.trim(),
-        p_area: area.trim(),
-        p_phone: phone,
-        p_avatar_url: url,
-        p_nickname: nickname.trim() || null,
-        p_wants_store: wantsStore,
-      });
-      if (error) throw error;
-      show(registered ? "내 정보를 고쳤어요." : "내 정보를 등록했어요!", "proud");
-      pushWithLoading(router, "/owner");
-      router.refresh();
-    } catch (e) {
-      show(errorMessage(e), "think");
-      setBusy(false);
-    }
+    submit.run(
+      async () => {
+        const supabase = createClient();
+        const url = file ? await uploadAvatar(supabase, userId, file) : avatarUrl;
+        const { error } = await supabase.rpc("save_my_profile", {
+          p_name: name.trim(),
+          p_area: area.trim(),
+          p_phone: phone,
+          p_avatar_url: url,
+          p_nickname: nickname.trim() || null,
+          p_wants_store: wantsStore,
+        });
+        if (error) throw error;
+      },
+      {
+        then: () => {
+          router.push("/owner");
+          router.refresh();
+        },
+      },
+    );
   }
 
   async function removeAccount() {
@@ -92,7 +98,7 @@ export function ProfileEditor({ userId, initial, hasStore = false }: { userId: s
       className="flex flex-col gap-3.5"
       onSubmit={(e) => {
         e.preventDefault();
-        submit();
+        save();
       }}
     >
       {/* 등록 전에 뒤로 가면 홈이 아니라 로그인 화면으로 */}
@@ -235,16 +241,22 @@ export function ProfileEditor({ userId, initial, hasStore = false }: { userId: s
           <p className="text-base leading-relaxed text-muted">
             내 정보와 즐겨찾기가 지워져요.{hasStore ? " 등록한 가게도 함께 지워져요." : ""} 지운 뒤에도 카카오로 다시 로그인하면 새로 만들 수 있어요.
           </p>
-          <button type="button" disabled={busy} onClick={removeAccount} className="min-h-14 w-fit rounded-2xl border-2 border-line bg-white px-4 text-lg font-bold text-danger disabled:opacity-60">
+          <button type="button" disabled={busy || submit.locked} onClick={removeAccount} className="min-h-14 w-fit rounded-2xl border-2 border-line bg-white px-4 text-lg font-bold text-danger disabled:opacity-60">
             계정 삭제하기
           </button>
         </section>
       )}
 
-      <div className="sticky bottom-0 -mx-[18px] bg-paper px-[18px] pt-2 pb-[max(14px,env(safe-area-inset-bottom))]">
-        <button type="submit" disabled={busy} className="min-h-16 w-full rounded-[22px] border-2 border-sage-deep bg-sage font-display text-[21px] text-white disabled:opacity-60">
-          {busy ? "저장하는 중…" : registered ? "고친 내용 저장" : "내 정보 등록하기"}
-        </button>
+      <div className="sticky bottom-0 -mx-[18px] flex flex-col gap-2 bg-paper px-[18px] pt-2 pb-[max(14px,env(safe-area-inset-bottom))]">
+        <SubmitError message={submit.error} />
+        {/* 처음 등록하는 화면은 버튼 이름을 그대로 둔다 (내 정보 등록하기 → 등록하는 중… → 등록했어요!) */}
+        <SubmitButton
+          kind={registered ? "save" : "register"}
+          idleLabel={registered ? undefined : "내 정보 등록하기"}
+          phase={submit.phase}
+          disabled={busy}
+          className="min-h-16 w-full rounded-[22px] font-display text-[21px] disabled:opacity-60"
+        />
       </div>
       {node}
     </form>

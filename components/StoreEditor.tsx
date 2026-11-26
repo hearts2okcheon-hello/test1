@@ -4,15 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { askDelete } from "@/lib/confirm";
-import { errorMessage } from "@/lib/errors";
 import { formatPhone, kakaoMapUrl } from "@/lib/hours";
 import { uploadStoreImage } from "@/lib/images";
-import { pushWithLoading } from "@/lib/nav";
 import { PHOTO_CATEGORIES, STORE_CATEGORIES } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
 import type { PhotoCategory, RegularHours, StoreMenu, StorePhoto, Weekday } from "@/lib/types";
 import { AddressSearch } from "./AddressSearch";
 import { PhotoPicker } from "./PhotoPicker";
+import { SubmitButton, SubmitError, useSubmit } from "./SubmitButton";
 import { useToast } from "./Toast";
 
 const DAYS: [Weekday, string][] = [
@@ -62,9 +61,9 @@ const CUSTOM_CATEGORY = "__custom";
 export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
   const router = useRouter();
   const { node, show } = useToast();
+  const submit = useSubmit();
   const [storeId, setStoreId] = useState(initial.storeId);
   const registering = initial.storeId === null;
-  const [busy, setBusy] = useState(false);
   const [name, setName] = useState(initial.name);
   const [phone, setPhone] = useState(formatPhone(initial.phone));
   const [phonePublic, setPhonePublic] = useState(initial.phonePublic);
@@ -106,7 +105,8 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
     setMenus((cur) => cur.map((m) => (m.key === key ? { ...m, ...patch } : m)));
   }
 
-  async function submit() {
+  function save() {
+    if (submit.locked) return;
     if (!name.trim()) return show("가게 이름을 써 주세요.", "think");
     if (phone.replace(/\D/g, "").length < 9) return show("전화번호를 다시 확인해 주세요.", "think");
     if (storePhone.trim() && storePhone.replace(/\D/g, "").length < 9) return show("가게 번호를 다시 확인해 주세요. 없으면 비워 두세요.", "think");
@@ -129,57 +129,59 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
       p_address: address.trim() || null,
     };
 
-    setBusy(true);
-    try {
-      const supabase = createClient();
-      let id = storeId;
-      if (id) {
-        const { error } = await supabase.rpc("update_store_profile", { p_store_id: id, ...fields });
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase.rpc("register_store", fields);
-        if (error) throw error;
-        id = data as string;
-        // 사진에서 실패해도 다시 누르면 새 가게가 아니라 수정이 된다
-        setStoreId(id);
-      }
-      const targetId = id;
+    // 저장이 끝나면 버튼에 완료가 잠깐 보인 뒤 옮겨 간다: 등록은 내 가게로, 고치기는 가게 화면으로 (ADR-028)
+    let savedId = "";
+    submit.run(
+      async () => {
+        const supabase = createClient();
+        let id = storeId;
+        if (id) {
+          const { error } = await supabase.rpc("update_store_profile", { p_store_id: id, ...fields });
+          if (error) throw error;
+        } else {
+          const { data, error } = await supabase.rpc("register_store", fields);
+          if (error) throw error;
+          id = data as string;
+          // 사진에서 실패해도 다시 누르면 새 가게가 아니라 수정이 된다
+          setStoreId(id);
+        }
+        const targetId = id;
+        savedId = id;
 
-      const savedMenus = await Promise.all(
-        menus.map(async (m) => ({
-          name: m.name.trim(),
-          price: m.price === "" ? null : Number(m.price),
-          photo_url: m.file ? await uploadStoreImage(supabase, targetId, m.file) : m.photo_url,
-        })),
-      );
-      const savedPhotos = await Promise.all(
-        photos.map(async (p) => ({
-          category: p.category,
-          url: p.file ? await uploadStoreImage(supabase, targetId, p.file) : p.url,
-        })),
-      );
-      const { error: mediaError } = await supabase.rpc("save_store_media", { p_store_id: targetId, p_menus: savedMenus, p_photos: savedPhotos });
-      if (mediaError) throw mediaError;
+        const savedMenus = await Promise.all(
+          menus.map(async (m) => ({
+            name: m.name.trim(),
+            price: m.price === "" ? null : Number(m.price),
+            photo_url: m.file ? await uploadStoreImage(supabase, targetId, m.file) : m.photo_url,
+          })),
+        );
+        const savedPhotos = await Promise.all(
+          photos.map(async (p) => ({
+            category: p.category,
+            url: p.file ? await uploadStoreImage(supabase, targetId, p.file) : p.url,
+          })),
+        );
+        const { error: mediaError } = await supabase.rpc("save_store_media", { p_store_id: targetId, p_menus: savedMenus, p_photos: savedPhotos });
+        if (mediaError) throw mediaError;
 
-      const savedLogo = logoFile ? await uploadStoreImage(supabase, targetId, logoFile) : logoUrl;
-      if (savedLogo !== initial.logoUrl) {
-        const { error: logoError } = await supabase.rpc("set_store_logo", { p_store_id: targetId, p_url: savedLogo });
-        if (logoError) throw logoError;
-      }
+        const savedLogo = logoFile ? await uploadStoreImage(supabase, targetId, logoFile) : logoUrl;
+        if (savedLogo !== initial.logoUrl) {
+          const { error: logoError } = await supabase.rpc("set_store_logo", { p_store_id: targetId, p_url: savedLogo });
+          if (logoError) throw logoError;
+        }
 
-      if (registering && firstPost.trim()) {
-        const { error } = await supabase.rpc("save_store_post", { p_store_id: targetId, p_body: firstPost.trim() });
-        if (error) throw error;
-      }
-
-      show(registering ? "가게를 등록했어요! 이제 마을방송에 나와요." : "가게 정보를 고쳤어요.", "proud");
-      pushWithLoading(router, registering ? "/owner/store" : `/stores/${targetId}`);
-      router.refresh();
-    } catch (e) {
-      show(errorMessage(e), "think");
-    } finally {
-      setBusy(false);
-    }
+        if (registering && firstPost.trim()) {
+          const { error } = await supabase.rpc("save_store_post", { p_store_id: targetId, p_body: firstPost.trim() });
+          if (error) throw error;
+        }
+      },
+      {
+        then: () => {
+          router.push(registering ? "/owner/store" : `/stores/${savedId}`);
+          router.refresh();
+        },
+      },
+    );
   }
 
   const tabPhotos = photos.filter((p) => p.category === galleryTab);
@@ -191,7 +193,7 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
       className="flex flex-col gap-3.5"
       onSubmit={(e) => {
         e.preventDefault();
-        submit();
+        save();
       }}
     >
       {registering ? (
@@ -423,15 +425,22 @@ export function StoreEditor({ initial }: { initial: StoreEditorValues }) {
         </div>
       </Section>
 
-      <div className="sticky bottom-0 -mx-[18px] flex gap-2 bg-paper px-[18px] pt-2 pb-[max(14px,env(safe-area-inset-bottom))]">
-        {!registering && (
-          <button type="button" onClick={() => router.back()} className="min-h-16 shrink-0 rounded-[22px] border-2 border-line bg-card px-4 text-lg font-bold">
-            취소
-          </button>
-        )}
-        <button type="submit" disabled={busy} className="min-h-16 flex-1 rounded-[22px] border-2 border-sage-deep bg-sage font-display text-[21px] text-white disabled:opacity-60">
-          {busy ? "저장하는 중…" : registering ? "등록하고 마을방송에 올리기" : "고친 내용 저장"}
-        </button>
+      <div className="sticky bottom-0 -mx-[18px] flex flex-col gap-2 bg-paper px-[18px] pt-2 pb-[max(14px,env(safe-area-inset-bottom))]">
+        <SubmitError message={submit.error} />
+        <div className="flex gap-2">
+          {!registering && (
+            <button type="button" onClick={() => router.back()} className="min-h-16 shrink-0 rounded-[22px] border-2 border-line bg-card px-4 text-lg font-bold">
+              취소
+            </button>
+          )}
+          {/* 처음 등록하는 화면은 버튼 이름을 그대로 둔다 (등록하고 마을방송에 올리기 → 등록하는 중… → 등록했어요!) */}
+          <SubmitButton
+            kind={registering ? "register" : "save"}
+            idleLabel={registering ? "등록하고 마을방송에 올리기" : undefined}
+            phase={submit.phase}
+            className="min-h-16 flex-1 rounded-[22px] font-display text-[21px]"
+          />
+        </div>
       </div>
       {node}
     </form>

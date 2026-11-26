@@ -10,6 +10,7 @@ import { SCHEDULE_KINDS, bandOf, calendarEnd, dayMark, daysBetween, defaultTimes
 import { MEMO_MAX } from "@/lib/signs";
 import { createClient } from "@/lib/supabase/client";
 import type { DayPlan, RegularHours, TempClosure } from "@/lib/types";
+import { SubmitButton, SubmitError, useSubmit } from "./SubmitButton";
 import { TimeWheel } from "./TimeWheel";
 import { useToast } from "./Toast";
 
@@ -80,7 +81,9 @@ export function OwnerCalendar({
   const [note, setNote] = useState("");
   const [editing, setEditing] = useState<Schedule | null>(null);
   const [periodOpen, setPeriodOpen] = useState(false);
+  // 일정을 지우는 중
   const [busy, setBusy] = useState(false);
+  const submit = useSubmit();
   const form = useRef<HTMLElement>(null);
 
   const [y, m] = ym;
@@ -147,33 +150,43 @@ export function OwnerCalendar({
     window.requestAnimationFrame(() => form.current?.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" }));
   }
 
-  async function save() {
+  /**
+   * 일정 저장 (ADR-028): 버튼에 "저장했어요!"가 잠깐 보인 뒤 칸을 비우고 달력을 새로 받는다 (이 화면에 남는다).
+   * 따로 뜨는 알림은 고른 기간보다 적게 들어갔을 때만 (그때는 며칠에 들어갔는지 알려야 한다)
+   */
+  function save() {
+    if (submit.locked || busy) return;
     if (!start || !end || !kind) return;
     if (kind === "out" && from >= to) return show("돌아오는 시각이 나가는 시각보다 뒤여야 해요.", "think");
-    setBusy(true);
-    try {
-      const { data, error } = await createClient().rpc("save_schedule", {
-        p_store_id: storeId,
-        p_kind: kind,
-        p_start: start,
-        p_end: end,
-        p_from: kind === "late_open" || kind === "out" ? from : null,
-        p_to: kind === "early_close" || kind === "out" ? to : null,
-        p_note: note.trim() || null,
-        p_closure_id: editing?.closureId ?? null,
-        p_plan_ids: editing && editing.planIds.length > 0 ? editing.planIds : null,
-      });
-      if (error) throw error;
-      // 휴무인 날은 건너뛰므로 고른 기간보다 적게 들어갈 수 있다
-      const skipped = typeof data === "number" && data < daysBetween(start, end);
-      show(skipped ? `휴무인 날을 빼고 ${data}일에 넣었어요.` : editing ? "일정을 고쳤어요." : `${rangeLabel(start, end)} 일정을 넣었어요.`, "proud");
-      reset();
-      router.refresh();
-    } catch (e) {
-      show(errorMessage(e), "think");
-    } finally {
-      setBusy(false);
-    }
+    let entered: number | null = null;
+    submit.run(
+      async () => {
+        const { data, error } = await createClient().rpc("save_schedule", {
+          p_store_id: storeId,
+          p_kind: kind,
+          p_start: start,
+          p_end: end,
+          p_from: kind === "late_open" || kind === "out" ? from : null,
+          p_to: kind === "early_close" || kind === "out" ? to : null,
+          p_note: note.trim() || null,
+          p_closure_id: editing?.closureId ?? null,
+          p_plan_ids: editing && editing.planIds.length > 0 ? editing.planIds : null,
+        });
+        if (error) throw error;
+        // 휴무인 날은 건너뛰므로 고른 기간보다 적게 들어갈 수 있다
+        if (typeof data === "number" && data < daysBetween(start, end)) entered = data;
+      },
+      {
+        onDone: () => {
+          if (entered !== null) show(`휴무인 날을 빼고 ${entered}일에 넣었어요.`, "proud");
+        },
+        then: () => {
+          reset();
+          router.refresh();
+        },
+        stay: true,
+      },
+    );
   }
 
   async function remove(s: Schedule) {
@@ -331,7 +344,7 @@ export function OwnerCalendar({
               <h2 className="font-display text-[21px] font-normal">{dayLabel(start)}에 등록된 일정</h2>
               <ul className="flex flex-col gap-2">
                 {onDay.map((s) => (
-                  <ScheduleRow key={s.key} s={s} busy={busy} onEdit={() => edit(s)} onRemove={() => remove(s)} />
+                  <ScheduleRow key={s.key} s={s} busy={busy || submit.locked} onEdit={() => edit(s)} onRemove={() => remove(s)} />
                 ))}
               </ul>
             </section>
@@ -445,14 +458,17 @@ export function OwnerCalendar({
               </>
             )}
 
-            <button
+            <SubmitError message={submit.error} />
+            {/* 아직 누를 수 없을 때는 무엇을 골라야 하는지 적어 둔다. 다 고르면 "저장하기" */}
+            <SubmitButton
+              kind="save"
               type="button"
+              phase={submit.phase}
+              idleLabel={!start ? "날짜를 골라 주세요" : !kind ? "일정 유형을 골라 주세요" : undefined}
               disabled={busy || !start || !kind}
               onClick={save}
-              className="min-h-16 rounded-[22px] border-2 border-sage-deep bg-sage font-display text-xl text-white disabled:border-line disabled:bg-sand disabled:text-muted disabled:!shadow-none"
-            >
-              {busy ? "저장하는 중…" : !start ? "날짜를 골라 주세요" : !kind ? "일정 유형을 골라 주세요" : editing ? "고친 일정 저장" : "일정 등록"}
-            </button>
+              className="min-h-16 rounded-[22px] font-display text-xl disabled:border-line disabled:bg-sand disabled:text-muted"
+            />
           </section>
 
           <section aria-labelledby={`${uid}-all`} className="flex flex-col gap-2">
@@ -464,7 +480,7 @@ export function OwnerCalendar({
             ) : (
               <ul className="flex flex-col gap-2">
                 {all.map((s) => (
-                  <ScheduleRow key={s.key} s={s} busy={busy} active={editing?.key === s.key} onEdit={() => edit(s)} onRemove={() => remove(s)} />
+                  <ScheduleRow key={s.key} s={s} busy={busy || submit.locked} active={editing?.key === s.key} onEdit={() => edit(s)} onRemove={() => remove(s)} />
                 ))}
               </ul>
             )}

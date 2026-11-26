@@ -2,54 +2,60 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { errorMessage } from "@/lib/errors";
 import { uploadStoreImage } from "@/lib/images";
 import { goBack, goBackRefreshed, pushWithLoading } from "@/lib/nav";
 import { postHref } from "@/lib/posts";
+import { afterPostHref } from "@/lib/submit";
 import { createClient } from "@/lib/supabase/client";
 import type { StorePost } from "@/lib/types";
 import { BackButton } from "./BackButton";
 import { Osori } from "./Osori";
 import { PhotoPicker } from "./PhotoPicker";
+import { SubmitButton, SubmitError, useSubmit } from "./SubmitButton";
 import { useToast } from "./Toast";
 
 const BODY_MAX = 500;
 
 /**
  * 소식·공지 쓰기·고치기. 올리면 오늘 들어온 소식에 바로 뜬다.
- * 새 글은 올린 뒤 내 가게로 간다. 고칠 때(post 가 있음)는 그 글만 고치는 따로 된 화면이고,
+ * 새 글은 버튼에 "올렸어요!"가 잠깐 보인 뒤 소통광장의 사장님 소식 줄로 간다 (방금 올린 글이 맨 위에 있다, ADR-028).
+ * 고칠 때(post 가 있음)는 그 글만 고치는 따로 된 화면이고,
  * 저장하거나 취소하면 들어온 화면(글 화면 · 소통광장 · 내 가게)으로 돌아간다 (ADR-025)
  */
 export function PostComposer({ storeId, storeName, post }: { storeId: string; storeName: string; post: StorePost | null }) {
   const router = useRouter();
   const { node, show } = useToast();
+  const submit = useSubmit();
   const [kind, setKind] = useState<"news" | "notice">(post?.kind ?? "news");
   const [body, setBody] = useState(post?.body ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(post?.image_url ?? null);
-  const [busy, setBusy] = useState(false);
 
-  async function submit() {
+  function send() {
+    if (submit.locked) return;
     if (!body.trim()) return show("내용을 써 주세요.", "think");
-    setBusy(true);
-    try {
-      const supabase = createClient();
-      const imageUrl = file ? await uploadStoreImage(supabase, storeId, file) : preview;
-      const { error } = await supabase.rpc("save_store_post", {
-        p_store_id: storeId,
-        p_body: body.trim(),
-        p_kind: kind,
-        p_image_url: imageUrl,
-        p_post_id: post?.id ?? null,
-      });
-      if (error) throw error;
-      if (post) return goBackRefreshed(router, postHref(storeId, post.id));
-      pushWithLoading(router, "/owner/store");
-      router.refresh();
-    } catch (e) {
-      show(errorMessage(e), "think");
-      setBusy(false);
-    }
+    submit.run(
+      async () => {
+        const supabase = createClient();
+        const imageUrl = file ? await uploadStoreImage(supabase, storeId, file) : preview;
+        const { error } = await supabase.rpc("save_store_post", {
+          p_store_id: storeId,
+          p_body: body.trim(),
+          p_kind: kind,
+          p_image_url: imageUrl,
+          p_post_id: post?.id ?? null,
+        });
+        if (error) throw error;
+      },
+      {
+        then: () => {
+          if (post) return goBackRefreshed(router, postHref(storeId, post.id));
+          // 쓰던 화면 자리를 소통광장으로 바꾼다 ("뒤로"를 눌러도 빈 쓰기 화면으로 돌아오지 않는다). 옮긴 다음에 새로 받아야 새 글이 보인다
+          router.replace(afterPostHref("store"));
+          router.refresh();
+        },
+      },
+    );
   }
 
   function cancel() {
@@ -62,7 +68,7 @@ export function PostComposer({ storeId, storeName, post }: { storeId: string; st
       className="flex flex-col gap-4"
       onSubmit={(e) => {
         e.preventDefault();
-        submit();
+        send();
       }}
     >
       <header className="flex items-center gap-2.5">
@@ -130,13 +136,12 @@ export function PostComposer({ storeId, storeName, post }: { storeId: string; st
         )}
       </div>
 
+      <SubmitError message={submit.error} />
       <div className="flex gap-2">
         <button type="button" onClick={cancel} className="min-h-16 shrink-0 rounded-[22px] border-2 border-line bg-card px-4 text-lg font-bold">
           취소
         </button>
-        <button type="submit" disabled={busy} className="min-h-16 flex-1 rounded-[22px] border-2 border-sage-deep bg-sage font-display text-[21px] text-white disabled:opacity-60">
-          {busy ? (post ? "저장하는 중…" : "올리는 중…") : post ? "고친 내용 저장" : "마을방송에 올리기"}
-        </button>
+        <SubmitButton kind={post ? "save" : "post"} phase={submit.phase} className="min-h-16 flex-1 rounded-[22px] font-display text-[21px]" />
       </div>
       {node}
     </form>
